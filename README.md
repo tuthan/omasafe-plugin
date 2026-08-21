@@ -29,10 +29,11 @@ project overview and roadmap.
 
 <p align="center"><strong>Demo video</strong></p>
 
-<video controls width="720">
-  <source src="https://raw.githubusercontent.com/tuthan/omasafe-plugin/main/media/video.mp4" type="video/mp4">
-  <a href="https://raw.githubusercontent.com/tuthan/omasafe-plugin/main/media/video.mp4">Watch the OmaSafe demo video</a>
-</video>
+
+
+https://github.com/user-attachments/assets/d745387c-61ed-4e2c-9f2f-294dda72807c
+
+
 
 ## Requirements
 
