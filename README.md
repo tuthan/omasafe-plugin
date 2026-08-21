@@ -11,6 +11,28 @@ separate operations.
 
 The plugin id is `io.github.tuthan.omasafe`.
 
+Visit the [OmaSafe landing page](https://tuthan.github.io/omasafe/) for the
+project overview and roadmap.
+
+## Screenshots and demo
+
+<table>
+  <tr>
+    <td align="center"><strong>Clean scan state</strong><br><img src="media/clear.png" alt="OmaSafe clean scan state" width="420"></td>
+    <td align="center"><strong>Review-needed state</strong><br><img src="media/warning.png" alt="OmaSafe review-needed state" width="420"></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="media/roadmap.png" alt="OmaSafe roadmap" width="900">
+</p>
+
+<p align="center"><strong>Demo video</strong></p>
+
+<video src="media/video.mp4" controls width="720">
+  <a href="media/video.mp4">Watch the OmaSafe demo video</a>
+</video>
+
 ## Requirements
 
 - Omarchy with shell plugin support
@@ -43,6 +65,11 @@ command -v omasafe-cli
 omasafe-cli --version
 omasafe-cli scan --format json
 ```
+
+Periodic scanning is disabled by default. Enable `Enable periodic scans` in the
+plugin's bar-widget settings if desired, then choose `Periodic scan interval
+(minutes)` (1–1440 minutes). Manual scans remain available by clicking the
+widget.
 
 The scan may exit with status `0` (quiet) or `3` (findings); both statuses are
 successful JSON-producing results. The CLI creates its XDG configuration, state,

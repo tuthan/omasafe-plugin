@@ -17,6 +17,25 @@
     "description": "Show new plugin drift and coverage alerts",
     "category": "Security",
     "allowMultiple": false,
-    "defaultSection": "right"
+    "defaultSection": "right",
+    "schema": [
+      {
+        "key": "periodicScanEnabled",
+        "type": "boolean",
+        "label": "Enable periodic scans",
+        "description": "Run OmaSafe automatically while Omarchy Shell is running. Manual scans are always available from the widget.",
+        "defaultValue": false
+      },
+      {
+        "key": "periodicScanIntervalMinutes",
+        "type": "integer",
+        "label": "Periodic scan interval (minutes)",
+        "description": "How often to run an automatic scan when periodic scans are enabled.",
+        "min": 1,
+        "max": 1440,
+        "step": 1,
+        "defaultValue": 5
+      }
+    ]
   }
 }

@@ -12,9 +12,18 @@ BarWidget {
   property int newCount: 0
   property var alerts: []
   property string scanState: "checking"
+  property string highestSeverity: "none"
   property string limitation: ""
   property string cliError: ""
   property string cliPath: ""
+
+  readonly property bool periodicScanEnabled: settings &&
+    settings.periodicScanEnabled === true
+  readonly property int periodicScanIntervalMinutes: {
+    var configured = settings ? Number(settings.periodicScanIntervalMinutes) : 5
+    if (!isFinite(configured)) configured = 5
+    return Math.max(1, Math.min(1440, Math.round(configured)))
+  }
 
   function injectPanel() {
     var target = panelLoader.item
@@ -46,6 +55,23 @@ BarWidget {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
+  readonly property color warningColor: "#e5a50a"
+  readonly property string statusLevel: root.scanState === "checking"
+    ? "checking" : (root.scanState === "missing-cli" || root.scanState === "unavailable"
+      ? "unknown" : (root.highestSeverity === "critical"
+        ? "critical" : (root.outstandingCount > 0 ? "warning" : "normal")))
+
+  function iconTooltip() {
+    if (root.statusLevel === "checking") return "OmaSafe: scanning"
+    if (root.scanState === "missing-cli") return "OmaSafe: install omasafe-cli"
+    if (root.scanState === "unavailable") return "OmaSafe: scan unavailable"
+    if (root.statusLevel === "critical")
+      return "OmaSafe: critical finding requires review"
+    if (root.statusLevel === "warning")
+      return "OmaSafe: " + root.outstandingCount + " item(s) need review"
+    return "OmaSafe: no outstanding changes"
+  }
+
   // Resolve the executable once, then invoke it directly so CLI arguments never
   // pass through a shell and the scan process can terminate normally.
   function cliCommand(args) {
@@ -73,6 +99,9 @@ BarWidget {
       root.outstandingCount = result.outstanding || root.alertCount
       root.newCount = result.new || 0
       root.alerts = result.alerts || []
+      root.highestSeverity = String(result.highest_severity ||
+        (root.alerts.some(function(alert) { return alert.severity === "critical" })
+          ? "critical" : (root.alertCount > 0 ? "warning" : "none")))
       root.scanState = result.quiet === true ? "quiet" : "attention"
       root.limitation = ""
       root.cliError = ""
@@ -148,8 +177,8 @@ BarWidget {
   }
 
   Timer {
-    interval: 300000
-    running: true
+    interval: root.periodicScanIntervalMinutes * 60000
+    running: root.periodicScanEnabled
     repeat: true
     onTriggered: root.runScan()
   }
@@ -171,20 +200,18 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.scanState === "checking"
-      ? "…" : (root.scanState === "missing-cli"
-      ? "CLI" : (root.scanState === "unavailable"
-        ? "?" : (root.outstandingCount > 0 ? "!" : "✓")))
+    text: ""
+    iconComponent: Component {
+      OmaSafeStatusIcon {
+        anchors.centerIn: parent
+        level: root.statusLevel
+        count: root.outstandingCount
+        warningColor: root.warningColor
+        criticalColor: root.bar ? root.bar.urgent : Color.urgent
+      }
+    }
     slotSize: Style.bar.statusSlot
-    tooltipText: root.scanState === "checking"
-      ? "OmaSafe: scanning"
-      : (root.scanState === "missing-cli"
-      ? "OmaSafe: install omasafe-cli"
-      : (root.scanState === "unavailable"
-        ? "OmaSafe: scan unavailable"
-        : (root.outstandingCount > 0
-      ? "OmaSafe: " + root.outstandingCount + " item(s) need review"
-      : "OmaSafe: " + root.scanState)))
+    tooltipText: root.iconTooltip()
     onPressed: function(mouseButton) {
       if (mouseButton === Qt.LeftButton && panelLoader.item) {
         root.runScan()
