@@ -46,24 +46,10 @@ the widget shows `CLI` and does not imply that the system is clean.
 ## Install the CLI
 
 The CLI is released separately from this plugin by the
-[main OmaSafe repository](https://github.com/tuthan/omasafe). On x86_64 Linux,
-use the version-pinned installer; it verifies the release's Sigstore bundle and
-SHA-256 digest before installing to `~/.local/bin`.
-
-```sh
-# Install the latest signed release
-curl --fail --proto '=https' --tlsv1.2 --location https://raw.githubusercontent.com/tuthan/omasafe/d4fb76d/scripts/install-cli.sh | bash -s -- --version latest
-
-# Or install an exact release
-curl --fail --proto '=https' --tlsv1.2 --location https://raw.githubusercontent.com/tuthan/omasafe/d4fb76d/scripts/install-cli.sh | bash -s -- --version v0.1.0
-```
-
-The raw-script URL is pinned to the installer commit; `latest` selects the
-current signed release, while `v0.1.0` selects an exact signed archive. From
-a checkout of the main repository, run
-`./scripts/install-cli.sh --version latest` or
-`./scripts/install-cli.sh --version v0.1.0` instead. Cosign is required; on
-Arch Linux, install it with `sudo pacman -S --needed cosign`.
+[main OmaSafe repository](https://github.com/tuthan/omasafe). Follow the
+[CLI README](https://github.com/tuthan/omasafe#readme) for its installation and
+verification instructions. The plugin does not download or install the CLI
+automatically.
 
 The plugin checks `~/.local/bin/omasafe-cli`, `/usr/local/bin/omasafe-cli`,
 `/usr/bin/omasafe-cli`, and finally the `omarchy-shell` session `PATH`. If you
