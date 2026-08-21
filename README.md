@@ -29,8 +29,9 @@ project overview and roadmap.
 
 <p align="center"><strong>Demo video</strong></p>
 
-<video src="media/video.mp4" controls width="720">
-  <a href="media/video.mp4">Watch the OmaSafe demo video</a>
+<video controls width="720">
+  <source src="https://raw.githubusercontent.com/tuthan/omasafe-plugin/main/media/video.mp4" type="video/mp4">
+  <a href="https://raw.githubusercontent.com/tuthan/omasafe-plugin/main/media/video.mp4">Watch the OmaSafe demo video</a>
 </video>
 
 ## Requirements
@@ -43,16 +44,25 @@ the widget shows `CLI` and does not imply that the system is clean.
 
 ## Install the CLI
 
-Download the matching `omasafe-cli-<version>-x86_64-unknown-linux-gnu.tar.gz`
-archive and its `.sha256` file from the [OmaSafe GitHub releases](https://github.com/tuthan/omasafe/releases).
-Verify the checksum, extract the archive, and install the binary in a location
-visible to the graphical Omarchy session. For a per-user install:
+The CLI is released separately from this plugin by the
+[main OmaSafe repository](https://github.com/tuthan/omasafe). On x86_64 Linux,
+use the version-pinned installer; it verifies the release's Sigstore bundle and
+SHA-256 digest before installing to `~/.local/bin`.
 
 ```sh
-tar -xzf omasafe-cli-<version>-x86_64-unknown-linux-gnu.tar.gz
-install -Dm755 omasafe-cli-<version>-x86_64-unknown-linux-gnu/omasafe-cli \
-  "$HOME/.local/bin/omasafe-cli"
+# Install the latest signed release
+curl --fail --proto '=https' --tlsv1.2 --location https://raw.githubusercontent.com/tuthan/omasafe/d4fb76d/scripts/install-cli.sh | bash -s -- --version latest
+
+# Or install an exact release
+curl --fail --proto '=https' --tlsv1.2 --location https://raw.githubusercontent.com/tuthan/omasafe/d4fb76d/scripts/install-cli.sh | bash -s -- --version v0.1.0
 ```
+
+The raw-script URL is pinned to the installer commit; `latest` selects the
+current signed release, while `v0.1.0` selects an exact signed archive. From
+a checkout of the main repository, run
+`./scripts/install-cli.sh --version latest` or
+`./scripts/install-cli.sh --version v0.1.0` instead. Cosign is required; on
+Arch Linux, install it with `sudo pacman -S --needed cosign`.
 
 The plugin checks `~/.local/bin/omasafe-cli`, `/usr/local/bin/omasafe-cli`,
 `/usr/bin/omasafe-cli`, and finally the `omarchy-shell` session `PATH`. If you
@@ -154,8 +164,9 @@ omarchy plugin update
 ```
 
 Updating the plugin does not update `omasafe-cli`. Update the CLI separately
-using the release or Arch package from the main OmaSafe project. Likewise,
-updating the CLI does not change the installed plugin revision.
+using the [main OmaSafe repository](https://github.com/tuthan/omasafe) installer
+or Arch package. Likewise, updating the CLI does not change the installed
+plugin revision.
 
 ## Local development
 
