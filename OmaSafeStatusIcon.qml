@@ -23,9 +23,10 @@ Item {
   // in a crowded bar. Quiet states stay as a light outline.
   readonly property bool alert: root.level === "critical" || root.level === "warning"
   readonly property string glyph: root.level === "normal" ? "✓"
-    : (root.level === "checking" ? "…" : (root.level === "unknown" ? "?"
-      : (root.level === "warning" && root.count > 0
-        ? (root.count > 9 ? "9+" : String(root.count)) : "!")))
+    : (root.level === "checking" ? "…" : (root.level === "ready" ? "⟳"
+      : (root.level === "unknown" ? "?"
+        : (root.level === "warning" && root.count > 0
+          ? (root.count > 9 ? "9+" : String(root.count)) : "!"))))
 
   Rectangle {
     anchors.centerIn: parent
@@ -41,6 +42,7 @@ Item {
     anchors.centerIn: parent
     anchors.verticalCenterOffset: root.level === "checking" ? -1 : 0
     text: root.glyph
+    textFormat: Text.PlainText
     color: root.alert ? Color.background : root.statusColor
     font.family: Style.font.family
     font.pixelSize: Style.font.caption

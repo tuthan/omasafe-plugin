@@ -15,12 +15,30 @@ Panel {
   property var statusReport: null
   property var diffReport: null
   property string panelError: ""
+  property string marketplaceRefreshError: ""
+  property string marketplaceRefreshMessage: ""
+  // A successful catalog refresh must be followed by an inventory reload before
+  // its success is shown. These coordinate that hand-off across the async
+  // inventory process so the reload is never dropped when inventory is busy.
+  property bool marketplaceRefreshAwaitingInventory: false
+  property bool inventoryReloadPending: false
+  // Marks the single inventory run started by a catalog refresh, so only that run
+  // may skip the per-plugin status sweep. Consumed by applyInventory; a concurrent
+  // normal-open reload never inherits it.
+  property bool nextInventoryCatalogOnly: false
+  // CLI stdout from a refresh, held until the reload applies so a success line is
+  // never shown before the catalog it describes is loaded.
+  property string pendingRefreshMessage: ""
   property string selectedError: ""
   property string selectedPluginId: ""
   property bool showCompliantPlugins: false
   property bool checkingPluginStatuses: false
   property var pluginStatuses: ({})
   property var statusQueue: []
+  // Identity fingerprint of the installed plugin set, so a catalog-only inventory
+  // reload can skip the O(N) per-plugin status sweep when nothing was installed,
+  // removed, or changed on disk.
+  property string installedSignature: ""
   property string trustError: ""
   property bool showPluginPicker: false
   property bool trustConfirming: false
@@ -32,8 +50,15 @@ Panel {
   readonly property var alerts: hostWidget ? hostWidget.alerts : []
   readonly property string statusLevel: hostWidget ? hostWidget.statusLevel : "unknown"
 
+  readonly property bool cliVerified: root.hostWidget
+    ? root.hostWidget.cliVerified === true : false
+
+  // Central authorization for every operational CLI command (inventory, status,
+  // diff, trust, untrust, marketplace refresh). Until the CLI is resolved and its
+  // version verified, this yields a non-executable command so no launcher can run
+  // or trust an unverified binary even if it forgets to check first.
   function cliCommand(args) {
-    return root.hostWidget
+    return (root.hostWidget && root.hostWidget.cliVerified)
       ? root.hostWidget.cliCommand(args)
       : ["/usr/bin/false"]
   }
@@ -47,6 +72,11 @@ Panel {
 
   function statusTitle() {
     if (root.statusLevel === "checking") return "Scanning"
+    if (!root.hostWidget) return "Scan status unavailable"
+    if (root.hostWidget.scanState === "ready") return "Ready to scan"
+    if (root.hostWidget.scanState === "missing-cli") return "omasafe-cli not found"
+    if (root.hostWidget.scanState === "incompatible-cli") return "omasafe-cli incompatible"
+    if (root.hostWidget.scanState === "unavailable") return "Scan unavailable"
     if (root.statusLevel === "critical") return "Critical finding"
     if (root.statusLevel === "warning") return "Review needed"
     if (root.statusLevel === "normal") return "No outstanding changes"
@@ -57,8 +87,13 @@ Panel {
     if (!root.hostWidget) return "Waiting for the OmaSafe widget."
     if (root.hostWidget.scanState === "missing-cli")
       return "Install omasafe-cli, then restart Omarchy Shell."
+    if (root.hostWidget.scanState === "incompatible-cli")
+      return root.hostWidget.cliError ||
+        "The resolved omasafe-cli is not a compatible version; scans are disabled."
     if (root.hostWidget.scanState === "unavailable")
       return root.hostWidget.cliError || "The latest scan could not be completed."
+    if (root.hostWidget.scanState === "ready")
+      return "Click Run scan to inspect the installed plugin state."
     if (root.statusLevel === "checking") return "Reading installed plugin state…"
     if (root.statusLevel === "critical") return "A confirmed critical finding needs immediate review."
     if (root.statusLevel === "warning")
@@ -90,6 +125,18 @@ Panel {
     return plugins.filter(function(plugin) { return plugin.classification !== "backup" })
   }
 
+  // Fingerprint of installed identities (id + source digest). Per-plugin trust
+  // status depends only on these, not on the marketplace catalog, so an unchanged
+  // signature means a catalog refresh cannot have changed any plugin's status.
+  function computeInstalledSignature() {
+    var parts = root.visiblePlugins().map(function(plugin) {
+      return String(plugin.id) + ":" +
+        String(plugin.content_digest || plugin.head || plugin.tree || "")
+    })
+    parts.sort()
+    return parts.join("|")
+  }
+
   function statusForPlugin(id) {
     return root.pluginStatuses[id] || null
   }
@@ -108,11 +155,12 @@ Panel {
     }).length
   }
 
-  function reviewPluginCount() {
-    return root.visiblePlugins().filter(function(plugin) {
-      var status = root.statusForPlugin(plugin.id)
-      return status && (status.state === "changed" || status.state === "partial")
-    }).length
+  function outstandingReviewCount() {
+    // Keep the summary tile aligned with the header, which is driven by the
+    // CLI's outstanding finding count. A finding may be system-level (for
+    // example marketplace coverage) and therefore have no changed/partial
+    // plugin status to count here.
+    return root.hostWidget ? Number(root.hostWidget.outstandingCount || 0) : 0
   }
 
   function untrustedPluginCount() {
@@ -225,6 +273,123 @@ Panel {
     return null
   }
 
+  function marketplaceClaim(marketplace) {
+    return marketplace && marketplace.registry_claim
+      ? marketplace.registry_claim : null
+  }
+
+  function snapshotClaim() {
+    var entries = root.inventoryReport && root.inventoryReport.marketplace || []
+    for (var i = 0; i < entries.length; i++) {
+      var claim = root.marketplaceClaim(entries[i])
+      if (claim) return claim
+    }
+    return null
+  }
+
+  function snapshotIntegrityLabel() {
+    var source = root.inventoryReport
+      ? String(root.inventoryReport.marketplace_source || "") : ""
+    var explicit = root.inventoryReport
+      ? root.inventoryReport.marketplace_snapshot_verified : undefined
+    if (explicit === true || (explicit === undefined && source === "pinned-fetch"))
+      return "Verified against pinned catalog commit"
+    if (source === "unverified-cache") return "Unverified cached snapshot"
+    if (source === "local-file") return "Local catalog file (not cache-verified)"
+    return "Marketplace snapshot unavailable"
+  }
+
+  function snapshotIntegrityLevel() {
+    var source = root.inventoryReport
+      ? String(root.inventoryReport.marketplace_source || "") : ""
+    var explicit = root.inventoryReport
+      ? root.inventoryReport.marketplace_snapshot_verified : undefined
+    if (explicit === true || (explicit === undefined && source === "pinned-fetch"))
+      return "normal"
+    if (source === "unverified-cache" || source === "local-file") return "warning"
+    return "unknown"
+  }
+
+  function snapshotCommit() {
+    if (root.inventoryReport && root.inventoryReport.marketplace_repository_commit)
+      return root.inventoryReport.marketplace_repository_commit
+    var claim = root.snapshotClaim()
+    return claim ? claim.registry_commit : null
+  }
+
+  function updateMarketplace() {
+    if (!root.hostWidget || !root.hostWidget.cliVerified ||
+        marketplaceRefreshProcess.running) return
+    root.marketplaceRefreshError = ""
+    root.marketplaceRefreshMessage = ""
+    root.marketplaceRefreshAwaitingInventory = false
+    root.inventoryReloadPending = false
+    marketplaceRefreshTimeout.restart()
+    marketplaceRefreshProcess.running = true
+  }
+
+  // Reload inventory after a catalog refresh, queuing if a reload is already in
+  // flight so the required post-refresh reload is never dropped. The catalog-only
+  // marker is applied to the run this actually starts (here or when the queue is
+  // drained), never to an unrelated reload already running.
+  function reloadInventoryForRefresh() {
+    if (inventoryProcess.running) {
+      root.inventoryReloadPending = true
+    } else {
+      root.nextInventoryCatalogOnly = true
+      inventoryProcess.running = true
+    }
+  }
+
+  function listingVerificationLabel(marketplace) {
+    var claim = root.marketplaceClaim(marketplace)
+    var status = claim ? String(claim.verification_status || "").toLowerCase() : ""
+    if (status === "verified") return "Verified by marketplace"
+    if (status === "unverified") return "Not verified by marketplace"
+    return "Marketplace verification unavailable"
+  }
+
+  function listingVerificationLevel(marketplace) {
+    var claim = root.marketplaceClaim(marketplace)
+    var status = claim ? String(claim.verification_status || "").toLowerCase() : ""
+    if (status === "verified") return "normal"
+    if (status === "unverified") return "warning"
+    return "unknown"
+  }
+
+  function installedCommitLabel(marketplace) {
+    var claim = root.marketplaceClaim(marketplace)
+    if (!claim || claim.installed_matches_listing === null ||
+        claim.installed_matches_listing === undefined)
+      return "Installed/validated commit comparison unavailable"
+    return claim.installed_matches_listing
+      ? "Installed commit matches validated commit"
+      : "Installed commit differs from validated commit"
+  }
+
+  function installedCommitLevel(marketplace) {
+    var claim = root.marketplaceClaim(marketplace)
+    if (!claim || claim.installed_matches_listing === null ||
+        claim.installed_matches_listing === undefined) return "unknown"
+    return claim.installed_matches_listing ? "normal" : "warning"
+  }
+
+  function upstreamCommitLabel(marketplace) {
+    var claim = root.marketplaceClaim(marketplace)
+    if (!claim || claim.upstream_moved === null || claim.upstream_moved === undefined)
+      return "Upstream comparison unavailable"
+    return claim.upstream_moved
+      ? "Upstream moved past validated commit"
+      : "Upstream still matches validated commit"
+  }
+
+  function upstreamCommitLevel(marketplace) {
+    var claim = root.marketplaceClaim(marketplace)
+    if (!claim || claim.upstream_moved === null || claim.upstream_moved === undefined)
+      return "unknown"
+    return claim.upstream_moved ? "warning" : "normal"
+  }
+
   function selectedAlert() {
     for (var i = 0; i < root.alerts.length; i++) {
       if (root.alerts[i].plugin_id === root.selectedPluginId) return root.alerts[i]
@@ -273,7 +438,20 @@ Panel {
   function open() {
     root.panelError = ""
     root.controller.show()
-    inventoryProcess.running = true
+    root.loadInventory()
+  }
+
+  // Only load once the CLI is verified. If the panel is opened during the brief
+  // startup verification window, it waits and the cliVerified watcher below loads
+  // as soon as the probe passes, rather than firing inventory at an unverified
+  // (or non-executable) binary.
+  function loadInventory() {
+    if (!root.cliVerified) {
+      root.panelError = "omasafe-cli is not verified yet; the panel loads once the version check passes."
+      return
+    }
+    root.panelError = ""
+    if (!inventoryProcess.running) inventoryProcess.running = true
   }
 
   function close() {
@@ -286,10 +464,25 @@ Panel {
   }
 
   function applyInventory(output) {
+    // Consume the catalog-only marker up front so it is spent on this run whether
+    // or not parsing succeeds, never leaking into the next inventory load.
+    var catalogOnly = root.nextInventoryCatalogOnly
+    root.nextInventoryCatalogOnly = false
     try {
       var report = JSON.parse(output)
       root.inventoryReport = report.result || {}
       root.panelError = ""
+      var signature = root.computeInstalledSignature()
+      var identitiesChanged = signature !== root.installedSignature
+      root.installedSignature = signature
+      // Skip the per-plugin status sweep ONLY on the reload started by a catalog
+      // refresh, with an unchanged installed set and a valid selection: marketplace
+      // claims come from the new inventoryReport, and trust status cannot have
+      // changed. Any other path (a normal open) must refresh statuses, since the
+      // trust baseline is mutable independently of installed source and may be stale.
+      if (catalogOnly && !identitiesChanged &&
+          root.selectedPluginId !== "" && root.pluginById(root.selectedPluginId))
+        return
       var plugins = root.visiblePlugins()
       var initialAlert = root.alerts.length > 0 ? root.alerts[0] : null
       var initialId = initialAlert ? initialAlert.plugin_id : (plugins.length > 0 ? plugins[0].id : "")
@@ -377,6 +570,7 @@ Panel {
 
               Text {
                 text: root.statusTitle()
+                textFormat: Text.PlainText
                 color: root.statusColor(root.statusLevel)
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.title
@@ -386,6 +580,7 @@ Panel {
               Text {
                 width: parent.width
                 text: root.statusMessage()
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -412,6 +607,7 @@ Panel {
               spacing: Style.space(2)
               Text {
                 text: root.visiblePlugins().length
+                textFormat: Text.PlainText
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.title
@@ -420,6 +616,7 @@ Panel {
               }
               Text {
                 text: "INSTALLED"
+                textFormat: Text.PlainText
                 color: Util.alpha(root.contentForeground, 0.64)
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
@@ -432,6 +629,7 @@ Panel {
               spacing: Style.space(2)
               Text {
                 text: root.checkingPluginStatuses ? "…" : root.trustedPluginCount()
+                textFormat: Text.PlainText
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.title
@@ -440,6 +638,7 @@ Panel {
               }
               Text {
                 text: "TRUSTED"
+                textFormat: Text.PlainText
                 color: Util.alpha(root.contentForeground, 0.64)
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
@@ -451,7 +650,8 @@ Panel {
             Column {
               spacing: Style.space(2)
               Text {
-                text: root.checkingPluginStatuses ? "…" : root.reviewPluginCount()
+                text: root.checkingPluginStatuses ? "…" : root.outstandingReviewCount()
+                textFormat: Text.PlainText
                 color: root.warningColor
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.title
@@ -460,6 +660,7 @@ Panel {
               }
               Text {
                 text: "REVIEW"
+                textFormat: Text.PlainText
                 color: Util.alpha(root.contentForeground, 0.64)
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
@@ -472,6 +673,7 @@ Panel {
               spacing: Style.space(2)
               Text {
                 text: root.checkingPluginStatuses ? "…" : root.untrustedPluginCount()
+                textFormat: Text.PlainText
                 color: root.statusColor("unknown")
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.title
@@ -480,6 +682,7 @@ Panel {
               }
               Text {
                 text: "UNTRUSTED"
+                textFormat: Text.PlainText
                 color: Util.alpha(root.contentForeground, 0.64)
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
@@ -493,16 +696,111 @@ Panel {
         Text {
           width: parent.width
           text: "Trusted means the current source exactly matches a recorded baseline."
+          textFormat: Text.PlainText
           wrapMode: Text.WordWrap
           color: Util.alpha(root.contentForeground, 0.58)
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.caption
         }
 
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+          visible: root.inventoryReport !== null
+
+          Text {
+            text: "MARKETPLACE SNAPSHOT"
+            textFormat: Text.PlainText
+            color: Util.alpha(root.contentForeground, 0.64)
+            font.family: root.bar ? root.bar.fontFamily : Style.font.family
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            font.letterSpacing: 1
+          }
+
+          Rectangle {
+            width: parent.width
+            implicitHeight: snapshotDetails.implicitHeight + Style.space(14)
+            radius: Style.cornerRadius
+            color: Util.alpha(root.statusColor(root.snapshotIntegrityLevel()), 0.08)
+            border.width: 1
+            border.color: Util.alpha(root.statusColor(root.snapshotIntegrityLevel()), 0.42)
+
+            Column {
+              id: snapshotDetails
+              anchors.fill: parent
+              anchors.margins: Style.space(7)
+              spacing: Style.space(3)
+
+              Text {
+                width: parent.width
+                text: root.snapshotIntegrityLabel()
+                textFormat: Text.PlainText
+                wrapMode: Text.WordWrap
+                color: root.statusColor(root.snapshotIntegrityLevel())
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+
+              Text {
+                width: parent.width
+                text: {
+                  var retrieved = root.inventoryReport.marketplace_retrieved_at || "unavailable"
+                  return "Catalog commit: " + root.shortDigest(root.snapshotCommit()) +
+                    "\nRetrieved: " + retrieved +
+                    (root.inventoryReport.marketplace_stale ? " (stale)" : "")
+                }
+                textFormat: Text.PlainText
+                wrapMode: Text.WordWrap
+                color: root.contentForeground
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+
+              Text {
+                width: parent.width
+                text: "Snapshot verification binds cached catalog bytes to the official pinned commit; it does not verify a Git commit signature."
+                textFormat: Text.PlainText
+                wrapMode: Text.WordWrap
+                color: Util.alpha(root.contentForeground, 0.62)
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+
+              Button {
+                width: parent.width
+                text: marketplaceRefreshProcess.running ? "Updating catalog…" : "Update catalog"
+                tooltipText: "Resolve the official marketplace main branch to an exact commit, then fetch and verify that pinned snapshot."
+                enabled: root.cliVerified && !marketplaceRefreshProcess.running
+                bordered: true
+                focusable: true
+                foreground: root.contentForeground
+                fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+                onClicked: root.updateMarketplace()
+              }
+
+              Text {
+                width: parent.width
+                visible: root.marketplaceRefreshMessage !== "" ||
+                  root.marketplaceRefreshError !== ""
+                text: root.marketplaceRefreshError || root.marketplaceRefreshMessage
+                textFormat: Text.PlainText
+                wrapMode: Text.WordWrap
+                color: root.marketplaceRefreshError !== ""
+                  ? root.warningColor : root.contentForeground
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+            }
+          }
+        }
+
         Text {
           visible: root.panelError !== ""
           width: parent.width
           text: root.panelError
+          textFormat: Text.PlainText
           wrapMode: Text.WordWrap
           color: root.statusColor("critical")
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -516,6 +814,7 @@ Panel {
 
           Text {
             text: "FINDINGS"
+            textFormat: Text.PlainText
             color: Util.alpha(root.contentForeground, 0.64)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
@@ -566,6 +865,7 @@ Panel {
                     Text {
                       anchors.centerIn: parent
                       text: "!"
+                      textFormat: Text.PlainText
                       color: Color.background
                       font.family: Style.font.family
                       font.pixelSize: Style.font.caption
@@ -575,6 +875,7 @@ Panel {
 
                   Text {
                     text: root.alertLabel(modelData)
+                    textFormat: Text.PlainText
                     color: root.statusColor(root.alertLevel(modelData))
                     font.family: root.bar ? root.bar.fontFamily : Style.font.family
                     font.pixelSize: Style.font.body
@@ -585,6 +886,7 @@ Panel {
                 Text {
                   width: parent.width
                   text: modelData.plugin_id + " · " + modelData.message
+                  textFormat: Text.PlainText
                   wrapMode: Text.WordWrap
                   color: root.contentForeground
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -609,6 +911,7 @@ Panel {
 
           Text {
             text: "SELECTED PLUGIN"
+            textFormat: Text.PlainText
             color: Util.alpha(root.contentForeground, 0.64)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
@@ -633,6 +936,7 @@ Panel {
               Text {
                 width: parent.width
                 text: root.selectedPluginId || "No installed plugin selected"
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -649,6 +953,7 @@ Panel {
                     "\nDigest: " + root.shortDigest(plugin.content_digest) +
                     "\nCoverage: " + ((plugin.limitations || []).join(", ") || "complete") : ""
                 }
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -661,6 +966,7 @@ Panel {
                 text: root.statusReport ? "Baseline: " + (root.statusReport.trusted
                   ? root.shortDigest(root.statusReport.trusted.content_digest) : "not established") +
                   "\nCurrent state: " + root.statusReport.state : ""
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -672,12 +978,35 @@ Panel {
                 visible: root.marketplaceByPlugin(root.selectedPluginId) !== null
                 text: {
                   var marketplace = root.marketplaceByPlugin(root.selectedPluginId)
-                  return marketplace ? "Marketplace: " + marketplace.status +
-                    "\nSnapshot: " + (root.inventoryReport.marketplace_retrieved_at || "unavailable") +
-                    (root.inventoryReport.marketplace_stale ? " (stale)" : "") : ""
+                  var claim = root.marketplaceClaim(marketplace)
+                  return marketplace ? "Marketplace listing: " + marketplace.status +
+                    "\nListing verification: " + root.listingVerificationLabel(marketplace) +
+                    "\nCommit comparison: " + root.installedCommitLabel(marketplace) +
+                    "\nValidated commit: " + root.shortDigest(claim && claim.listing_validated_commit) +
+                    "\nUpstream commit: " + root.shortDigest(claim && claim.upstream_observed_commit) +
+                    "\nUpstream state: " + root.upstreamCommitLabel(marketplace) : ""
                 }
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
-                color: root.contentForeground
+                color: {
+                  var marketplace = root.marketplaceByPlugin(root.selectedPluginId)
+                  if (root.installedCommitLevel(marketplace) === "warning" ||
+                      root.listingVerificationLevel(marketplace) === "warning" ||
+                      root.upstreamCommitLevel(marketplace) === "warning")
+                    return root.warningColor
+                  return root.contentForeground
+                }
+                font.family: root.bar ? root.bar.fontFamily : Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+
+              Text {
+                width: parent.width
+                visible: root.marketplaceByPlugin(root.selectedPluginId) !== null
+                text: "Marketplace verification is a claim from this catalog snapshot, not an OmaSafe safety verdict."
+                textFormat: Text.PlainText
+                wrapMode: Text.WordWrap
+                color: Util.alpha(root.contentForeground, 0.62)
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
                 font.pixelSize: Style.font.caption
               }
@@ -689,6 +1018,7 @@ Panel {
                   ((root.diffReport.changed_files || []).slice(0, 5).join(", ") || "none") +
                   ((root.diffReport.changed_files || []).length > 5
                     ? " +" + ((root.diffReport.changed_files || []).length - 5) + " more" : "") : ""
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.contentForeground
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -699,6 +1029,7 @@ Panel {
                 width: parent.width
                 visible: root.selectedError !== ""
                 text: root.selectedError
+                textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.warningColor
                 font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -726,6 +1057,7 @@ Panel {
 
                   Text {
                     text: "TRUST CONTROLS"
+                    textFormat: Text.PlainText
                     color: Color.accent
                     font.family: root.bar ? root.bar.fontFamily : Style.font.family
                     font.pixelSize: Style.font.caption
@@ -799,6 +1131,7 @@ Panel {
 
           Text {
             text: "INSTALLED PLUGINS"
+            textFormat: Text.PlainText
             color: Util.alpha(root.contentForeground, 0.64)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
@@ -840,6 +1173,7 @@ Panel {
                   Text {
                     width: parent.width
                     text: modelData.id
+                    textFormat: Text.PlainText
                     elide: Text.ElideRight
                     color: root.contentForeground
                     font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -850,6 +1184,7 @@ Panel {
                   Text {
                     width: parent.width
                     text: root.pluginStatusLabel(modelData)
+                    textFormat: Text.PlainText
                     elide: Text.ElideRight
                     color: Util.alpha(root.contentForeground, 0.68)
                     font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -886,6 +1221,7 @@ Panel {
             Text {
               text: root.statusReport && root.statusReport.trusted
                 ? "REPLACE TRUST BASELINE?" : "TRUST CURRENT IDENTITY?"
+              textFormat: Text.PlainText
               color: root.warningColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
@@ -896,6 +1232,7 @@ Panel {
             Text {
               width: parent.width
               text: "This records the exact current source identity for " + root.selectedPluginId + "."
+              textFormat: Text.PlainText
               wrapMode: Text.WordWrap
               color: root.contentForeground
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -910,6 +1247,7 @@ Panel {
                   "\nTree: " + (plugin.tree || "unavailable") +
                   "\nDigest: " + (plugin.content_digest || "unavailable") : ""
               }
+              textFormat: Text.PlainText
               wrapMode: Text.WrapAnywhere
               color: Util.alpha(root.contentForeground, 0.78)
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -919,6 +1257,7 @@ Panel {
             Text {
               width: parent.width
               text: "Trusting this identity does not establish that the plugin is safe."
+              textFormat: Text.PlainText
               wrapMode: Text.WordWrap
               color: root.warningColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -969,6 +1308,7 @@ Panel {
 
             Text {
               text: "REMOVE TRUST BASELINE?"
+              textFormat: Text.PlainText
               color: root.warningColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: Style.font.caption
@@ -980,6 +1320,7 @@ Panel {
               width: parent.width
               text: "OmaSafe will stop treating " + root.selectedPluginId +
                 " as trusted. Its previous trust record stays in history, but the plugin will need a new explicit trust decision."
+              textFormat: Text.PlainText
               wrapMode: Text.WordWrap
               color: root.contentForeground
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -1018,6 +1359,7 @@ Panel {
           width: parent.width
           visible: root.inventoryReport && root.inventoryReport.non_builtin_bar_replaces_bar
           text: "A third-party full-bar plugin replaces the OmaSafe bar widget. CLI and desktop notifications remain available."
+          textFormat: Text.PlainText
           wrapMode: Text.WordWrap
           color: root.warningColor
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -1026,7 +1368,10 @@ Panel {
 
         Button {
           text: root.statusLevel === "checking" ? "Scanning…" : "Run scan"
-          enabled: root.hostWidget && root.statusLevel !== "checking"
+          // Disabled until a compatible CLI is resolved: a missing or
+          // version-incompatible binary cannot produce a trustworthy scan.
+          enabled: root.hostWidget && root.statusLevel !== "checking" &&
+            root.hostWidget.cliPath !== "" && root.hostWidget.cliCompatible
           focusable: true
           background: Color.accent
           foreground: Color.background
@@ -1055,6 +1400,7 @@ Panel {
 
           Text {
             text: "BASELINED & UNCHANGED"
+            textFormat: Text.PlainText
             color: Util.alpha(root.contentForeground, 0.64)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
@@ -1069,6 +1415,7 @@ Panel {
               : (root.baselinedUnchangedPlugins().length > 0
                 ? "These plugins match a recorded trust baseline with complete coverage."
                 : "No installed plugins currently meet this condition.")
+            textFormat: Text.PlainText
             wrapMode: Text.WordWrap
             color: Util.alpha(root.contentForeground, 0.72)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -1103,6 +1450,7 @@ Panel {
                   anchors.verticalCenter: parent.verticalCenter
                   width: parent.width - Style.space(28)
                   text: modelData.id
+                  textFormat: Text.PlainText
                   elide: Text.ElideRight
                   color: root.contentForeground
                   font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -1116,12 +1464,23 @@ Panel {
         Text {
           width: parent.width
           text: "OmaSafe reports changes and coverage limits. It does not declare plugins safe."
+          textFormat: Text.PlainText
           wrapMode: Text.WordWrap
           color: Util.alpha(root.contentForeground, 0.64)
           font.family: root.bar ? root.bar.fontFamily : Style.font.family
           font.pixelSize: Style.font.caption
         }
       }
+    }
+  }
+
+  Connections {
+    target: root.hostWidget
+    // Load a panel that was opened before the CLI finished verifying, as soon as
+    // it becomes verified.
+    function onCliVerifiedChanged() {
+      if (root.opened && root.cliVerified && root.inventoryReport === null)
+        root.loadInventory()
     }
   }
 
@@ -1135,6 +1494,66 @@ Panel {
     stderr: StdioCollector {
       waitForEnd: true
       onStreamFinished: if (String(text || "").trim() !== "") root.panelError = String(text).trim()
+    }
+    onExited: function(exitCode) {
+      // Drain a queued reload first: the applied inventory may be the pre-refresh
+      // one, so run the refreshed reload before publishing any refresh success.
+      if (root.inventoryReloadPending) {
+        root.inventoryReloadPending = false
+        root.nextInventoryCatalogOnly = true
+        if (!inventoryProcess.running) inventoryProcess.running = true
+        return
+      }
+      // The refreshed catalog is now applied; publish the held success message,
+      // but only if the reload actually produced a valid inventory (a failed
+      // reload leaves panelError to explain the problem instead).
+      if (root.marketplaceRefreshAwaitingInventory) {
+        root.marketplaceRefreshAwaitingInventory = false
+        if (root.marketplaceRefreshError === "" && root.inventoryReport !== null)
+          root.marketplaceRefreshMessage =
+            root.pendingRefreshMessage !== "" ? root.pendingRefreshMessage
+                                              : "Marketplace catalog updated."
+        root.pendingRefreshMessage = ""
+      }
+    }
+  }
+
+  Process {
+    id: marketplaceRefreshProcess
+    command: root.cliCommand(["marketplace", "refresh", "--latest"])
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.pendingRefreshMessage = String(text || "").trim()
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.marketplaceRefreshError = String(text || "").trim()
+    }
+    onExited: function(exitCode) {
+      marketplaceRefreshTimeout.stop()
+      if (exitCode === 0) {
+        root.marketplaceRefreshError = ""
+        // Hold the success message until the refreshed inventory has actually
+        // been applied (published from inventoryProcess.onExited).
+        root.marketplaceRefreshMessage = ""
+        root.marketplaceRefreshAwaitingInventory = true
+        root.reloadInventoryForRefresh()
+      } else if (root.marketplaceRefreshError === "") {
+        root.marketplaceRefreshError =
+          "Marketplace update failed. Check the network connection and CLI version."
+      }
+    }
+  }
+
+  Timer {
+    id: marketplaceRefreshTimeout
+    interval: 60000
+    repeat: false
+    onTriggered: {
+      if (marketplaceRefreshProcess.running) {
+        marketplaceRefreshProcess.running = false
+        root.marketplaceRefreshError = "Marketplace update timed out after 60 seconds."
+      }
     }
   }
 

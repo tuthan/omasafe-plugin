@@ -35,6 +35,47 @@ https://github.com/user-attachments/assets/d745387c-61ed-4e2c-9f2f-294dda72807c
 
 
 
+## How it works
+
+The plugin is the bar widget and review panel; `omasafe-cli` is the engine. The
+panel calls the CLI (`plugins inventory`, `plugins status`, `plugins diff`,
+`plugins trust`, `plugins review`) and renders what it returns — it never makes
+a safety judgment of its own. Two independent signals drive the panel:
+
+**1. Local trust and drift detection.** OmaSafe tracks the source of every
+installed plugin against a per-plugin *trust baseline*.
+
+- **Trust** — trusting a plugin records a baseline of its current source
+  (expected head, tree, and content digest). The plugin then reads as
+  `Baselined & unchanged`.
+- **Detect drift** — each scan re-derives the installed plugin's source and
+  compares it to that baseline. If the bytes changed, the plugin flips to
+  `Source changed` (a `source-drift` finding) and the panel can show the exact
+  diff. This is what catches a plugin that was silently modified or updated
+  after you trusted it.
+- **Untrust** — untrusting clears the baseline; the plugin returns to
+  `No trust baseline` and is no longer vouched for until you trust it again.
+
+Trust is local and operator-driven: nothing is trusted until you trust it, and
+a missing or failed scan is never shown as clean.
+
+**2. Marketplace verification (independent of local trust).** For plugins listed
+in the marketplace, the panel also surfaces the catalog's own claims, bound to a
+pinned catalog snapshot:
+
+- **Snapshot integrity** — whether the catalog snapshot was verified against the
+  official pinned commit (`Verified against pinned catalog commit`) or is only an
+  unverified cache / local file.
+- **Listing verify / unverify** — the marketplace's `verified` or `unverified`
+  claim for that listing.
+- **Commit comparison and drift** — whether the installed commit matches the
+  listing's validated commit, and whether the upstream commit has moved past it.
+
+Marketplace verification is a claim attributed to the catalog snapshot, **not an
+OmaSafe safety verdict** and **not the same as local trust**. A listing can be
+marketplace-verified while its installed source has drifted from your local
+baseline — the panel shows both so the two are never conflated.
+
 ## Requirements
 
 - Omarchy with shell plugin support
@@ -46,10 +87,22 @@ the widget shows `CLI` and does not imply that the system is clean.
 ## Install the CLI
 
 The CLI is released separately from this plugin by the
-[main OmaSafe repository](https://github.com/tuthan/omasafe). Follow the
-[CLI README](https://github.com/tuthan/omasafe#readme) for its installation and
-verification instructions. The plugin does not download or install the CLI
-automatically.
+[main OmaSafe repository](https://github.com/tuthan/omasafe). Download the
+matching `omasafe-cli-<version>-x86_64-linux.tar.gz` archive and
+its `.sha256` file from the [OmaSafe GitHub releases](https://github.com/tuthan/omasafe/releases).
+Verify the checksum, extract the archive, and install the binary in a location
+visible to the graphical Omarchy session. For a per-user install:
+
+```sh
+sha256sum --check omasafe-cli-<version>-x86_64-linux.tar.gz.sha256
+tar -xzf omasafe-cli-<version>-x86_64-linux.tar.gz
+install -Dm755 omasafe-cli-<version>-x86_64-linux/omasafe-cli \
+  "$HOME/.local/bin/omasafe-cli"
+```
+
+The plugin does not download or install the CLI automatically. Do not pipe a
+remote script to a shell; inspect the release archive and checksum before
+installing.
 
 The plugin checks `~/.local/bin/omasafe-cli`, `/usr/local/bin/omasafe-cli`,
 `/usr/bin/omasafe-cli`, and finally the `omarchy-shell` session `PATH`. If you
@@ -66,7 +119,27 @@ omasafe-cli scan --format json
 Periodic scanning is disabled by default. Enable `Enable periodic scans` in the
 plugin's bar-widget settings if desired, then choose `Periodic scan interval
 (minutes)` (1–1440 minutes). Manual scans remain available by clicking the
-widget.
+widget. With periodic scanning disabled the plugin does not run the external CLI
+at shell startup — it only locates the binary and runs `--version`; a scan is
+executed at startup only when periodic scanning is enabled.
+
+### CLI compatibility gate
+
+Before any scan is run or trusted, the plugin resolves `omasafe-cli`, runs
+`--version`, and requires it to exit `0` and report a parseable version.
+A binary that does not behave like a versioned omasafe-cli is rejected and the
+widget shows an `incompatible` state instead of running scans. This is a
+compatibility check, not an authenticity control: `--version` output is
+self-reported, so verify the binary's checksum at install time (above) to defend
+against a tampered or substituted CLI.
+
+Operators can tighten the gate via the plugin's bar-widget settings:
+
+- `cliVersionMin` — reject any CLI older than this version (e.g. `1.2.0`).
+- `cliVersionRequireIdentity` — require the `--version` output to contain
+  `omasafe`.
+
+Both are unset by default so an unknown-but-valid CLI version is not rejected.
 
 The scan may exit with status `0` (quiet) or `3` (findings); both statuses are
 successful JSON-producing results. The CLI creates its XDG configuration, state,
@@ -77,6 +150,29 @@ ${XDG_CONFIG_HOME:-~/.config}/omasafe
 ${XDG_STATE_HOME:-~/.local/state}/omasafe
 ${XDG_CACHE_HOME:-~/.cache}/omasafe
 ```
+
+### Marketplace verification display
+
+The review panel displays the marketplace context returned by
+`omasafe-cli plugins inventory --format json`:
+
+- whether the cached catalog snapshot matches the exact catalog bytes at the
+  pinned official repository commit (`pinned-fetch`) or is an unverified cache;
+- the marketplace's `verified` / `unverified` claim for the selected listing;
+- whether the installed plugin commit matches the listing-validated commit; and
+- whether the marketplace-observed upstream commit moved beyond that validated
+  commit.
+
+Snapshot verification binds catalog bytes to a pinned commit; it does not verify
+a Git commit signature. Listing verification is a marketplace claim attributed
+to the displayed snapshot, not an OmaSafe safety verdict. Missing data is shown
+as unavailable rather than treated as verified.
+
+The panel's **Update catalog** button is a manual network action. It asks the CLI
+to resolve the official marketplace `main` branch to its current exact commit,
+then fetches and verifies that pinned snapshot. A successful update immediately
+reloads the panel inventory. Normal inventory commands, scans, and scheduled
+scans remain offline and never update the catalog automatically.
 
 ## Install
 
