@@ -35,6 +35,23 @@ BarWidget {
   // process that survives SIGTERM and exits 0 after timing out cannot re-authorize.
   property bool versionSettled: false
 
+  // Scan output must be accumulated whole to be parsed as one JSON document, so it
+  // is bounded: a faulty or replaced CLI could otherwise flood stdout/stderr and
+  // grow this long-lived shell's memory. Each stream is capped independently;
+  // crossing the cap latches overflow, hard-kills the process, and drops the
+  // partial buffers unparsed. A legitimate `scan --format json` report is tiny, so
+  // the cap only ever trips on malfunctioning or hostile output.
+  //
+  // The cap counts UTF-16 code units, per stream, so worst-case retained output is
+  // ~2x scanOutputCharCap bytes across the two streams, plus transient concat and
+  // parse allocations. It is a hard bound, not a precise byte budget.
+  property string scanStdout: ""
+  property string scanStderr: ""
+  readonly property int scanOutputCharCap: 4 * 1024 * 1024
+  // Latches the first terminal decision for a scan (overflow, timeout, or exit) so
+  // a later callback cannot re-parse output or overwrite the resulting state.
+  property bool scanSettled: false
+
   // Single authorization gate for every operational CLI command (scan and every
   // panel command). A command may only run once resolution completed, a path was
   // found, and the version probe passed.
@@ -223,31 +240,82 @@ BarWidget {
     }
     if (!scanProcess.running) {
       root.cliError = ""
+      root.scanStdout = ""
+      root.scanStderr = ""
+      root.scanSettled = false
       root.scanState = "checking"
+      scanKill.stop()          // disarm any stale escalation from a prior scan
       scanTimeout.restart()
       scanProcess.running = true
     }
   }
 
+  // Abort a scan whose output crossed the cap: latch, stop the timers, hard-kill
+  // the flooding process immediately, and discard the partial buffers unparsed.
+  function overflowScan(stream) {
+    if (root.scanSettled) return
+    root.scanSettled = true
+    scanTimeout.stop()
+    scanKill.stop()
+    root.scanStdout = ""
+    root.scanStderr = ""
+    root.scanState = "unavailable"
+    root.cliError = "omasafe-cli exceeded the ~" +
+      Math.round(root.scanOutputCharCap / (1024 * 1024)) + " MiB " + stream +
+      " output cap; scan aborted"
+    if (scanProcess.running) scanProcess.signal(9)
+  }
+
   Process {
     id: scanProcess
     command: root.cliCommand(["scan", "--format", "json"])
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.applyScan(text)
+    // Chunked, capped reads instead of StdioCollector: a faulty or replaced CLI
+    // cannot grow shell memory without bound. splitMarker "" delivers raw chunks
+    // (no line buffering, so no single unbounded line is ever retained). stdout
+    // and stderr are capped separately; the full JSON is parsed once, in onExited,
+    // relying on onRead draining before exit (same contract as versionCheck).
+    stdout: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (root.scanSettled) return
+        root.scanStdout += String(chunk)
+        if (root.scanStdout.length > root.scanOutputCharCap) root.overflowScan("stdout")
+      }
     }
-    stderr: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        root.cliError = String(text || "").trim()
-        if (root.cliError.indexOf("omasafe-cli was not found") >= 0)
-          root.scanState = "missing-cli"
+    stderr: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (root.scanSettled) return
+        root.scanStderr += String(chunk)
+        if (root.scanStderr.length > root.scanOutputCharCap) root.overflowScan("stderr")
       }
     }
     onExited: function(exitCode) {
+      // Always disarm the timers first: a SIGTERM'd process that exits promptly
+      // would otherwise early-return below with scanKill still armed, letting the
+      // previous scan's kill timer fire into a scan started within the window.
       scanTimeout.stop()
-      if (exitCode === 127) root.scanState = "missing-cli"
-      else if (exitCode !== 0 && exitCode !== 3) root.scanState = "unavailable"
+      scanKill.stop()
+      // Ignore a late exit if overflow or the timeout already settled this scan.
+      if (root.scanSettled) return
+      root.scanSettled = true
+      var err = String(root.scanStderr || "").trim()
+      root.scanStderr = ""
+      if (err !== "") root.cliError = err
+      if (exitCode === 127 || err.indexOf("omasafe-cli was not found") >= 0) {
+        root.scanState = "missing-cli"
+        root.scanStdout = ""
+        return
+      }
+      if (exitCode !== 0 && exitCode !== 3) {
+        root.scanState = "unavailable"
+        root.scanStdout = ""
+        return
+      }
+      // Exit 0 (quiet) or 3 (findings) carry a valid report; applyScan sets the
+      // outcome state and clears cliError on success, or falls back on bad JSON.
+      root.applyScan(root.scanStdout)
+      root.scanStdout = ""
     }
   }
 
@@ -296,15 +364,16 @@ BarWidget {
   Process {
     id: versionCheck
     command: root.versionCommand()
-    // Line-split rather than collect: only the first non-empty line is retained
-    // (capped), and later lines are drained and discarded, so a flooding binary
-    // cannot grow memory here. stderr is left unread so OS pipe backpressure and
-    // the timeout/kill bound it too. Authorization still happens only in onExited.
+    // Chunked, capped collection: only the first 256 chars are retained and the
+    // rest is drained and discarded. splitMarker "" delivers raw chunks (no line
+    // buffering), so a newline-free flood cannot grow memory before the timeout.
+    // stderr is left unread so OS pipe backpressure and the timeout/kill bound it
+    // too. Authorization still happens only in onExited.
     stdout: SplitParser {
-      splitMarker: "\n"
-      onRead: function(line) {
-        if (root.cliVersionOutput === "" && String(line).trim() !== "")
-          root.cliVersionOutput = String(line).slice(0, 256)
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (root.cliVersionOutput.length < 256)
+          root.cliVersionOutput = (root.cliVersionOutput + String(chunk)).slice(0, 256)
       }
     }
     onExited: function(exitCode) {
@@ -366,13 +435,29 @@ BarWidget {
     id: scanTimeout
     interval: 30000
     repeat: false
+    // Bound a hung scan. Settle to a terminal decision first (latched, so a later
+    // exit cannot override it), then SIGTERM and escalate to SIGKILL if ignored.
     onTriggered: {
+      if (root.scanSettled) return
+      root.scanSettled = true
+      scanKill.stop()
+      root.scanStdout = ""
+      root.scanStderr = ""
+      root.scanState = "unavailable"
+      root.cliError = "CLI scan timed out after 30 seconds"
       if (scanProcess.running) {
-        scanProcess.running = false
-        root.scanState = "unavailable"
-        root.cliError = "CLI scan timed out after 30 seconds"
+        scanProcess.running = false   // SIGTERM
+        scanKill.restart()            // escalate to SIGKILL if it survives
       }
     }
+  }
+
+  Timer {
+    id: scanKill
+    interval: 3000
+    repeat: false
+    // SIGKILL a scan that ignored SIGTERM. onExited is ignored (already latched).
+    onTriggered: if (scanProcess.running) scanProcess.signal(9)
   }
 
   Timer {
