@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.tuthan.omasafe",
   "name": "OmaSafe",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "author": "Hung Vo",
   "license": "MIT",
   "description": "A small trust and drift indicator for Omarchy plugins",
@@ -35,6 +35,20 @@
         "max": 1440,
         "step": 1,
         "defaultValue": 5
+      },
+      {
+        "key": "cliVersionMin",
+        "type": "string",
+        "label": "Minimum omasafe-cli version",
+        "description": "Require this CLI version before running panel commands.",
+        "defaultValue": "0.2.1"
+      },
+      {
+        "key": "cliVersionRequireIdentity",
+        "type": "boolean",
+        "label": "Require OmaSafe CLI identity",
+        "description": "Require --version output to identify as omasafe-cli.",
+        "defaultValue": false
       }
     ]
   }

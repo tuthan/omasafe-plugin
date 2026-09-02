@@ -9,7 +9,10 @@ before enabling it. The plugin does not download, install, or execute a release
 asset at runtime. Installing the plugin and installing the CLI are intentionally
 separate operations.
 
-The plugin id is `io.github.tuthan.omasafe`.
+The plugin id is `io.github.tuthan.omasafe`. Browse it in the
+[Omarchy plugin marketplace](https://plugins.omarchy.org/index.html); the
+marketplace catalog is maintained in the
+[marketplace repository](https://github.com/omacom/omarchy-plugin-marketplace).
 
 Visit the [OmaSafe landing page](https://tuthan.github.io/omasafe/) for the
 project overview and roadmap.
@@ -135,11 +138,21 @@ against a tampered or substituted CLI.
 
 Operators can tighten the gate via the plugin's bar-widget settings:
 
-- `cliVersionMin` — reject any CLI older than this version (e.g. `1.2.0`).
+- `cliVersionMin` — reject any CLI older than this version (default `0.2.1`).
 - `cliVersionRequireIdentity` — require the `--version` output to contain
   `omasafe`.
 
-Both are unset by default so an unknown-but-valid CLI version is not rejected.
+The plugin requires CLI `0.2.1` or newer by default; operators can raise the
+floor, while identity checking remains opt-in.
+
+The v0.2 integration enables analysis-backed scan alerts, a lazy Findings view
+for `plugins analyze`, rule explanations and Baseline V3 coverage claims. The
+v0.2.1 integration adds CLI-owned enforcement and schedule status, confirmed
+advisory/hardened enable and reviewed-update controls, and read-only override
+and recovery details. The panel renders these versioned reports as claims and
+decisions from the CLI; it does not re-evaluate policy, expiry, coverage, or
+plugin safety in QML. A CLI 0.2.0 binary is therefore rejected by the default
+floor because it cannot provide the v0.2.1 hardening contract.
 
 The scan may exit with status `0` (quiet) or `3` (findings); both statuses are
 successful JSON-producing results. The CLI creates its XDG configuration, state,
@@ -252,6 +265,10 @@ or Arch package. Likewise, updating the CLI does not change the installed
 plugin revision.
 
 ## Local development
+
+See [docs/cli-v0.2-plan.md](docs/cli-v0.2-plan.md) for the v0.2 feature
+mapping and [docs/cli-v0.2.1-plan.md](docs/cli-v0.2.1-plan.md) for the
+implemented hardening contract and compatibility boundary.
 
 Omarchy expects a real plugin directory, so local development uses `rsync`
 instead of a symlink. Run this from the repository root:

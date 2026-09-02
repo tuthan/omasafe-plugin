@@ -12,9 +12,11 @@ BarWidget {
   property int newCount: 0
   property var alerts: []
   property string scanState: "checking"
+  property bool scanResultsStale: false
   property string highestSeverity: "none"
   property string limitation: ""
   property string cliError: ""
+  property string lastScanAt: ""
   property string cliPath: ""
   // cliResolver runs asynchronously; until it exits we can't tell "CLI absent"
   // from "not resolved yet", so a scan requested in that window is deferred.
@@ -58,10 +60,18 @@ BarWidget {
   readonly property bool cliVerified: root.cliResolved && root.cliCompatible &&
     root.cliPath !== ""
 
-  // Optional operator policy (off by default so an unknown-but-valid CLI version
-  // is not rejected). Set via plugin settings.
-  readonly property string cliVersionMin: settings && settings.cliVersionMin
-    ? String(settings.cliVersionMin) : ""
+  // v0.2 features require the CLI floor; operators may raise it in settings.
+  readonly property string configuredCliVersionMin: settings &&
+    settings.cliVersionMin !== undefined ? String(settings.cliVersionMin) : ""
+  readonly property bool cliVersionMinInvalid: settings &&
+    settings.cliVersionMin !== undefined &&
+    !/^\d+\.\d+(?:\.\d+)?$/.test(root.configuredCliVersionMin.trim())
+  readonly property string cliVersionMin: {
+    var floor = [0, 2, 1]
+    var configured = root.parseVersion(root.configuredCliVersionMin)
+    return configured && root.compareVersion(configured, floor) > 0
+      ? configured.join(".") : "0.2.1"
+  }
   readonly property bool cliVersionRequireIdentity: settings &&
     settings.cliVersionRequireIdentity === true
 
@@ -182,6 +192,13 @@ BarWidget {
       root.cliError = "Resolved binary does not identify as omasafe-cli"
       return
     }
+    if (root.cliVersionMinInvalid) {
+      root.cliCompatible = false
+      root.cliVersion = parsed.join(".")
+      root.scanState = "incompatible-cli"
+      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.2.1"
+      return
+    }
     var min = root.cliVersionMin ? root.parseVersion(root.cliVersionMin) : null
     if (min && root.compareVersion(parsed, min) < 0) {
       root.cliCompatible = false
@@ -199,18 +216,28 @@ BarWidget {
   function applyScan(output) {
     try {
       var report = JSON.parse(output)
+      if (String(report.schema || "") !== "omasafe.report.v1" ||
+          !report.result || !Array.isArray(report.result.alerts))
+        throw new Error("unsupported scan report")
       var result = report.result || {}
       root.alertCount = (result.alerts || []).length
-      root.outstandingCount = result.outstanding || root.alertCount
+      root.outstandingCount = result.outstanding !== undefined
+        ? Number(result.outstanding) : root.alertCount
       root.newCount = result.new || 0
       root.alerts = result.alerts || []
-      root.highestSeverity = String(result.highest_severity ||
-        (root.alerts.some(function(alert) { return alert.severity === "critical" })
-          ? "critical" : (root.alertCount > 0 ? "warning" : "none")))
+      root.lastScanAt = String(report.generated_at || "")
+      var highest = String(result.highest_severity || "").toLowerCase()
+      if (highest === "error") highest = "critical"
+      root.highestSeverity = highest ||
+        (root.alerts.some(function(alert) {
+          return ["critical", "error"].indexOf(String(alert.severity || "").toLowerCase()) >= 0
+        }) ? "critical" : (root.alertCount > 0 ? "warning" : "none"))
       root.scanState = result.quiet === true ? "quiet" : "attention"
+      root.scanResultsStale = false
       root.limitation = ""
       root.cliError = ""
     } catch (error) {
+      root.scanResultsStale = true
       root.scanState = root.cliError.indexOf("omasafe-cli was not found") >= 0
         ? "missing-cli" : "unavailable"
       root.limitation = "CLI report unavailable"
@@ -227,12 +254,14 @@ BarWidget {
     }
     root.scanRequested = false
     if (root.cliPath === "") {
+      root.scanResultsStale = true
       root.scanState = "missing-cli"
       root.cliError = "omasafe-cli was not found in ~/.local/bin, /usr/local/bin, /usr/bin, or PATH"
       return
     }
     if (!root.cliCompatible) {
       // Version gate failed: never execute or trust an incompatible binary.
+      root.scanResultsStale = true
       root.scanState = "incompatible-cli"
       if (root.cliError === "")
         root.cliError = "omasafe-cli version is not compatible"
@@ -243,6 +272,7 @@ BarWidget {
       root.scanStdout = ""
       root.scanStderr = ""
       root.scanSettled = false
+      root.scanResultsStale = true
       root.scanState = "checking"
       scanKill.stop()          // disarm any stale escalation from a prior scan
       scanTimeout.restart()
@@ -260,6 +290,7 @@ BarWidget {
     root.scanStdout = ""
     root.scanStderr = ""
     root.scanState = "unavailable"
+    root.scanResultsStale = true
     root.cliError = "omasafe-cli exceeded the ~" +
       Math.round(root.scanOutputCharCap / (1024 * 1024)) + " MiB " + stream +
       " output cap; scan aborted"
@@ -268,7 +299,7 @@ BarWidget {
 
   Process {
     id: scanProcess
-    command: root.cliCommand(["scan", "--format", "json"])
+    command: root.cliCommand(["scan", "--include-analysis", "--format", "json"])
     // Chunked, capped reads instead of StdioCollector: a faulty or replaced CLI
     // cannot grow shell memory without bound. splitMarker "" delivers raw chunks
     // (no line buffering, so no single unbounded line is ever retained). stdout
@@ -308,6 +339,7 @@ BarWidget {
         return
       }
       if (exitCode !== 0 && exitCode !== 3) {
+        root.scanResultsStale = true
         root.scanState = "unavailable"
         root.scanStdout = ""
         return
@@ -444,6 +476,7 @@ BarWidget {
       root.scanStdout = ""
       root.scanStderr = ""
       root.scanState = "unavailable"
+      root.scanResultsStale = true
       root.cliError = "CLI scan timed out after 30 seconds"
       if (scanProcess.running) {
         scanProcess.running = false   // SIGTERM
