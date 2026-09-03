@@ -19,6 +19,8 @@ CursorSurface {
   property string trustTooltip: ""
 
   property bool analyzed: false
+  property string healthState: "unknown"
+  property string healthLabel: "Plugin status unavailable"
   property var counts: ({})
   property string countText: ""        // "5 items" / "not analyzed" / "checking…"
   property string limitsText: ""       // " · 13 limits" or ""
@@ -81,6 +83,19 @@ CursorSurface {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         spacing: Style.space(4)
+
+        SemanticMark {
+          id: healthMark
+          anchors.verticalCenter: parent.verticalCenter
+          visible: root.healthState !== ""
+          compact: true
+          level: root.healthState
+          labelOverride: root.healthLabel
+          foreground: root.foreground
+          dim: root.dim
+          fontFamily: root.fontFamily
+          resolvedFamily: root.resolvedFamily
+        }
 
         Text {
           visible: root.trustGlyph !== ""
@@ -159,8 +174,8 @@ CursorSurface {
   }
 
   PanelToolTip {
-    visible: root.hasCursor && root.trustTooltip !== ""
-    text: root.trustTooltip
+    visible: root.hasCursor && (root.trustTooltip !== "" || root.healthLabel !== "")
+    text: root.trustTooltip !== "" ? root.trustTooltip : root.healthLabel
     fontFamily: root.fontFamily
   }
 }

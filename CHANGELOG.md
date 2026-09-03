@@ -1,13 +1,47 @@
 # Changelog
 
 All notable changes to the OmaSafe plugin are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
-semantic versioning once the two-view UI ships (`0.3.0`).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
+semantic versioning (`0.4.0` for the current Phase 5 feature).
+
+## [Unreleased] — Phase 5: expanded panel
+
+### Added
+
+- **Analysis status markers** — the former Flow tab is now user-facing **Analysis**.
+  Shared health/severity markers span alerts, plugins, rules, capabilities and
+  graph nodes: green checks are reserved for current no-alert/no-hit states,
+  while medium, high and critical findings use yellow, amber and red tiers.
+- **Persistent scan snapshot** — the last successful parsed scan is retained under
+  the XDG cache directory and shown as stale after restart until a fresh scan runs.
+- **Focused graph pulse** — selected or pinned medium/high/critical graph nodes use
+  a bounded halo pulse without moving graph geometry.
+
+- **Expand/Compact panel** — the existing popup can grow to a fitted wide view with
+  all four Graph layers (`PLUGINS → CAPABILITIES → RULES → BASELINE V3`) visible at
+  once. The button sits beside Scan in the hero action row on every tab; Compact keeps
+  the normal popup size, and the expanded size persists while switching tabs. The `g`
+  shortcut and button call the same panel-wide toggle. Expanded Matrix now uses
+  responsive cell widths, a larger label column and a two-line class header.
+- **Wide-layout regression coverage** — `scripts/flow-test.js` now verifies four-column
+  placement and the expanded row budget.
+
+### Fixed
+
+- **Bar alert-count overlap** — the shield and sibling alert count now use an explicit
+  content-sized layout (including the inter-item gap and a trailing optical guard) so
+  negative-bearing neighboring glyphs cannot paint over the count.
+- **Matrix table alignment** — compact and expanded Matrix columns now start at the
+  panel edge and share the available width; horizontal scrolling is used only when
+  the full catalog is wider than the viewport.
+- **Matrix header consistency** — the plugin column now keeps a visible `PLUGINS`
+  heading in every all-plugin state (or `PLUGIN` for a scoped row), including before
+  any plugin has been analyzed; the title is stable in compact and expanded layouts.
 
 ## [Unreleased] — Phase 4: comprehension, correctness and polish
 
 The Flow surface is made correct in the running shell and rewritten to explain itself
-before any cosmetic polish. See `docs/implementation/phase-4-polish.md`.
+before any cosmetic polish. See `../omasafe-docs/implementation/phase-4-polish.md`.
 
 ### Fixed
 
@@ -49,11 +83,12 @@ before any cosmetic polish. See `docs/implementation/phase-4-polish.md`.
 ## [Unreleased] — Phase 3: the trust flow
 
 The third view lands: an interactive trust graph inside the 420-unit popup. See
-`docs/implementation/phase-3-trust-flow.md`.
+`../omasafe-docs/implementation/phase-3-trust-flow.md`.
 
 ### Added
 
-- **Flow view (`views/FlowView.qml`)** — reachable on chip `[Flow]` / key `2`. Four fixed
+- **Analysis view (`views/FlowView.qml`, internal Trust Flow lens)** — reachable on chip
+  `[Analysis]` / key `2`. Four fixed
   layers `PLUGINS → CAPABILITIES → RULES → BASELINE V3` drawn as the same `CursorSurface`
   rows the other views use, joined by cubic-Bézier edges in one `Shape` through
   `Shape.CurveRenderer`. A focus pair of two open columns with two rails; `h`/`l` cross
@@ -82,7 +117,7 @@ The third view lands: an interactive trust graph inside the 420-unit popup. See
 ## [0.3.0] — Phase 2: information architecture
 
 The four-tab UI becomes two views plus a plugin detail sheet, and every fact is placed by
-authority (see `docs/implementation/phase-2-information-architecture.md`). Every list is
+authority (see `../omasafe-docs/implementation/phase-2-information-architecture.md`). Every list is
 now written once, on the kit row grammar, bound to one normalised view model.
 
 ### Changed
@@ -125,7 +160,7 @@ now written once, on the kit row grammar, bound to one normalised view model.
 ### Fixed
 
 Phase 0 correctness and authorization fixes, made inside the existing four-tab UI with no
-visual change (see `docs/implementation/phase-0-correctness.md`):
+visual change (see `../omasafe-docs/implementation/phase-0-correctness.md`):
 
 - **Forced tab jump** — opening with alerts, and a successful trust, no longer yank the
   view to Findings / away from Plugins (T0.7, A1).
@@ -174,7 +209,7 @@ text (T0.2, A6/GR4).
 
 Phase 1 rebuilds the chrome around the content out of `qs.Ui` primitives and theme tokens,
 puts one keyboard cursor over the shell targets, and replaces the overlay with a sheet that
-cannot be bypassed (see `docs/implementation/phase-1-shell-and-confirmation.md`). The four
+cannot be bypassed (see `../omasafe-docs/implementation/phase-1-shell-and-confirmation.md`). The four
 tab bodies are untouched and keep working by mouse; Phase 2 rebuilds them on kit rows.
 
 - **Kit shell** — the hand-rolled tab strip and status-identity block become a `PanelHero`
@@ -185,9 +220,10 @@ tab bodies are untouched and keep working by mouse; Phase 2 rebuilds them on kit
   outline), not its colour, says whether a current scan result exists, with a sibling
   `bodySmall` count and an urgent badge only for a critical/error alert or a block; a failed
   scan never shows the filled quiet glyph (T1.7).
-- **Tokens** — colour and type are declared once on the root (`fg`, `urgent`, the `dimStep`
-  ladder, `hoverFill`/`selectedFill`, `fontFamily`); the three `#e5a50a` literals and
-  `Color.muted` are gone, and there is no warning hue (T1.2/T1.3).
+- **Tokens and semantic markers** — colour and type are declared once on the root (`fg`,
+  `urgent`, the `dimStep` ladder, `hoverFill`/`selectedFill`, `fontFamily`); the shared
+  `SemanticMark` adds theme-aware green/yellow/amber/red status tiers while keeping the
+  state word and glyph visible (T1.2/T1.3).
 - **One cursor** — the dev-gallery cursor model drives a single highlight over the hero scan
   button and the view chips by keyboard and mouse; no `Button` is `focusable`, so Tab keeps
   switching bar panels (T1.8).
@@ -199,4 +235,4 @@ tab bodies are untouched and keep working by mouse; Phase 2 rebuilds them on kit
   verified Nerd/ASCII glyph table, and relative-time/age formatting (T1.1).
 
 - Planned for Phases 2–4: two-view information architecture, the Trust Flow graph, and the
-  polish pass. See `docs/implementation/`.
+  polish pass. See `../omasafe-docs/implementation/`.

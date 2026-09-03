@@ -36,10 +36,11 @@ Column {
   function severityGlyphKey(sev) {
     switch (String(sev || "").toLowerCase()) {
       case "info":     return "info"
+      case "low":      return "info"
       case "medium":   return "medium"
       case "high":     return "alert"
       case "critical": return "critical"
-      default:         return ""   // low / unsupported: word alone
+      default:         return ""   // unsupported: hollow marker / unavailable word
     }
   }
   function severityBold(sev) {
@@ -47,7 +48,21 @@ Column {
     return s === "high" || s === "critical"
   }
 
-  // capabilities grouped by class, occurrences desc.
+  // Findings normally carry the catalog severity, but keep the marker useful if
+  // an older CLI omits it: resolve the rule's declared default without inventing
+  // a plugin verdict.
+  function findingSeverity(finding) {
+    var direct = String(finding && finding.severity || "").toLowerCase()
+    if (direct !== "") return direct
+    var rid = String(finding && finding.rule_id || "")
+    var rules = root.vm ? root.vm.rules : []
+    for (var i = 0; i < rules.length; i++)
+      if (String(rules[i].id || "") === rid) return String(rules[i].severity || "")
+    return ""
+  }
+
+  // Capabilities grouped by class, detected uses desc. Each capability record is
+  // one source-level reference; fileCount remains the distinct-file count.
   function capabilityGroups() {
     if (!analysis || !analysis.capabilities) return []
     var by = {}
@@ -56,23 +71,30 @@ Column {
       var c = analysis.capabilities[i]
       var cls = String(c.capability || "")
       if (cls === "") continue
-      if (!by[cls]) { by[cls] = { cls: cls, sites: [], files: ({}) }; order.push(cls) }
-      by[cls].sites.push(c)
+      if (!by[cls]) { by[cls] = { cls: cls, uses: [], files: ({}) }; order.push(cls) }
+      by[cls].uses.push(c)
       by[cls].files[String(c.relative_path || "")] = true
     }
     var out = []
     for (var j = 0; j < order.length; j++) {
       var g = by[order[j]]
       var nFiles = Object.keys(g.files).length
-      out.push({ cls: g.cls, sites: g.sites, siteCount: g.sites.length, fileCount: nFiles })
+      var risk = "unknown"
+      var rules = root.vm ? root.vm.rules : []
+      for (var ri = 0; ri < rules.length; ri++) {
+        if (String(rules[ri].capability || "") !== g.cls) continue
+        if (Labels.severityRank(rules[ri].severity) > Labels.severityRank(risk))
+          risk = Labels.severityTier(rules[ri].severity)
+      }
+      out.push({ cls: g.cls, uses: g.uses, useCount: g.uses.length, fileCount: nFiles, riskLevel: risk })
     }
-    out.sort(function(a, b) { return b.siteCount - a.siteCount })
+    out.sort(function(a, b) { return b.useCount - a.useCount })
     return out
   }
 
-  function siteLine(site) {
-    return String(site.relative_path || "") + ":" + String(site.line || "") + " · "
-      + String(site.detail || "") + " · " + Labels.confidence(site.confidence)
+  function useLine(use) {
+    return String(use.relative_path || "") + ":" + String(use.line || "") + " · "
+      + String(use.detail || "") + " · " + Labels.confidence(use.confidence)
   }
 
   // ---- mutation result / error line (doc 03 §5.5, T2.14) -----------------------
@@ -225,12 +247,13 @@ Column {
         required property var modelData
         required property int index
         width: parent.width
-        severityGlyph: { var k = root.severityGlyphKey(modelData.severity); return k !== "" ? Glyphs.ui_(k, root.rf) : "" }
-        titleBold: root.severityBold(modelData.severity)
+        severityGlyph: { var k = root.severityGlyphKey(root.findingSeverity(modelData)); return k !== "" ? Glyphs.ui_(k, root.rf) : "" }
+        severityLevel: Labels.severityTier(root.findingSeverity(modelData))
+        titleBold: root.severityBold(root.findingSeverity(modelData))
         title: String(modelData.title || "")
         subtitle: String(modelData.rule_id || "") + " · " + String(modelData.relative_path || "") + ":" + String(modelData.line || "")
         expanded: panel && panel.expandedFindingKey === (panel ? panel.findingKey(modelData) : "")
-        severityWord: Labels.severity(modelData.severity) + " · catalog severity"
+        severityWord: Labels.severity(root.findingSeverity(modelData)) + " · catalog severity"
         confidenceWord: Labels.confidence(modelData.confidence)
         evidenceText: String(modelData.evidence || "")
         explanation: String(modelData.explanation || "")
@@ -280,17 +303,18 @@ Column {
         width: parent.width
         glyph: Glyphs.cap(modelData.cls, root.rf)
         name: Labels.capability(modelData.cls)
-        sitesText: modelData.siteCount + (modelData.siteCount === 1 ? " site · " : " sites · ") + modelData.fileCount + (modelData.fileCount === 1 ? " file" : " files")
+        riskLevel: modelData.riskLevel
+        usesText: modelData.useCount + (modelData.useCount === 1 ? " use · " : " uses · ") + modelData.fileCount + (modelData.fileCount === 1 ? " file" : " files")
         expanded: panel && panel.expandedClass === modelData.cls
-        sites: {
+        uses: {
           if (!(panel && panel.expandedClass === modelData.cls)) return []
-          var show = panel.classShowAll === modelData.cls ? modelData.sites.length : Math.min(3, modelData.sites.length)
+          var show = panel.classShowAll === modelData.cls ? modelData.uses.length : Math.min(3, modelData.uses.length)
           var arr = []
-          for (var i = 0; i < show; i++) arr.push(root.siteLine(modelData.sites[i]))
+          for (var i = 0; i < show; i++) arr.push(root.useLine(modelData.uses[i]))
           return arr
         }
         moreCount: (panel && panel.expandedClass === modelData.cls && panel.classShowAll !== modelData.cls)
-          ? Math.max(0, modelData.sites.length - 3) : 0
+          ? Math.max(0, modelData.uses.length - 3) : 0
         hasCursor: root.has("classes", index)
         foreground: root.col("fg"); dim: root.col("dim")
         fontFamily: root.col("fontFamily"); resolvedFamily: root.rf

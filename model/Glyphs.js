@@ -32,6 +32,7 @@ var ui = {
   "alert":           _g(0xF0026, "md-alert", "!"),             // alert / differs / high
   "info":            _g(0xF02FD, "md-information_outline", "i"),
   "critical":        _g(0xF0029, "md-alert_octagon", "O"),     // alert-octagon
+  "healthy":         _g(0xF05E0, "md-check_circle", "✓"),      // current, complete, no issue
   "medium":          _g(0xF0765, "md-circle", "*"),            // filled circle
   "hollow":          _g(0xF0766, "md-circle_outline", "o"),    // not analyzed / unavailable, Flow only
   "rule":            _g(0xF09EE, "md-file_document_outline", "R"),

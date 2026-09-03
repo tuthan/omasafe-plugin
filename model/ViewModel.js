@@ -18,10 +18,8 @@ function _arr(v) { return Array.isArray(v) ? v : [] }
 function _str(v) { return String(v === null || v === undefined ? "" : v) }
 function _commit7(v) { var s = _str(v); return s === "" ? "" : s.slice(0, 7) }
 
-var _sevRank = { critical: 6, error: 5, high: 4, warning: 3, medium: 2, low: 1, info: 0 }
 function _severityRank(v) {
-  var s = _str(v).toLowerCase()
-  return _sevRank[s] === undefined ? -1 : _sevRank[s]
+  return Labels.severityRank(v)
 }
 
 // classification → the ui-glyph key the PluginRow / hero uses.
@@ -102,8 +100,17 @@ function buildPlugins(input) {
   var analysisById = input.analysisById || {}
   var checking = _arr(input.checkingIds)
   var alerted = {}
+  var alertSeverityById = {}
   var alerts = _arr(input.alerts)
-  for (var a = 0; a < alerts.length; a++) alerted[_str(alerts[a].plugin_id)] = true
+  for (var a = 0; a < alerts.length; a++) {
+    var alertId = _str(alerts[a].plugin_id)
+    alerted[alertId] = true
+    var alertTier = Labels.severityTier(alerts[a].severity)
+    if (!alertSeverityById[alertId] || Labels.severityRank(alertTier) > Labels.severityRank(alertSeverityById[alertId]))
+      alertSeverityById[alertId] = alertTier
+  }
+  var scanMeta = input.scanMeta || {}
+  var scanHasResult = scanMeta.hasResult === true
 
   var out = []
   for (var i = 0; i < plugins.length; i++) {
@@ -131,6 +138,17 @@ function buildPlugins(input) {
       : (isChecking ? "checking…" : "not analyzed")
 
     var marketplace = _marketplaceByPlugin(inv, id)
+    // Staleness wins over a remembered alert tier: the alert row keeps its
+    // severity, while the plugin health marker makes the data age explicit.
+    var healthState = scanMeta.stale === true ? "stale" : (alertSeverityById[id] || "")
+    if (healthState === "") {
+      if (scanHasResult && status && _str(status.state) === "unchanged") healthState = "healthy"
+      else healthState = "unknown"
+    }
+    var healthLabel = healthState === "healthy" ? "No active alerts" :
+      (healthState === "stale" ? "Showing a cached scan result" :
+        (alertSeverityById[id] ? "Highest alert severity: " + Labels.severity(alertSeverityById[id]) :
+          "Plugin status unavailable"))
     out.push({
       id: id,
       raw: p,
@@ -154,7 +172,9 @@ function buildPlugins(input) {
       lexicalText: _lexicalText(analysis),
       parserNull: analyzed && (analysis.parser === null || analysis.parser === undefined),
       coverageLimitCount: analyzed ? _arr(analysis.coverage_limitations).length : 0,
-      alerted: alerted[id] === true
+      alerted: alerted[id] === true,
+      healthState: healthState,
+      healthLabel: healthLabel
     })
   }
 
@@ -186,6 +206,8 @@ function buildBackups(input) {
       countText: "",
       limitsText: "",
       lexicalText: "",
+      healthState: "unknown",
+      healthLabel: "Backup copy is not scanned",
       isBackup: true
     })
   }
@@ -213,6 +235,8 @@ function buildAlerts(input, pluginsById) {
       pluginId: pid,
       kindLabel: kindLabel,
       subtitle: subtitle,
+      severity: Labels.severity(a.severity),
+      severityLevel: Labels.severityTier(a.severity),
       urgent: Labels.alertIsUrgent(a.severity),
       severityRank: _severityRank(a.severity),
       isNew: a.new === true,
@@ -315,6 +339,9 @@ function buildRules(input, plugins) {
       // The catalog row's right-aligned count: occurrences, or "–" before analysis
       // (03 §7.1: never 0 until at least one plugin is analyzed).
       rowHitText: analyzedCount === 0 ? "–" : _str(hitOccurrences)
+      ,severityLevel: Labels.severityTier(r.default_severity),
+      noLocalHits: analyzedCount > 0 && analyzedCount === plugins.length && hitOccurrences === 0,
+      analysisComplete: analyzedCount === plugins.length
     })
   }
   // capability class then id.
@@ -573,6 +600,8 @@ function flowInput(input) {
   var analysisById = input.analysisById || {}
   var stateById = input.analysisStateById || {}
   var statusById = input.statusById || {}
+  var scanStale = input.scanStale === true
+  var scanHasResult = input.scanHasResult === true
   var enforcementById = input.enforcementById || {}
   var cov = input.coverage || null
   var rl = input.rulesList || null
@@ -584,10 +613,15 @@ function flowInput(input) {
 
   // alerts naming a plugin (outstanding count per id).
   var outstandingById = {}
+  var outstandingSeverityById = {}
   var alerts = _arr(input.alerts)
   for (var a = 0; a < alerts.length; a++) {
     var apid = _str(alerts[a].plugin_id)
     if (apid !== "") outstandingById[apid] = (outstandingById[apid] || 0) + 1
+    var alertTier = Labels.severityTier(alerts[a].severity)
+    if (apid !== "" && (!outstandingSeverityById[apid] ||
+        Labels.severityRank(alertTier) > Labels.severityRank(outstandingSeverityById[apid])))
+      outstandingSeverityById[apid] = alertTier
   }
 
   var live = _arr(inv.plugins).filter(function(p) { return _str(p.classification) !== "backup" })
@@ -601,11 +635,11 @@ function flowInput(input) {
 
   function classA(cls) {
     if (!classAgg[cls]) classAgg[cls] = { id: cls, occurrences: 0, reviewItems: 0,
-      plugins: {}, parserBacked: 0, lexicalOnly: 0 }
+      plugins: {}, parserBacked: 0, lexicalOnly: 0, severity: "unknown" }
     return classAgg[cls]
   }
   function ruleA(rid) {
-    if (!ruleAgg[rid]) ruleAgg[rid] = { id: rid, occurrences: 0, reviewItems: 0, plugins: {} }
+    if (!ruleAgg[rid]) ruleAgg[rid] = { id: rid, occurrences: 0, reviewItems: 0, plugins: {}, severity: "unknown" }
     return ruleAgg[rid]
   }
   function crA(cls, rid) {
@@ -649,15 +683,27 @@ function flowInput(input) {
       for (var q = 0; q < caps.length; q++) {
         var cc = caps[q], ccls = _str(cc.capability), crid = _str(cc.source_rule_id)
         if (ccls === "" || crid === "") continue
+        var capTier = Labels.severityTier(catalog[crid] && catalog[crid].default_severity)
+        var capClass = classA(ccls)
+        if (Labels.severityRank(capTier) > Labels.severityRank(capClass.severity)) capClass.severity = capTier
         var cr = crA(ccls, crid); cr.occ++; _confBackedInc(cr, cc.confidence)
         var ra = ruleA(crid); ra.occurrences++; ra.plugins[id] = true
+        if (Labels.severityRank(capTier) > Labels.severityRank(ra.severity)) ra.severity = capTier
       }
       var fs2 = _arr(analysis.findings)
       for (var r2 = 0; r2 < fs2.length; r2++) {
         var ff = fs2[r2], fcls2 = _str(ff.capability), frid2 = _str(ff.rule_id)
         if (frid2 === "") continue
+        var findingTier = Labels.severityTier(ff.severity || (catalog[frid2] && catalog[frid2].default_severity))
+        var findingRule = ruleA(frid2)
+        if (Labels.severityRank(findingTier) > Labels.severityRank(findingRule.severity)) findingRule.severity = findingTier
         if (fcls2 !== "") { var cr2 = crA(fcls2, frid2); cr2.review++; _confBackedInc(cr2, ff.confidence) }
+        if (fcls2 !== "") {
+          var findingClass = classA(fcls2)
+          if (Labels.severityRank(findingTier) > Labels.severityRank(findingClass.severity)) findingClass.severity = findingTier
+        }
         var ra2 = ruleA(frid2); ra2.reviewItems++; ra2.plugins[id] = true
+        if (Labels.severityRank(findingTier) > Labels.severityRank(ra2.severity)) ra2.severity = findingTier
       }
       if (analysis.parser === null || analysis.parser === undefined) lexicalOnlyCount++
     }
@@ -668,7 +714,11 @@ function flowInput(input) {
       limits: analyzed ? _arr(analysis.coverage_limitations).length : 0,
       outstanding: outstandingById[id] || 0,
       trust: status ? _str(status.state) : "", trustReason: status ? _str(status.reason) : "",
-      block: block, byClass: byClass
+      block: block, byClass: byClass,
+      // A stale scan is shown as stale even when its cached alert list had a
+      // previous severity; the alert rows still retain their individual tiers.
+      riskLevel: scanStale ? "stale" : (outstandingSeverityById[id] ||
+        (scanHasResult && status && status.state === "unchanged" ? "healthy" : "unknown"))
     })
   }
 
@@ -687,7 +737,8 @@ function flowInput(input) {
     var cg = classAgg[clk]
     classes.push({ id: cg.id, name: Labels.capability(cg.id), occurrences: cg.occurrences,
       reviewItems: cg.reviewItems, plugins: Object.keys(cg.plugins).length,
-      parserBacked: cg.parserBacked, lexicalOnly: cg.lexicalOnly })
+      parserBacked: cg.parserBacked, lexicalOnly: cg.lexicalOnly, severity: cg.severity,
+      riskLevel: cg.severity })
   }
 
   // --- rule nodes + class → rule edges ---
@@ -697,7 +748,8 @@ function flowInput(input) {
     var cat = catalog[rg.id] || {}
     rules.push({ id: rg.id, title: _str(cat.title), severity: Labels.severity(cat.default_severity),
       language: _str(cat.language), occurrences: rg.occurrences, reviewItems: rg.reviewItems,
-      hits: rg.occurrences + rg.reviewItems, plugins: Object.keys(rg.plugins).length })
+      hits: rg.occurrences + rg.reviewItems, plugins: Object.keys(rg.plugins).length,
+      riskLevel: rg.severity !== "unknown" ? rg.severity : Labels.severityTier(cat.default_severity) })
   }
   var classRuleEdges = []
   for (var ek in edgeCR) {

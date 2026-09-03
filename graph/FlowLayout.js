@@ -16,6 +16,15 @@ function _str(v) { return String(v === null || v === undefined ? "" : v) }
 function _num(v) { var n = Number(v); return isFinite(n) ? n : 0 }
 function _cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s }
 
+function _riskText(level, kind) {
+  var r = _str(level)
+  if (r === "") return ""
+  if (r === "healthy") return " · no active alerts"
+  if (r === "stale") return " · stale result"
+  if (r === "unknown" || r === "incomplete" || r === "checking") return " · " + r
+  return " · " + r + (kind === "health" ? " alert" : " risk")
+}
+
 // ---- edge helpers -------------------------------------------------------------
 
 // dashed when every backing fact is lexical-fallback or null — i.e. no parser-backed
@@ -49,6 +58,7 @@ var _layerOfKind = { plugin: 0, class: 1, rule: 2, baseline: 3 }
 function _pluginNode(p) {
   var state = _str(p.analysis)                    // not analyzed | analyzing | analyzed | unavailable
   var analyzed = state === "analyzed"
+  var riskLevel = _str(p.riskLevel)
   var count
   if (analyzed) count = _str(p.occurrences)
   else if (state === "analyzing") count = "…"
@@ -59,32 +69,36 @@ function _pluginNode(p) {
     key: key(["plugin", p.id]), layer: "plugins", id: p.id, label: p.id, count: count,
     glyphKey: "", hollow: !analyzed && state !== "analyzing", analyzing: state === "analyzing",
     bold: _num(p.outstanding) > 0, urgent: p.block === true, faint: p.faint === true,
-    suffix: suffix, tooltip: p.id + (suffix ? suffix : ""),
+    suffix: suffix, tooltip: p.id + (suffix ? suffix : "") + _riskText(riskLevel, "health"),
     occurrences: _num(p.occurrences), classes: _num(p.classes),
     reviewItems: _num(p.reviewItems), limits: _num(p.limits),
-    outstanding: _num(p.outstanding), analyzed: analyzed
+    outstanding: _num(p.outstanding), analyzed: analyzed,
+    riskLevel: riskLevel
   }
 }
 
 function _classNode(c) {
+  var riskLevel = _str(c.riskLevel || c.severity)
   return {
     key: key(["class", c.id]), layer: "classes", id: c.id, label: c.name || c.id,
     count: _str(c.occurrences), glyphKey: c.id, hollow: false, analyzing: false,
     bold: false, urgent: false, faint: c.faint === true, suffix: "",
-    tooltip: (c.name || c.id) + " · " + c.occurrences + " in " + c.plugins,
-    occurrences: _num(c.occurrences), plugins: _num(c.plugins), reviewItems: _num(c.reviewItems)
+    tooltip: (c.name || c.id) + " · " + c.occurrences + " in " + c.plugins + _riskText(riskLevel, "severity"),
+    occurrences: _num(c.occurrences), plugins: _num(c.plugins), reviewItems: _num(c.reviewItems),
+    riskLevel: riskLevel
   }
 }
 
 function _ruleNode(r, analyzedCount) {
+  var riskLevel = _str(r.riskLevel || r.severity)
   return {
     key: key(["rule", r.id]), layer: "rules", id: r.id, label: r.id,
     count: analyzedCount > 0 ? _str(r.hits) : "–", glyphKey: "", hollow: false,
     analyzing: false, bold: false, urgent: false, faint: r.faint === true, suffix: "",
-    tooltip: r.id + (r.title ? " · " + r.title : ""),
+    tooltip: r.id + (r.title ? " · " + r.title : "") + _riskText(riskLevel, "severity"),
     occurrences: _num(r.occurrences), reviewItems: _num(r.reviewItems), hits: _num(r.hits),
     plugins: _num(r.plugins), severity: _str(r.severity), language: _str(r.language),
-    title: _str(r.title)
+    title: _str(r.title), riskLevel: riskLevel
   }
 }
 

@@ -182,6 +182,29 @@ eq(R[RPS].hits, 49, 'rule PS hits 49'); eq(R[RPE].hits, 45, 'rule PE hits 45')
 eq(R[RCC].hits, 14, 'rule CC hits 14'); eq(R[RDR].hits, 10, 'rule DR hits 10 (all review)')
 eq(R[RFS].hits, 8, 'rule FS hits 8'); eq(R[RDX].hits, 4, 'rule DX hits 4')
 eq(R[RDR].reviewItems, 10, 'DR is review-only'); eq(R[RDR].occurrences, 0, 'DR 0 occurrences')
+eq(Labels.severityTier('error'), 'critical', 'error maps to critical tier')
+eq(C['process-execution'].riskLevel, 'medium', 'capability risk derives from linked rule severity')
+eq(R[RPE].riskLevel, 'medium', 'rule node carries catalog severity tier')
+
+const healthyVm = ViewModel.build({
+  inventory: { plugins: [{ id: 'healthy.plugin', classification: 'cloned/local' }] },
+  alerts: [], statusById: { 'healthy.plugin': { state: 'unchanged' } },
+  scanMeta: { stale: false, hasResult: true }, nowMs: Date.now()
+})
+eq(healthyVm.plugins[0].healthState, 'healthy', 'unchanged current plugin gets green health state')
+const preScanVm = ViewModel.build({
+  inventory: { plugins: [{ id: 'pre-scan.plugin', classification: 'cloned/local' }] },
+  alerts: [], statusById: { 'pre-scan.plugin': { state: 'unchanged' } },
+  scanMeta: { stale: false, hasResult: false }, nowMs: Date.now()
+})
+eq(preScanVm.plugins[0].healthState, 'unknown', 'unchanged baseline before first scan is not green')
+const staleVm = ViewModel.build({
+  inventory: { plugins: [{ id: 'stale.plugin', classification: 'cloned/local' }] },
+  alerts: [{ plugin_id: 'stale.plugin', severity: 'critical' }],
+  statusById: { 'stale.plugin': { state: 'unchanged' } },
+  scanMeta: { stale: true }, nowMs: Date.now()
+})
+eq(staleVm.plugins[0].healthState, 'stale', 'stale scan never gets green health state')
 
 // edge counts by kind
 const kindOf = (ref) => ref[0]
@@ -252,6 +275,21 @@ eq(layout.geometry.cols[0].moreLabel, '', 'PLUGINS (8) no +more')
 // geometry: two open columns 118, two rails 28
 eq(layout.geometry.cols[0].width, 118, 'col0 open width 118')
 eq(layout.geometry.cols[2].width, 28, 'col2 rail width 28')
+
+// ---- expanded graph geometry (Phase 5) ---------------------------------------
+// The root's wide flowGeo() supplies four open columns and derives each width from
+// the fitted body width. Exercise the same contract here so a future layout change
+// cannot silently reintroduce the compact two-column assumptions.
+const wideGeo = { orderEpoch: 2, maxRows: 20, headerH: 20, rowH: 28,
+  pair: [true, true, true, true], wide: true, railW: 28, openW: (1120 - 3 * 72) / 4,
+  pairGutter: 72, railGutter: 0, offsets: [0, 0, 0, 0] }
+const wide = FlowLayout.build(fin, wideGeo)
+eq(wide.geometry.cols.length, 4, 'expanded graph has four columns')
+eq(wide.geometry.cols.every(c => c.open), true, 'expanded graph opens every column')
+eq(wide.geometry.cols[0].width, 226, 'expanded col0 width = (1120 - 3*72) / 4')
+eq(wide.geometry.cols[1].x, 298, 'expanded col1 starts after col0 + pair gutter')
+eq(wide.geometry.cols[3].x + wide.geometry.cols[3].width, 1120, 'expanded columns stay inside body width')
+eq(wide.geometry.rows, 12, 'expanded row budget still caps at tallest column')
 
 // edge geometry: control points at thirds; endpoints land on node row centres
 const anEdge = layout.edges.find(e => e.a.startsWith('plugin|') && e.b.startsWith('class|'))

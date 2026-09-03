@@ -2,6 +2,7 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 import "../model/Glyphs.js" as Glyphs
+import "../components"
 
 // FlowNode — one node row of the Trust Flow graph (doc 04 T3.3, §10.2). A
 // CursorSurface (never reads the pointer-inside flag for paint — the kit contract) plus an
@@ -67,7 +68,7 @@ CursorSurface {
     anchors {
       left: glyph.visible ? glyph.right : parent.left
       leftMargin: glyph.visible ? Style.space(6) : Style.space(10)
-      right: count.left; rightMargin: Style.space(8)
+      right: riskMark.left; rightMargin: Style.space(6)
       verticalCenter: parent.verticalCenter
     }
     textFormat: Text.PlainText
@@ -77,6 +78,24 @@ CursorSurface {
     font.family: node.fontFamily
     font.pixelSize: Style.font.bodySmall
     font.bold: node.modelData.bold === true
+  }
+  SemanticMark {
+    id: riskMark
+    anchors.right: count.left
+    anchors.rightMargin: Style.space(4)
+    anchors.verticalCenter: parent.verticalCenter
+    width: visible ? implicitWidth : 0
+    visible: node.modelData.riskLevel !== undefined &&
+      ["unknown", "incomplete", "checking"].indexOf(String(node.modelData.riskLevel || "")) < 0
+    compact: true
+    kind: node.modelData.layer === "plugins" ? "health" : "severity"
+    level: String(node.modelData.riskLevel || "unknown")
+    pulse: (node.hasCursor || node.current) && ["medium", "high", "critical"].indexOf(String(node.modelData.riskLevel || "")) >= 0
+    pulseInfinite: (node.hasCursor || node.current) && String(node.modelData.riskLevel || "") === "critical"
+    foreground: node.fg
+    dim: node.dimColor
+    fontFamily: node.fontFamily
+    resolvedFamily: node.resolvedFamily
   }
   Text {
     id: count

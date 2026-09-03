@@ -13,6 +13,8 @@ CursorSurface {
 
   property string kindLabel: ""
   property string subtitle: ""
+  property string severity: ""
+  property string severityLevel: "unknown"
   property bool urgent: false
   property bool pseudo: false
 
@@ -35,16 +37,16 @@ CursorSurface {
     anchors.rightMargin: Style.space(8)
     spacing: Style.space(8)
 
-    Text {
+    SemanticMark {
       id: glyph
-      width: Style.space(22)
       anchors.verticalCenter: parent.verticalCenter
-      textFormat: Text.PlainText
-      text: Glyphs.ui_("alert", root.resolvedFamily)
-      horizontalAlignment: Text.AlignHCenter
-      color: root.urgent ? root.urgentColor : root.foreground
-      font.family: root.fontFamily
-      font.pixelSize: Style.font.icon
+      compact: true
+      level: root.severityLevel
+      labelOverride: root.severity !== "" ? root.severity : "Alert"
+      foreground: root.foreground
+      dim: root.dim
+      fontFamily: root.fontFamily
+      resolvedFamily: root.resolvedFamily
     }
 
     Column {

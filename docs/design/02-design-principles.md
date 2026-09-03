@@ -4,10 +4,9 @@ This document fixes the rules every other design document and every line of the 
 principles that merge the Omarchy Quattro ethos with OmaSafe's six product ground rules, the visual system (type,
 spacing, colour, encodings, borders, motion, glyphs, density, scaling) expressed only in `qs.Commons` tokens that exist
 in the installed shell, the copy system with every status string the panel may print, and the review checklist a change
-must pass to be called Quattro-native. It is the reference the [UI overhaul proposal](03-ui-overhaul-proposal.md), the
-[Trust Flow spec](04-trust-graph-spec.md) and the [implementation roadmap](05-implementation-roadmap.md) cite; the
-evidence behind each rule is in [Research and audit](01-research-and-audit.md). Versions: omasafe-cli 0.2.1 · plugin
-0.2.1 · Omarchy 4.0.2 Quattro · Quickshell 0.3.1 · Qt 6.11.2 · JetBrainsMono Nerd Font.
+must pass to be called Quattro-native. It is the normative design reference for the companion UI, Trust Flow,
+implementation roadmap, and research notes, which live in the sibling `omasafe-docs` project. Versions: omasafe-cli 0.2.1 · plugin
+0.4.0 · Omarchy 4.0.2 Quattro · Quickshell 0.3.1 · Qt 6.11.2 · JetBrainsMono Nerd Font.
 
 Contents
 
@@ -37,8 +36,9 @@ principles from the Quattro research are cited as E1–E14.
   evidence volume (`5 review items`, `29 occurrences`), never quality. Severity is the rule's catalog default and is
   labelled as such. The PLUGINS footer defines what a baseline is. The bar shows a count in foreground; the urgent
   badge appears only for a critical / error alert or an enforcement block.
-- **Don't.** Score, grade, percentage, meter, "safe / clean / protected / verified (bare) / risk", the `󰄬` check as a
-  state glyph, a filled disc, a stat strip, a hue ramp, a green or amber anything.
+- **Don't.** Score, grade, percentage, meter, or "safe / clean / protected / verified (bare)". A green check is
+  permitted only as the explicit `No active alerts` / `No local hits` marker described below; it is never a safety
+  conclusion. Severity colours must always be paired with a word and glyph.
 - **Review test.** Cover everything below the hero: the reader can state plugin count, data age and whether a scan is
   running, and cannot infer a safety judgment. Prefix any string with "It is a fact that…" and it stays true given only
   the CLI JSON.
@@ -157,7 +157,7 @@ flowchart LR
   `MouseArea`, including a tab strip, seven cards, stat tiles and a confirm overlay that the kit already provides.
 - **Do.** Rows are `CursorSurface`; buttons are `Button` / `PanelActionButton`; view chips are one `ButtonGroup`; headers
   are `PanelSectionHeader`; rules are `PanelSeparator`; the hero is `PanelHero`; the only local composites are those in
-  the component inventory ([05 §9](05-implementation-roadmap.md)) — `components/*` (`NoticeRow`, `SectionHeaderRow`,
+  the component inventory (companion roadmap §9) — `components/*` (`NoticeRow`, `SectionHeaderRow`,
   `InfoGrid`, `ActionRow`, `AlertRow`, `PluginRow`, `ClassRow`, `EvidenceRow`, `EdgeRow`, `SourceRow`, `RuleRow`,
   `RelationRow`, `CapabilityStrip`, `FactPill`, `Breadcrumb`, `FinderField`, `InspectorStrip`, `ConfirmSheet`),
   `graph/*` and `OmaSafeShield` — each composed from kit parts.
@@ -199,24 +199,23 @@ flowchart LR
 - **Review test.** Count grouping devices on any screen: one `ButtonGroup` plus `PanelSectionHeader`s, nothing else. At
   base 12 a plugin row is ≤ `Style.space(44)` tall.
 
-### P9 Colour is interaction state; meaning is word, then shape, then weight (E4, E12, GR1)
+### P9 Semantic status is word + shape + colour (E4, E12, GR1)
 
-- **Statement.** Content is `fg` and three dim steps mixed toward the theme background (§2.3). Hue reaches the screen
-  only through the kit's state fills (`Style.hoverFillFor`, `selectedFillFor`) and through `Color.urgent`, which is
-  restricted to a critical/error alert, an enforcement block glyph or row border, the CLI failure line, the active
-  destructive confirm button, and the bar badge. Multiple independent critical/block rows may each retain urgent;
-  no valid state is hidden or recoloured merely to satisfy a global count.
-- **Why.** Themes decide whether `accent` even differs from `foreground` (default template hover colour is
-  `{{ foreground }}`); in `white` the urgent colour is `#2a2a2a`, so hue can never carry meaning alone. There is no
-  warning token: `Color.loadColors` (Color.qml:135–165) never reads `yellow`, and `shell.toml` has no warning role. A
-  severity ramp is a verdict painted in colour.
-- **Do.** Severity = word + a distinct shape per step (`low` is the word alone) + weight; confidence = word (edges dashed
-  in Flow); trust = a
-  right-aligned state word, bold only for `differs`; availability = dim word; occurrence counts = digits.
-- **Don't.** `#e5a50a`, `Util.alpha(urgent, …)` pills, an `attentionFill` on non-block states, opacity ramps on glyphs,
-  `Color.accent` painted directly, `Color.muted`.
+- **Statement.** Content remains `fg` with three dim steps mixed toward the theme background (§2.3). The shared
+  `SemanticMark` is the only exception: it reinforces explicit CLI states with a word, distinct glyph and
+  theme-aware colour tier. Green is reserved for a current, explicit “No active alerts” or “No local hits” state;
+  yellow marks medium/warning, amber marks high, red marks critical/error or blocked, and gray marks stale,
+  unavailable or incomplete data. These are status cues, never a safety verdict.
+- **Why.** The previous no-hue rule made warning and severity states unnecessarily hard to scan. Keeping the marker
+  semantic, compact and always paired with text preserves accessibility while allowing the requested at-a-glance
+  health signal.
+- **Do.** Severity = word + glyph + tier colour; health = green check only for the two explicit clean facts; confidence
+  = word (edges dashed in Analysis); trust = a right-aligned state word, bold only for `differs`; availability = dim
+  word; occurrence counts = digits.
+- **Don't.** `#e5a50a` or ad-hoc per-row hues, colour-only badges, green for stale/unavailable/not-analyzed data,
+  opacity ramps on glyphs, `Color.accent` painted directly, `Color.muted`.
 - **Review test.** Screenshot in `white`, `catppuccin-latte`, `retro-82`, `oxocarbon`, `ame-quattro`: every state is
-  distinguishable with hue removed; inspect every `urgent` binding and reject any use outside the semantic allowlist.
+  distinguishable with hue removed; verify each marker still prints its state word in expanded contexts.
 
 ### P10 The theme owns the surface (E5)
 
@@ -295,23 +294,23 @@ Sizes at base 12 from Style.qml:327–338.
 
 Rule: any `Style.space(n)` or `Style.spacing.*` token; never a bare pixel literal (the §4 blocker). The set the design
 documents bind is n ∈ {1, 2, 3, 4, 6, 8, 10, 12, 14, 18, 20, 22, 28, 32, 34, 44, 72, 88, 190, 370, 400, 420, 560} plus
-{600, 1080} for the Phase 5 window only (04 §4.3, 05 §8); it is a preferred set, not a closed one — a new value needs a
+{780, 1120} for Phase 5 expanded mode only (04 §4.3, 05 §8); it is a preferred set, not a closed one — a new value needs a
 stated reason in the document that introduces it, not an amendment here.
 
 | Where | Value |
 |---|---|
-| Panel | `fittedContentWidth(Style.space(420))` · `fittedContentHeight(h, Style.space(560))`; the inner `space(480)` cap at Panel.qml:2394 goes |
+| Panel | compact: `fittedContentWidth(Style.space(420))` · `fittedContentHeight(h, Style.space(560))`; Phase 5 expanded: fitted `Style.space(1120)` × `Style.space(780)` target; the inner `space(480)` cap at Panel.qml:2394 goes |
 | Vertical hierarchy | outer `Column.spacing: Style.space(12)` · section `space(10)` · rows `space(6)` · lines `space(1)` |
 | Row | `implicitHeight: content + Style.spacing.rowPaddingX`; insets left `space(10)`, right `space(8)`; glyph column `space(22)`, glyph gap `space(8)` |
 | Key:value | `GridLayout { columns: 2; columnSpacing: Style.space(20); rowSpacing: Style.spacing.labelGap }` |
 | Action row | `Row { spacing: Style.space(6) }` of `Button { bordered: true }` |
 | Confirm card | `width: min(parent.width − space(32), space(370))`, `padding: space(18)`, gap `space(10)` — kit `ConfirmDialog.qml:52–99` values. Buttons size to content with the kit minimum: `width: Math.max(Style.space(88), label.implicitWidth + Style.space(28)); height: Style.space(34)` (the kit's fixed `width: Style.space(88)` at `ConfirmDialog.qml:98` and `height: Style.space(34)` at `:99` fit `Cancel`/`Confirm` only; JetBrains Mono advances 0.6 em, so `Record baseline` at `body` is 108 units and would clip) |
 | Graph | rows `Style.spacing.popupRowHeight`; rail `space(28)`; edge lane between the open pair `pairGutter = space(72)`; rail-to-neighbour `railGutter = space(12)`; body height derived from what the popup has left (04 §4.1 step 4: 10 rows at base 12), never a fixed cap |
-| Long lists | `ListView { height: Math.min(contentHeight, Style.space(400)) }` (45 rules, evidence sites) |
+| Long lists | `ListView { height: Math.min(contentHeight, Style.space(400)) }` (45 rules, source-use evidence) |
 
 ### 2.3 Colour roles and derivations
 
-Declared once on each root; nothing else in the plugin is a colour expression.
+Declared once on each root; the shared `SemanticMark` owns the small, theme-aware semantic tier palette.
 
 ```qml
 readonly property color fg:           bar ? bar.foreground : Color.foreground
@@ -327,7 +326,8 @@ readonly property color selectedFill: Style.selectedFillFor(fg, Color.accent)
 
 Rules: `Color.accent` reaches the screen only through the kit (`Style.*StateColor`, `Color.popups.border`,
 `ConfirmDialog.selectedText`). `Color.muted` is never used. `Util.alpha(fg, …)` appears only inside `graph/EdgeLayer.qml`
-(rest `Style.hoverBorderAlpha`, hot `0.9`) and inside the kit. There is no warning colour of any kind.
+(rest `Style.hoverBorderAlpha`, hot `0.9`) and inside the kit. `SemanticMark.qml` is the sole owner of semantic tier
+colours and chooses readable light/dark variants from the theme background.
 
 Why a mix toward background and not the kit's `Qt.darker` ladder (`PanelHero` 1.4, `Toggle` 1.5, `TextField` placeholder
 1.6, `PanelActionButton` disabled 2.0): the hierarchy rests almost entirely on these three steps, because size contrast is
@@ -344,16 +344,17 @@ replaced by these three names.
 
 ### 2.4 Semantic encodings
 
-Order of channels: the word is always printed; shape adds a glyph; weight adds bold. Hue never carries meaning alone
-and there are no opacity ramps. Nothing below encodes a verdict.
+Order of channels: the word is always printed; shape adds a glyph; the shared marker adds a tier colour; weight adds bold.
+Hue never carries meaning alone and there are no opacity ramps. Nothing below encodes a verdict.
 
 | Meaning | Word (always) | Glyph | Weight / paint |
 |---|---|---|---|
 | Trust `unchanged` / `partial` / `untrusted` (never) / `untrusted` (revoked) | matches baseline · matches · coverage limited · no baseline · baseline revoked | none | regular |
 | Trust `changed` | differs · N files | `󰀦` | bold |
 | Trust loading / unavailable / unsupported | checking… / unavailable / unsupported | none | dim |
-| Severity `info` / `low` / `medium` / `high` | the word | `󰋽` / none (word only) / `󰝥` / `󰀦` | regular / regular / regular / bold |
-| Severity `critical` / unknown | critical / unsupported | `󰀩` (alert-octagon) in `urgent` / none | bold / dim |
+| Severity `info` / `low` / `medium` / `high` | the word | info / info / medium / alert glyph | regular / regular / regular / bold; blue / blue / yellow / amber tier |
+| Severity `critical` / unknown | critical / unavailable | critical / hollow glyph | bold red / dim gray |
+| Health `healthy` / `stale` / `incomplete` | No active alerts / cached result / analysis incomplete | check / hollow glyph | green only for current healthy; gray otherwise |
 | Confidence `ast-backed` / `lexical-fallback` / `null` | parser-backed / text match only / no parser | none in rows; Flow edges solid / dashed / dashed | — |
 | Scan alert row | kind label (§3.3) | `󰀦` in fg; `urgent` only for `critical` / `error` | bold primary line |
 | Catalog claim | Catalog says: … | none — never a pill, never beside a trust word | regular |
@@ -367,10 +368,10 @@ and there are no opacity ramps. Nothing below encodes a verdict.
 | Occurrence / edge weight | digits | edge thickness `space(1)` ≤ 3 · `space(2)` 4–9 · `space(3)` ≥ 10 | never area, angle or hue |
 | Cursor / current | — | — | `CursorSurface.hasCursor` → `hoverFill` + `Border.controlSpec("hover-cursor")`; `current` → `selectedFill` |
 
-Notes. Every severity step that has a glyph has its own shape — info `󰋽`, medium `󰝥`, high `󰀦`, critical `󰀩` — so
-`high` and `critical` never differ by hue alone (in `white`, `urgent` is `#2a2a2a` ≈ fg) and critical survives hue
-removal by shape. `low` is the word alone, matching the "unavailable / unsupported: none" rule; it is the most common
-severity in real data (all 10 local review items) and a glyph would add nothing the word does not. `󰝦` therefore means
+Notes. Every displayed severity tier has a glyph and a distinct marker colour — info/low use the info glyph, medium the
+medium glyph, high the alert glyph and critical the critical glyph — so high and critical never differ by hue alone.
+Health uses the green check only for the two explicit current no-alert/no-hit facts; stale, unavailable and incomplete
+states remain gray. `󰝦` therefore means
 exactly one thing: a hollow, unanalyzed or unavailable node in Flow. `󰄬` is never a state glyph; "matches baseline" is a
 word only. Five hues are forbidden and Bertin's value channel (opacity) would be read as importance.
 
@@ -439,7 +440,7 @@ UI glyphs
 | critical (alert-octagon) | `󰀩` | F0029 | `O` | medium (filled circle) | `󰝥` | F0765 | `*` |
 | hollow node (not analyzed / unavailable, Flow only) | `󰝦` | F0766 | `o` | rule | `󰧮` | F09EE | `R` |
 | enforcement block | `󰂭` | F00AD | `X` | catalog / Baseline V3 | `󰆼` | F01BC | `B` |
-| large view | `󱁉` | F1049 | `#` | Git checkout | `󰊢` | F02A2 | `g` |
+| expand Flow | `󱁉` | F1049 | `#` | Git checkout | `󰊢` | F02A2 | `g` |
 | installed without git | `󰏗` | F03D7 | `p` | backup copy | `󱈎` | F120E `md-archive_outline` | `b` |
 | unsupported | `󰘥` | F0625 | `?` | | | | |
 
@@ -510,7 +511,7 @@ screenshots are taken at 9, 12, 16 and 20.
 | Base | Card width (units → px) | Behaviour |
 |---|---|---|
 | 9 | 420 → 315 | trust word abbreviates (`matches`, `differs · 3`, `no baseline`); strip stays (17 × bodySmall ≈ 130 px); Flow open columns 87 units each (04 §4.3) with 11-character `ElideMiddle` labels; digests wrap per character |
-| 12 | 420 | as wireframed in [03](03-ui-overhaul-proposal.md) |
+| 12 | 420 | as wireframed in the companion UI proposal |
 | 16 | 560 | labels rarely elide; Flow open columns 157 units each |
 | 20 | 700, capped by `fittedContentWidth` at the screen | row heights grow with `rowPaddingX`; confirm card stays `min(width − 32, space(370))`; nothing has a fixed pixel width |
 
@@ -536,7 +537,7 @@ stays true given only the CLI JSON. "Trusted" appears only in the PLUGINS footer
 
 | Use | Never | Why |
 |---|---|---|
-| capability (observed in source) · occurrence · site | permission, grant, request | Omarchy has no permission boundary; plugins run with the shell's rights |
+| capability (observed in source) · use · source location | permission, grant, request | A use is one capability reference emitted by analysis; Omarchy has no permission boundary, so this is evidence rather than a granted permission |
 | review item (rule match) | finding (in UI), vulnerability, issue | "finding" stays in code and JSON |
 | alert (scan alert) | finding, item to review, warning (noun) | ends both collisions |
 | baseline · Record / Replace / Remove baseline · matches / differs from baseline · no baseline · baseline revoked | Trust source / identity, trusted, untrusted, clean, changed (alone) | trust is the user's act; the state is a comparison |
@@ -680,7 +681,7 @@ Every tooltip states a fact or a key; none repeats a label.
 | Row open chevron | Open plugin / Open rule / Open review item |
 | Copy `PanelActionButton` | Copy full digest |
 | Analyze | Analyze (a) |
-| Large view (Phase 5) | Open large view (g) |
+| Expanded panel (Phase 5) | Expand panel (g) / Compact panel (g) |
 | Severity word | Catalog severity: the rule's default severity class. Not a measure of this plugin. |
 | Confidence word | Confidence: evidence quality. Parser-backed = syntax tree; text match only = lexical; no parser = context or lexical build. |
 | Trust word (plugin row, short form) | the long-form trust row of §3.3 for the same state, e.g. `No trust baseline recorded` — the baseline definition itself is printed only in the `ConfirmSheet` body and the PLUGINS footer (03 §4.1) |

@@ -188,7 +188,7 @@ Panel {
   // hidden until Phase 3, so no digit ever changes meaning.
   readonly property var tabs: [
     { key: "overview", label: "Overview" },
-    { key: "flow", label: "Flow" },
+    { key: "flow", label: "Analysis" },
     { key: "rules", label: "Rules" }
   ]
   // The view chips' options (value = tab key). One chip per view.
@@ -196,6 +196,10 @@ Panel {
     return { value: t.key, label: t.label }
   })
   property int activeIndex: 0
+  // Phase 5: the panel can grow in place; Flow Graph uses the room for all four
+  // columns and Matrix uses it for a wider table. Compact is the normal popup size;
+  // the state is reset when the panel closes.
+  property bool expanded: false
   readonly property string activeTabKey: root.tabs[root.activeIndex].key
   readonly property bool operationRunning: trustProcess.running || reviewUpdateProcess.running ||
     enableProcess.running || scheduleInstallProcess.running
@@ -239,6 +243,7 @@ Panel {
   // cursor is hidden on open until the first key or hover (doc 03 §13).
   onOpenedChanged: {
     if (!root.opened) {
+      root.expanded = false
       root.clearPendingAction(); root.overviewDepth = 0
       // A closed panel drops the analysis sweep: bump the generation so a stale
       // in-flight result never chains, and clear the queue (doc 04 §10.1).
@@ -265,10 +270,9 @@ Panel {
   readonly property color selectedFill: Style.selectedFillFor(fg, Color.accent)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
-  // Kept as an alias while the four tab bodies (Phase 2) still read these names;
-  // both resolve to the same colour as the new tokens above. warningColor is now
-  // the urgent token — there is no warning hue (doc 02 P9) — so the transitional
-  // tab bodies drop the amber literal without their own rewrite.
+  // Kept as an alias while the transitional tab bodies still read these names;
+  // both resolve to the same colour as the new tokens above. Row-level semantic
+  // tiers are owned by SemanticMark.qml, so legacy surfaces remain token-driven.
   readonly property color contentForeground: root.fg
   readonly property color warningColor: root.urgent
   readonly property var alerts: hostWidget ? hostWidget.alerts : []
@@ -832,7 +836,7 @@ Panel {
   function sectionCount(section) {
     var a = root.analysisReport
     switch (section) {
-      case "hero":           return 1          // the scan Button
+      case "hero":           return 2          // Scan + Expand/Compact
       case "views":          return root.tabs.length
       case "alerts":         return root.cliVerified && root.vm ? root.vm.alerts.length : 0
       case "plugins":        return root.cliVerified && root.vm
@@ -864,7 +868,7 @@ Panel {
     return 0
   }
   function sectionIsHorizontal(section) {
-    return section === "views" || section === "trust-actions"
+    return section === "hero" || section === "views" || section === "trust-actions"
       || section === "claim-actions" || section === "enforcement"
       || section === "lens" || section === "inspector-actions"
   }
@@ -961,6 +965,7 @@ Panel {
     }
     switch (s) {
       case "hero":
+        if (i === 1) { root.togglePanelExpanded(); return }
         if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
         return
       case "views":
@@ -1082,12 +1087,13 @@ Panel {
   // the graph body is `rows * rowH`, the panel is content-sized (fittedContentHeight,
   // §PopupCard), so a short graph keeps the panel short, which keeps rows small — the
   // window collapses to one row. This mirrors the activeFlick.height formula but against
-  // the card's maximum (availableCardHeight, capped at the same 560), so rows is stable;
+  // the card's maximum (availableCardHeight, capped at 560 compact / 780 expanded), so rows is stable;
   // FlowLayout still caps geometry.rows at the tallest column's node count, so a small
   // graph never leaves empty space.
   readonly property real flowViewportHeightMax: {
     if (!panel) return flowViewportHeight
-    var card = panel.availableCardHeight > 0 ? Math.min(panel.availableCardHeight, Style.space(560)) : Style.space(560)
+    var cap = root.expanded ? Style.space(780) : Style.space(560)
+    var card = panel.availableCardHeight > 0 ? Math.min(panel.availableCardHeight, cap) : cap
     var inner = card - panel.verticalContentInset - fixedColumn.height - Style.space(12)
     return Math.max(Style.space(60), Math.max(flowViewportHeight, inner))
   }
@@ -1107,8 +1113,8 @@ Panel {
   property string flowTraceClass: ""
   property string flowTraceReturnLens: "graph"         // the lens to restore when the trace pops
 
-  // The legend (doc 04 §5): glyphs, edge styles and keys in use. Every phrase is from
-  // 02 §2.7 / §3.6; none contains "safe", "clean", bare "verified" or "risk".
+  // The legend (doc 04 §5): glyphs, edge styles, semantic markers and keys in use.
+  // It describes the displayed CLI facts without turning them into a safety verdict.
   function flowLegendText() {
     return "Plugin → observed capability → detecting rule → Baseline V3\n" +
       "solid = parser-backed · dashed = text match only\n" +
@@ -1118,6 +1124,8 @@ Panel {
       "= equivalent check · ≈ partially covered\n" +
       "class glyph on a BASELINE row = covered at class level\n" +
       "no mark, dim = not covered by OmaSafe · 󰝦 not analyzed\n" +
+      "green check = current no-alert/no-hit fact · yellow = medium · amber = high · red = critical/blocked\n" +
+      "focused medium/high/critical marker may pulse briefly; graph geometry never moves\n" +
       "bold = outstanding alert · 󰂭 blocked by policy\n" +
       "j k h l move · scroll a column (wheel / j k) to reveal +N more · Enter pin/open · x unpin · t trace · a analyze · m matrix"
   }
@@ -1233,17 +1241,59 @@ Panel {
 
   // ---- Trust Flow: layout, cursor, queue and lenses (doc 04 §4, §6, §10) -------
 
+  function compactFlowPairForColumn(col) {
+    col = Math.max(0, Math.min(3, Number(col)))
+    if (col === 0) return [true, true, false, false]
+    if (col === 3) return [false, false, true, true]
+    if (col === 1) return root.flowPair[0] && root.flowPair[1]
+      ? [true, true, false, false] : [false, true, true, false]
+    return root.flowPair[2] && root.flowPair[3]
+      ? [false, false, true, true] : [false, true, true, false]
+  }
+
+  function togglePanelExpanded() {
+    if (root.navigationLocked) return
+    var next = !root.expanded
+    if (root.flowLens === "graph" && next) {
+      // The expanded Graph affordance opens every layer. Matrix and Trace keep
+      // their current lens so the same control can enlarge the table or chain,
+      // even when the toggle was clicked from another top-level tab.
+      root.flowPair = [true, true, true, true]
+    } else if (root.flowLens === "graph" && !next) {
+      root.flowPair = root.compactFlowPairForColumn(root.flowCol)
+    }
+    root.expanded = next
+    // KeyboardPanel's fitted width/height updates after this turn. Rebuild only after
+    // FlowView has pushed the new body width and row budget back to the root.
+    Qt.callLater(function() {
+      if (root.activeTabKey === "flow") { root.rebuildFlow(); root.afterCursorMove() }
+    })
+  }
+
   // Numeric geometry for FlowLayout (§4.3). openW clamps so the focus pair never
   // collapses on a very narrow popup; columns snap (no Behavior on widths).
   function flowGeo(sameEpoch) {
     var railW = Style.space(28), pairGutter = Style.space(72), railGutter = Style.space(12)
     var w = root.flowBodyWidth
-    var openW = (w - 2 * railW - pairGutter - 2 * railGutter) / 2
+    var wide = root.expanded && root.flowLens === "graph"
+    var pair = wide ? [true, true, true, true] : root.flowPair
+    var openW
+    if (wide) {
+      // Keep the four columns and three lanes inside the fitted body even on a
+      // work area narrower than the preferred 1120-unit target.
+      var minOpenW = Math.min(Style.space(40),
+        Math.max(Style.space(1), (w - 3 * Style.space(12)) / 4))
+      pairGutter = Math.min(pairGutter, Math.max(Style.space(12), (w - 4 * minOpenW) / 3))
+      openW = Math.max(minOpenW, (w - 3 * pairGutter) / 4)
+    } else {
+      openW = (w - 2 * railW - pairGutter - 2 * railGutter) / 2
+    }
     return {
       orderEpoch: root.flowOrderEpoch, sameEpoch: sameEpoch === true, previousKeys: root.flowPrevKeys,
       maxRows: Math.max(1, root.flowMaxRows), headerH: Style.space(20), rowH: Style.spacing.popupRowHeight,
-      pair: root.flowPair, railW: railW, openW: Math.max(Style.space(40), openW),
-      pairGutter: pairGutter, railGutter: railGutter, offsets: root.flowOffsets
+      pair: pair, wide: wide, railW: railW,
+      openW: Math.max(wide ? Style.space(1) : Style.space(40), openW),
+      pairGutter: pairGutter, railGutter: wide ? 0 : railGutter, offsets: root.flowOffsets
     }
   }
 
@@ -1278,7 +1328,9 @@ Panel {
       analysisStateById: root.flowAnalysisStateMap(), statusById: root.pluginStatuses,
       enforcementById: enf, alerts: root.alerts, coverage: root.coverageReport,
       rulesList: root.rulesListReport, scope: root.flowScope,
-      filters: { backups: root.showPluginBackups }
+      filters: { backups: root.showPluginBackups },
+      scanStale: root.hostWidget ? root.hostWidget.scanResultsStale === true : true,
+      scanHasResult: root.hostWidget ? root.hostWidget.hasScanResult === true : false
     })
   }
 
@@ -1374,6 +1426,7 @@ Panel {
 
   // Slide the focus pair so `col` is open, keeping the side the cursor came from.
   function flowEnsurePairOpen(col) {
+    if (root.expanded && root.flowLens === "graph") return
     if (root.flowPair[col] === true) return
     var p
     if (col >= 3) p = 2
@@ -3320,7 +3373,9 @@ Panel {
         outstanding: root.hostWidget ? Number(root.hostWidget.outstandingCount || 0) : 0,
         "new": root.hostWidget ? Number(root.hostWidget.newCount || 0) : 0,
         highestSeverity: root.hostWidget ? String(root.hostWidget.highestSeverity || "") : "",
-        generatedAt: root.hostWidget ? String(root.hostWidget.lastScanAt || "") : ""
+        generatedAt: root.hostWidget ? String(root.hostWidget.lastScanAt || "") : "",
+        stale: root.hostWidget ? root.hostWidget.scanResultsStale === true : true,
+        hasResult: root.hostWidget ? root.hostWidget.hasScanResult === true : false
       },
       statusById: root.pluginStatuses,
       checkingIds: root.statusQueue,
@@ -3488,13 +3543,15 @@ Panel {
     owner: root.hostWidget || root
     bar: root.bar
     open: root.opened
-    contentWidth: fittedContentWidth(Style.space(420))
+    contentWidth: fittedContentWidth(Style.space(root.expanded ? 1120 : 420))
     focusTarget: keyCatcher
-    // A fixed column (hero · status line · notices · view chips) over a body that
-    // always scrolls (doc 03 §3). The inner space(480) and outer space(600) caps
-    // collapse into one space(560).
-    contentHeight: fittedContentHeight(fixedColumn.implicitHeight + Style.space(12) +
-      activeContent.implicitHeight, Style.space(560))
+    // Compact keeps the current fixed-column/body contract. Expanded follows the
+    // hyprmoncfg fitted panel pattern and gives Flow enough height for the four-column
+    // graph without ever exceeding the active work area.
+    contentHeight: root.expanded
+      ? fittedContentHeight(Style.space(780))
+      : fittedContentHeight(fixedColumn.implicitHeight + Style.space(12) +
+          activeContent.implicitHeight, Style.space(560))
 
   PanelKeyCatcher {
     id: keyCatcher
@@ -3544,6 +3601,7 @@ Panel {
       else if (t === "m") { if (inFlow) root.flowToggleLens() }
       else if (t === "c") { if (inFlow) root.flowToggleMatrixClasses() }
       else if (t === "t") { if (inFlow) root.flowTrace() }
+      else if (t === "g") root.togglePanelExpanded()
       else if (t === "?") { if (inFlow) root.flowLegendVisible = !root.flowLegendVisible }
       else if (t === "r" || t === "R") {
         if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
@@ -3584,16 +3642,39 @@ Panel {
           }
 
           trailingControl: Component {
-            Button {
-              iconText: Glyphs.ui_("rescan", Style.font.resolvedFamily)
-              iconSpinning: root.checking
-              tooltipText: "Run scan (r)"
-              enabled: root.scanAvailable
-              hasCursor: root.cursorActive && root.focusSection === "hero" && root.selectedIndex === 0
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              onClicked: if (root.hostWidget) root.hostWidget.runScan()
-              onHovered: function(isHovered) { if (isHovered) root.hoverCursor("hero", 0) }
+            Row {
+              id: heroActions
+              spacing: Style.space(8)
+
+              Button {
+                id: scanButton
+                iconText: Glyphs.ui_("rescan", Style.font.resolvedFamily)
+                iconSpinning: root.checking
+                tooltipText: "Run scan (r)"
+                enabled: root.scanAvailable
+                hasCursor: root.cursorActive && root.focusSection === "hero" && root.selectedIndex === 0
+                foreground: root.fg
+                fontFamily: root.fontFamily
+                onClicked: if (root.hostWidget) root.hostWidget.runScan()
+                onHovered: function(isHovered) { if (isHovered) root.hoverCursor("hero", 0) }
+              }
+
+              Button {
+                id: expandButton
+                visible: true
+                text: root.expanded ? "Compact" : "Expand"
+                iconText: root.expanded ? Glyphs.ui_("collapse", Style.font.resolvedFamily)
+                  : Glyphs.ui_("large-view", Style.font.resolvedFamily)
+                tooltipText: root.expanded ? "Compact panel (g)" : "Expand panel (g)"
+                bordered: true
+                enabled: !root.navigationLocked
+                hasCursor: root.cursorActive && root.focusSection === "hero" && root.selectedIndex === 1
+                foreground: root.fg
+                fontFamily: root.fontFamily
+                fontSize: Style.font.bodySmall
+                onClicked: root.togglePanelExpanded()
+                onHovered: function(isHovered) { if (isHovered) root.hoverCursor("hero", 1) }
+              }
             }
           }
         }

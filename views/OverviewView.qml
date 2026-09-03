@@ -66,6 +66,8 @@ Column {
         width: parent.width
         kindLabel: modelData.kindLabel
         subtitle: modelData.subtitle
+        severity: modelData.severity
+        severityLevel: modelData.severityLevel
         urgent: modelData.urgent
         pseudo: modelData.pseudo
         hasCursor: root.has("alerts", index)
@@ -142,6 +144,8 @@ Column {
         trustBold: modelData.trustBold
         trustTooltip: modelData.trustLong
         analyzed: modelData.analyzed
+        healthState: modelData.healthState
+        healthLabel: modelData.healthLabel
         counts: modelData.counts
         countText: modelData.countText
         limitsText: modelData.limitsText
@@ -176,6 +180,8 @@ Column {
         pluginId: modelData.id
         trustWord: modelData.trustWord
         analyzed: false
+        healthState: modelData.healthState
+        healthLabel: modelData.healthLabel
         counts: ({})
         countText: modelData.countText
         hasCursor: root.has("plugins", (root.vm ? root.vm.plugins.length : 0) + index)

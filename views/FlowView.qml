@@ -6,8 +6,9 @@ import "../components"
 import "../graph"
 
 // Flow view (doc 04 §6, §9, §10.1): the section header (TRUST FLOW · scope · counts),
-// a breadcrumb at Z1/Z2, the lens ButtonGroup with the ? legend in its right slot, the
-// graph body (TrustFlow), and the fixed InspectorStrip. All Flow state — layout,
+// a breadcrumb at Z1/Z2, the lens ButtonGroup with the ? legend, the graph body
+// (TrustFlow), and the fixed InspectorStrip. The Phase 5 panel-wide Expand/Compact control lives beside Scan in PanelHero.
+// All Flow state — layout,
 // cursor, depth, lens, queue — lives on panel (the root); this view is a thin
 // presenter that binds to it and pushes back its body width and row budget.
 Column {

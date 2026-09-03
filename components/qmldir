@@ -13,6 +13,7 @@ SourceRow 1.0 SourceRow.qml
 ActionRow 1.0 ActionRow.qml
 RuleRow 1.0 RuleRow.qml
 RelationRow 1.0 RelationRow.qml
+SemanticMark 1.0 SemanticMark.qml
 Breadcrumb 1.0 Breadcrumb.qml
 FinderField 1.0 FinderField.qml
 InspectorStrip 1.0 InspectorStrip.qml

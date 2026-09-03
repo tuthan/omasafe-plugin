@@ -194,6 +194,30 @@ function severity(value) {
     ["info", "low", "medium", "high", "critical", "warning", "error"])
 }
 
+// Presentation tier shared by alerts, findings, rules and derived capability
+// markers. `warning`/`error` are CLI vocabulary aliases; the UI keeps the more
+// useful four-step scale (medium/high/critical) consistent everywhere.
+function severityTier(value) {
+  var s = String(value || "").toLowerCase()
+  if (s === "error" || s === "critical") return "critical"
+  if (s === "high") return "high"
+  if (s === "warning" || s === "medium") return "medium"
+  if (s === "low") return "low"
+  if (s === "info") return "info"
+  return "unknown"
+}
+
+function severityRank(value) {
+  switch (severityTier(value)) {
+    case "critical": return 5
+    case "high": return 4
+    case "medium": return 3
+    case "low": return 2
+    case "info": return 1
+    default: return 0
+  }
+}
+
 // relation (coverage map): the sentence, never a bare enum.
 function relation(value) {
   switch (String(value || "")) {

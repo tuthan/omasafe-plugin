@@ -4,18 +4,21 @@ import qs.Ui
 import "../model/Glyphs.js" as Glyphs
 
 // One CAPABILITIES OBSERVED row (doc 03 §5.2): class glyph · capability name ·
-// `<n> sites · <m> files` · expand chevron. Expanded (one class at a time, the view
-// owns that), it opens a Column of site rows `path:line · detail · <confidence word>`
-// (bodySmall) with a `+N more` sub-row. Presentational; the view supplies the site
+// `<n> uses · <m> files` · expand chevron. A use is one source-level capability
+// reference emitted by the analyzer; files is the distinct-file count. Expanded
+// (one class at a time, the view owns that), it opens source-location rows
+// `path:line · detail · <confidence word>`
+// (bodySmall) with a `+N more` sub-row. Presentational; the view supplies the source-use
 // strings already limited to the shown count and owns the cursor.
 CursorSurface {
   id: root
 
   property string glyph: ""
   property string name: ""
-  property string sitesText: ""        // "16 sites · 2 files"
+  property string usesText: ""         // "16 uses · 2 files"
+  property string riskLevel: "unknown"
   property bool expanded: false
-  property var sites: []               // array of already-formatted site strings
+  property var uses: []                // array of already-formatted source-use strings
   property int moreCount: 0            // >0 → a "+N more" sub-row
 
   property color dim: Color.foreground
@@ -56,22 +59,36 @@ CursorSurface {
       }
 
       Text {
-        id: sitesTextItem
+        id: usesTextItem
         anchors.right: chevron.left
         anchors.rightMargin: Style.space(8)
         anchors.verticalCenter: parent.verticalCenter
         textFormat: Text.PlainText
-        text: root.sitesText
+        text: root.usesText
         color: root.dim
         font.family: root.fontFamily
         font.pixelSize: Style.font.bodySmall
+      }
+
+      SemanticMark {
+        id: riskMark
+        anchors.right: usesTextItem.left
+        anchors.rightMargin: Style.space(4)
+        anchors.verticalCenter: usesTextItem.verticalCenter
+        compact: true
+        level: root.riskLevel
+        labelOverride: "Highest linked rule severity"
+        foreground: root.foreground
+        dim: root.dim
+        fontFamily: root.fontFamily
+        resolvedFamily: root.resolvedFamily
       }
 
       Text {
         id: nameText
         anchors.left: glyphText.right
         anchors.leftMargin: Style.space(8)
-        anchors.right: sitesTextItem.left
+        anchors.right: riskMark.left
         anchors.rightMargin: Style.space(8)
         anchors.verticalCenter: parent.verticalCenter
         textFormat: Text.PlainText
@@ -94,14 +111,14 @@ CursorSurface {
       }
     }
 
-    // Expanded site list.
+    // Expanded source-use list.
     Column {
       width: parent.width
       visible: root.expanded
       spacing: Style.space(1)
 
       Repeater {
-        model: root.expanded ? root.sites : []
+        model: root.expanded ? root.uses : []
         delegate: Text {
           required property var modelData
           width: parent.width
@@ -132,5 +149,11 @@ CursorSurface {
         }
       }
     }
+  }
+
+  PanelToolTip {
+    visible: root.hasCursor
+    text: "Uses = source-level capability references found by the analyzer · files = distinct files containing them."
+    fontFamily: root.fontFamily
   }
 }

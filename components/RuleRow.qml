@@ -16,6 +16,9 @@ CursorSurface {
   property string title: ""
   property string idLine: ""           // "oma.qml.process-execution · qml · medium"
   property string rowHitText: "–"
+  property string severity: "unknown"
+  property bool noLocalHits: false
+  property bool analysisComplete: false
 
   property bool expanded: false
   property string summary: ""
@@ -80,11 +83,41 @@ CursorSurface {
         font.pixelSize: Style.font.bodySmall
       }
 
+      SemanticMark {
+        id: severityMark
+        anchors.right: hitCount.left
+        anchors.rightMargin: Style.space(4)
+        anchors.verticalCenter: hitCount.verticalCenter
+        compact: true
+        level: root.severity
+        labelOverride: root.severity
+        foreground: root.foreground
+        dim: root.dim
+        fontFamily: root.fontFamily
+        resolvedFamily: root.resolvedFamily
+      }
+
+      SemanticMark {
+        id: cleanMark
+        anchors.right: severityMark.left
+        anchors.rightMargin: Style.space(2)
+        anchors.verticalCenter: severityMark.verticalCenter
+        visible: root.noLocalHits && root.analysisComplete
+        compact: true
+        kind: "health"
+        level: "healthy"
+        labelOverride: "No local hits"
+        foreground: root.foreground
+        dim: root.dim
+        fontFamily: root.fontFamily
+        resolvedFamily: root.resolvedFamily
+      }
+
       Column {
         id: twoLine
         anchors.left: glyphText.right
         anchors.leftMargin: Style.space(8)
-        anchors.right: hitCount.left
+        anchors.right: (cleanMark.visible ? cleanMark.left : severityMark.left)
         anchors.rightMargin: Style.space(8)
         anchors.verticalCenter: parent.verticalCenter
         spacing: Style.space(1)

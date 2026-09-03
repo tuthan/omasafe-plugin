@@ -3,8 +3,9 @@ import qs.Commons
 import qs.Ui
 import "../model/Glyphs.js" as Glyphs
 
-// One REVIEW ITEMS row (doc 03 §5.2, 02 §2.4/§2.8). Line 1: severity glyph (none for
-// `low` — the word alone) · title (body; bold from high). Line 2: `rule_id · path:line`
+// One REVIEW ITEMS row (doc 03 §5.2, 02 §2.4/§2.8). Line 1: semantic severity marker
+// (blue info glyph for info/low, yellow medium, amber high, red critical) · title
+// (body; bold from high). Line 2: `rule_id · path:line`
 // (bodySmall) · expand chevron. Expanded: two FactPills (catalog severity, confidence),
 // Evidence (WrapAnywhere), Why this rule exists (explanation), What to check
 // (review_guidance), and [Open rule] which pushes a cross-view return frame (§13).
@@ -12,6 +13,7 @@ CursorSurface {
   id: root
 
   property string severityGlyph: ""
+  property string severityLevel: "unknown"
   property bool titleBold: false
   property string title: ""
   property string subtitle: ""         // rule_id · path:line
@@ -51,18 +53,17 @@ CursorSurface {
       width: parent.width
       height: Math.max(twoLine.implicitHeight, chevron.size)
 
-      Text {
+      SemanticMark {
         id: sevGlyph
-        anchors.left: parent.left
         anchors.top: parent.top
         anchors.topMargin: Style.space(1)
-        width: Style.space(22)
-        textFormat: Text.PlainText
-        text: root.severityGlyph
-        horizontalAlignment: Text.AlignHCenter
-        color: root.foreground
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.icon
+        compact: true
+        level: root.severityLevel
+        labelOverride: root.severityWord
+        foreground: root.foreground
+        dim: root.dim
+        fontFamily: root.fontFamily
+        resolvedFamily: root.resolvedFamily
       }
 
       Column {

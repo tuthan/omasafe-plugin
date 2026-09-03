@@ -103,6 +103,9 @@ Column {
         glyph: Glyphs.cap(modelData.capability, root.rf)
         title: modelData.title
         idLine: modelData.id + " · " + modelData.language + " · " + modelData.severity
+        severity: modelData.severityLevel
+        noLocalHits: modelData.noLocalHits
+        analysisComplete: modelData.analysisComplete
         rowHitText: modelData.rowHitText
         expanded: panel && panel.expandedRuleId === modelData.id
         summary: modelData.summary
