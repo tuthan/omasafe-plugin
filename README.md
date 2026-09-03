@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="media/logo.png" alt="OmaSafe" width="520">
+</p>
+
 # OmaSafe Omarchy plugin
 
 OmaSafe is an Omarchy bar widget and review panel for inspecting installed
@@ -14,15 +18,14 @@ operations.
 - [Omarchy plugin marketplace](https://plugins.omarchy.org/index.html)
 - [OmaSafe CLI repository](https://github.com/tuthan/omasafe)
 
-## Screenshots
 
-### Analysis matrix
 
-![Analysis matrix showing installed plugins by capability class](media/analysis-paths.png)
+![Omasafe plugin preview](preview.png)
+
 
 ### Analysis graph
 
-![Analysis graph showing a plugin, capabilities, rules, and Baseline V3](media/analysis-paths-graph.png)
+![Analysis graph showing a plugin, capabilities, rules, and Baseline V3](media/graph.png)
 
 ## What the panel shows
 

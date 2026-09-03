@@ -3630,14 +3630,34 @@ Panel {
           iconOpacity: root.heroIconOpacity()
 
           iconComponent: Component {
-            OmaSafeShield {
-              iconSize: Style.font.display
-              filled: root.hasScanResult
-              foreground: root.fg
-              dimColor: root.dim
-              urgent: root.urgent
-              fontFamily: root.fontFamily
-              resolvedFamily: Style.font.resolvedFamily
+            Item {
+              // The expanded hero has enough room for the full wordmark; compact
+              // mode keeps the shield so the bar-sized popup stays unchanged.
+              width: root.expanded ? Style.space(220) : Style.font.display
+              height: root.expanded ? Style.space(98) : Style.font.display
+
+              Image {
+                anchors.fill: parent
+                visible: root.expanded
+                source: root.expanded ? Qt.resolvedUrl("media/logo.png") : ""
+                sourceSize.width: width
+                sourceSize.height: height
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                smooth: true
+              }
+
+              OmaSafeShield {
+                anchors.fill: parent
+                visible: !root.expanded
+                iconSize: Style.font.display
+                filled: root.hasScanResult
+                foreground: root.fg
+                dimColor: root.dim
+                urgent: root.urgent
+                fontFamily: root.fontFamily
+                resolvedFamily: Style.font.resolvedFamily
+              }
             }
           }
 
