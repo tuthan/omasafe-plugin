@@ -1,7 +1,9 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import Quickshell
 import Quickshell.Io
+import "model/Time.js" as Time
 
 BarWidget {
   id: root
@@ -53,6 +55,23 @@ BarWidget {
   // Latches the first terminal decision for a scan (overflow, timeout, or exit) so
   // a later callback cannot re-parse output or overwrite the resulting state.
   property bool scanSettled: false
+
+  // The scan result is a small, parsed snapshot so a shell restart can show the
+  // last known state without pretending it is fresh. Raw stdout/stderr and the
+  // potentially large analysis payload never enter this cache.
+  readonly property string cacheHome: {
+    var configured = String(Quickshell.env("XDG_CACHE_HOME") || "").trim()
+    var home = String(Quickshell.env("HOME") || "").trim()
+    return configured !== "" ? configured : home + "/.cache"
+  }
+  readonly property string scanCacheDir: root.cacheHome + "/omasafe"
+  readonly property string scanCachePath: root.scanCacheDir + "/last-scan.json"
+  property bool scanCacheDirReady: false
+  property bool scanCacheReady: false
+  property bool scanCacheHydrated: false
+  property var pendingScanCache: null
+  property var cachedScanSnapshot: null
+  property string scanCacheError: ""
 
   // Single authorization gate for every operational CLI command (scan and every
   // panel command). A command may only run once resolution completed, a path was
@@ -109,11 +128,14 @@ BarWidget {
   onBarChanged: injectPanel()
   onSettingsChanged: injectPanel()
 
-  visible: !vertical
-  implicitWidth: button.implicitWidth
-  implicitHeight: button.implicitHeight
+  // The Row/Column of icon + count sizes the widget; a vertical bar stacks them
+  // (doc 03 §2). visible: !vertical is gone — the container handles both bars.
+  implicitWidth: iconRow.implicitWidth
+  implicitHeight: iconRow.implicitHeight
 
-  readonly property color warningColor: "#e5a50a"
+  // The bar keeps its existing urgent token contract; row-level semantic tiers live
+  // in components/SemanticMark.qml and are not painted into this compact icon.
+  readonly property color warningColor: bar ? bar.urgent : Color.urgent
   readonly property string statusLevel: root.scanState === "checking"
     ? "checking" : (root.scanState === "ready" ? "ready"
       : (root.scanState === "missing-cli" || root.scanState === "unavailable" ||
@@ -121,17 +143,50 @@ BarWidget {
         : (root.highestSeverity === "critical" ? "critical"
           : (root.outstandingCount > 0 ? "warning" : "normal"))))
 
+  // Bar-state inputs for the OmaSafeShield contract (doc 03 §2), each with an
+  // explicit false/zero fallback.
+  readonly property color barForeground: bar ? bar.barForeground : Color.foreground
+  function dimStep(k) {
+    var b = Color.background
+    return Qt.rgba(barForeground.r * (1 - k) + b.r * k, barForeground.g * (1 - k) + b.g * k,
+      barForeground.b * (1 - k) + b.b * k, 1)
+  }
+  readonly property color dim: dimStep(0.33)
+  readonly property bool checking: root.scanState === "checking"
+  // The two states a fresh result sets (applyScan).
+  readonly property bool hasScanResult: root.scanState === "quiet" || root.scanState === "attention"
+  readonly property bool earlierResultKept: root.scanResultsStale && root.lastScanAt !== ""
+  readonly property bool cliFailed: root.scanState === "missing-cli" ||
+    root.scanState === "incompatible-cli" || root.scanState === "unavailable"
+  // Count of enforcement_summary.decisions[].outcome === "block" from the scan
+  // report, when it carries one; 0 otherwise. Set in applyScan.
+  property int blockedDecisions: 0
+  readonly property bool urgentBadge: hasScanResult &&
+    (root.highestSeverity === "critical" || root.highestSeverity === "error" ||
+      root.blockedDecisions > 0)
+
   function iconTooltip() {
-    if (root.statusLevel === "checking") return "OmaSafe: scanning"
+    if (root.checking) return "OmaSafe: scanning"
+    if (root.scanState === "missing-cli") return "OmaSafe: omasafe-cli not found"
+    if (root.scanState === "incompatible-cli")
+      return "OmaSafe: omasafe-cli " + root.cliVersion + " found; " +
+        root.cliVersionMin + " or newer required"
+    if (root.scanState === "unavailable")
+      return root.earlierResultKept
+        ? "OmaSafe: last scan failed; showing results from " + root.relativeScanAge()
+        : "OmaSafe: last scan failed; results unavailable"
     if (root.scanState === "ready") return "OmaSafe: click to scan"
-    if (root.scanState === "missing-cli") return "OmaSafe: install omasafe-cli"
-    if (root.scanState === "incompatible-cli") return "OmaSafe: incompatible omasafe-cli"
-    if (root.scanState === "unavailable") return "OmaSafe: scan unavailable"
-    if (root.statusLevel === "critical")
-      return "OmaSafe: critical finding requires review"
-    if (root.statusLevel === "warning")
-      return "OmaSafe: " + root.outstandingCount + " item(s) need review"
-    return "OmaSafe: no outstanding changes"
+    if (root.scanResultsStale && root.lastScanAt !== "")
+      return "OmaSafe: showing cached results from " + root.relativeScanAge()
+    if (root.urgentBadge) return "OmaSafe: 1 critical alert to review"
+    if (root.outstandingCount > 0)
+      return "OmaSafe: " + root.outstandingCount +
+        (root.outstandingCount === 1 ? " alert to review" : " alerts to review")
+    return "OmaSafe: no outstanding alerts"
+  }
+
+  function relativeScanAge() {
+    return Time.relative(root.lastScanAt) || "an earlier scan"
   }
 
   // Resolve the executable once, then invoke it directly so CLI arguments never
@@ -219,13 +274,24 @@ BarWidget {
       if (String(report.schema || "") !== "omasafe.report.v1" ||
           !report.result || !Array.isArray(report.result.alerts))
         throw new Error("unsupported scan report")
-      var result = report.result || {}
+      root.applyScanResult(report.result, report.generated_at, false)
+      root.queueScanCache(report)
+    } catch (error) {
+      root.scanResultsStale = true
+      root.scanState = root.cliError.indexOf("omasafe-cli was not found") >= 0
+        ? "missing-cli" : "unavailable"
+      root.limitation = "CLI report unavailable"
+    }
+  }
+
+  function applyScanResult(result, generatedAt, stale) {
+      result = result || {}
       root.alertCount = (result.alerts || []).length
       root.outstandingCount = result.outstanding !== undefined
         ? Number(result.outstanding) : root.alertCount
       root.newCount = result.new || 0
       root.alerts = result.alerts || []
-      root.lastScanAt = String(report.generated_at || "")
+      root.lastScanAt = String(generatedAt || "")
       var highest = String(result.highest_severity || "").toLowerCase()
       if (highest === "error") highest = "critical"
       root.highestSeverity = highest ||
@@ -233,15 +299,74 @@ BarWidget {
           return ["critical", "error"].indexOf(String(alert.severity || "").toLowerCase()) >= 0
         }) ? "critical" : (root.alertCount > 0 ? "warning" : "none"))
       root.scanState = result.quiet === true ? "quiet" : "attention"
-      root.scanResultsStale = false
+      // Count recorded enforcement blocks when the report carries a summary; the
+      // urgent badge is raised for a block as well as for critical/error severity.
+      var decisions = (result.enforcement_summary && result.enforcement_summary.decisions) || []
+      root.blockedDecisions = Array.isArray(decisions)
+        ? decisions.filter(function(d) { return String(d.outcome || "") === "block" }).length : 0
+      root.scanResultsStale = stale === true
       root.limitation = ""
       root.cliError = ""
-    } catch (error) {
-      root.scanResultsStale = true
-      root.scanState = root.cliError.indexOf("omasafe-cli was not found") >= 0
-        ? "missing-cli" : "unavailable"
-      root.limitation = "CLI report unavailable"
+  }
+
+  function scanCacheSnapshot(report) {
+    var result = report && report.result ? report.result : {}
+    return {
+      schema: "omasafe.scan-cache.v1",
+      generated_at: String(report && report.generated_at || ""),
+      cli_version: String(root.cliVersion || ""),
+      result: {
+        alerts: Array.isArray(result.alerts) ? result.alerts : [],
+        outstanding: result.outstanding,
+        "new": result.new,
+        highest_severity: result.highest_severity,
+        quiet: result.quiet === true,
+        enforcement_summary: result.enforcement_summary || null
+      }
     }
+  }
+
+  function queueScanCache(report) {
+    root.pendingScanCache = root.scanCacheSnapshot(report)
+    root.flushScanCache()
+  }
+
+  function flushScanCache() {
+    if (!root.scanCacheReady || !root.scanCacheDirReady || !root.pendingScanCache) return
+    try {
+      scanCacheFile.setText(JSON.stringify(root.pendingScanCache, null, 2) + "\n")
+      root.pendingScanCache = null
+      root.scanCacheError = ""
+    } catch (error) {
+      root.scanCacheError = "Could not save the last scan snapshot."
+    }
+  }
+
+  function loadScanCache(raw) {
+    if (root.scanCacheHydrated) return
+    root.scanCacheHydrated = true
+    root.scanCacheReady = true
+    try {
+      var snapshot = JSON.parse(String(raw || ""))
+      if (String(snapshot.schema || "") !== "omasafe.scan-cache.v1" ||
+          !snapshot.result || !Array.isArray(snapshot.result.alerts) ||
+          String(snapshot.generated_at || "") === "") throw new Error("invalid cache")
+      root.cachedScanSnapshot = snapshot
+      root.applyCachedScan()
+    } catch (error) {
+      root.cachedScanSnapshot = null
+    }
+    root.flushScanCache()
+  }
+
+  function applyCachedScan() {
+    var snapshot = root.cachedScanSnapshot
+    if (!snapshot || !root.cliVerified) return
+    if (String(snapshot.cli_version || "") !== String(root.cliVersion || "")) {
+      root.scanCacheError = "Cached scan was produced by a different CLI version."
+      return
+    }
+    root.applyScanResult(snapshot.result, snapshot.generated_at, true)
   }
 
   function runScan() {
@@ -430,6 +555,7 @@ BarWidget {
       if (root.cliCompatible) {
         root.scanState = "ready"
         root.cliError = ""
+        root.applyCachedScan()
         // Replay a deferred click, or start the first scan for periodic users
         // so they get a real status at login instead of an idle "ready" badge.
         if (root.scanRequested || root.periodicScanEnabled) root.runScan()
@@ -500,7 +626,33 @@ BarWidget {
     onTriggered: root.runScan()
   }
 
-  Component.onCompleted: cliResolver.running = true
+  Process {
+    id: scanCacheMkdir
+    command: ["/usr/bin/mkdir", "-p", root.scanCacheDir]
+    onExited: function(exitCode) {
+      root.scanCacheDirReady = exitCode === 0
+      if (!root.scanCacheDirReady) root.scanCacheError = "Could not prepare the scan cache directory."
+      else scanCacheFile.reload()
+      root.flushScanCache()
+    }
+  }
+
+  FileView {
+    id: scanCacheFile
+    path: root.scanCachePath
+    watchChanges: false
+    atomicWrites: true
+    printErrors: false
+    onLoaded: root.loadScanCache(text())
+    onLoadFailed: root.scanCacheReady = true
+    onSaved: root.scanCacheError = ""
+    onSaveFailed: root.scanCacheError = "Could not save the last scan snapshot."
+  }
+
+  Component.onCompleted: {
+    scanCacheMkdir.running = true
+    cliResolver.running = true
+  }
 
   Loader {
     id: panelLoader
@@ -513,29 +665,84 @@ BarWidget {
     }
   }
 
-  BarIconButton {
-    id: button
-    anchors.fill: parent
-    bar: root.bar
-    text: ""
-    iconComponent: Component {
-      OmaSafeStatusIcon {
-        anchors.centerIn: parent
-        level: root.statusLevel
-        count: root.outstandingCount
-        warningColor: root.warningColor
-        criticalColor: root.bar ? root.bar.urgent : Color.urgent
+  // The shield in its status slot with a sibling count Text (doc 03 §2). The count
+  // cannot live inside the icon — BarIconButton fixes fixedWidth: slotSize and shows
+  // its own text only when iconComponent is null — so it is a sibling and the widget
+  // must reserve the gap and text width explicitly. An Item is used instead of a
+  // Grid so the module slot receives the same dimensions that the two children paint
+  // in both horizontal and vertical bars; this prevents the count from spilling into
+  // the next status widget when the alert number appears. The trailing optical guard
+  // is intentional: some neighboring Nerd Font glyphs have a negative painted
+  // bearing and can otherwise draw back over the final count pixels.
+  Item {
+    id: iconRow
+    anchors.centerIn: parent
+    readonly property real countGap: countText.visible ? Style.space(2) : 0
+    readonly property real countWidth: countText.visible ? countText.implicitWidth : 0
+    readonly property real countHeight: countText.visible ? countText.implicitHeight : 0
+    readonly property real opticalGuard: countText.visible ? Style.space(8) : 0
+    implicitWidth: root.vertical
+      ? Math.max(button.width, countWidth)
+      : button.width + countGap + countWidth + opticalGuard
+    implicitHeight: root.vertical
+      ? button.height + countGap + countHeight + opticalGuard
+      : Math.max(button.height, countHeight)
+    width: implicitWidth
+    height: implicitHeight
+
+    BarIconButton {
+      id: button
+      bar: root.bar
+      text: ""
+      slotSize: Style.bar.statusSlot
+      // BarIconButton's fixedWidth/fixedHeight describe its implicit size. This
+      // explicit canvas keeps the optical slot stable while iconRow grows for text.
+      width: root.vertical ? root.barSize : Style.bar.statusSlot
+      height: root.vertical ? Style.bar.statusSlot : root.barSize
+      x: root.vertical ? (iconRow.width - width) / 2 : 0
+      y: root.vertical ? 0 : (iconRow.height - height) / 2
+      iconComponent: Component {
+        OmaSafeShield {
+          iconSize: Style.bar.iconFont
+          filled: root.hasScanResult
+          dim: root.cliFailed
+          checking: root.checking
+          badge: root.urgentBadge
+          opened: root.opened
+          foreground: root.barForeground
+          dimColor: root.dim
+          urgent: root.bar ? root.bar.urgent : Color.urgent
+          fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+          resolvedFamily: Style.font.resolvedFamily
+        }
+      }
+      tooltipText: root.iconTooltip()
+      onPressed: function(mouseButton) {
+        if (mouseButton === Qt.LeftButton && panelLoader.item) {
+          root.runScan()
+          root.open()
+        } else if (mouseButton === Qt.MiddleButton) {
+          root.runScan()
+        }
       }
     }
-    slotSize: Style.bar.statusSlot
-    tooltipText: root.iconTooltip()
-    onPressed: function(mouseButton) {
-      if (mouseButton === Qt.LeftButton && panelLoader.item) {
-        root.runScan()
-        root.open()
-      } else if (mouseButton === Qt.MiddleButton) {
-        root.runScan()
-      }
+
+    // A count is data: bodySmall floor (02 P7), never a filled disc; dim when it
+    // belongs to a kept earlier result. Never shown when 0 (quiet has no count).
+    Text {
+      id: countText
+      visible: (root.hasScanResult || root.earlierResultKept) && root.outstandingCount > 0
+      text: root.outstandingCount > 9 ? "9+" : String(root.outstandingCount)
+      textFormat: Text.PlainText
+      font.family: root.bar ? root.bar.fontFamily : Style.font.family
+      font.pixelSize: Style.font.bodySmall
+      color: root.earlierResultKept ? root.dim : root.barForeground
+      x: root.vertical
+        ? (iconRow.width - implicitWidth) / 2
+        : button.width + iconRow.countGap
+      y: root.vertical
+        ? button.height + iconRow.countGap
+        : (iconRow.height - implicitHeight) / 2
     }
   }
 }
