@@ -4,6 +4,20 @@ All notable changes to the OmaSafe plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 semantic versioning (`0.4.0` for the current Phase 5 feature).
 
+## [Unreleased] — v0.2.2 Plugin Source Scan
+
+### Added
+
+- **Plugin Source Scan** — the dedicated Source Scan tab accepts a GitHub URL or copied plain
+  Omarchy install command, retains the last result in session memory, and renders
+  the CLI's exact-commit, scan-only report without installing or enabling anything.
+- **Conditional install guidance** — when complete findings contain no high or critical
+  item, the tab shows a suggested install command for copying; it stays hidden when
+  findings are omitted or severity is incomplete.
+- **Bounded candidate state** — resolving/fetching/analyzing progress, cancellation,
+  120-second timeout cleanup, strict acquisition/identity/report normalization,
+  omission-aware findings/capabilities/coverage, and an exact rescan command.
+
 ## [Unreleased] — Phase 5: expanded panel
 
 ### Added

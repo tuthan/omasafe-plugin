@@ -5,10 +5,10 @@
 # OmaSafe Omarchy plugin
 
 OmaSafe is an Omarchy bar widget and review panel for inspecting installed
-plugins. It surfaces source drift, detected capabilities, rule coverage, scan
-alerts, trust baselines, and marketplace metadata. The separate `omasafe-cli`
-binary does the scanning; this plugin renders its reports and does not declare
-plugins safe.
+plugins and reviewing public GitHub candidates before installation. It surfaces
+source drift, detected capabilities, rule coverage, scan alerts, trust baselines,
+and marketplace metadata. The separate `omasafe-cli` binary does the scanning;
+this plugin renders its reports and does not declare plugins safe.
 
 The plugin runs as unsandboxed QML inside `omarchy-shell`, so review the source
 before enabling it. Installing the plugin and installing the CLI are separate
@@ -36,6 +36,7 @@ The panel has three views:
 | **Overview** | Plugin inventory, trust baseline state, scan alerts, and marketplace claims. |
 | **Analysis** | Matrix, graph, trace, detected capabilities, linked rules, and Baseline V3 coverage. |
 | **Rules** | Rule catalog, local hits, and Baseline V3 coverage relations. |
+| **Source Scan** | Manual pre-install scan of a public GitHub URL or copied install command. |
 
 Analysis counts are evidence, not permissions or scores. A capability “use” is
 one source-level reference emitted by the analyzer; the file count is the number
@@ -61,6 +62,7 @@ safety verdict. Cached results are explicitly labeled stale.
 | `Enter` | Open a plugin, pin a graph node, or follow a link. |
 | `Esc` | Go back, close a confirmation sheet, or close the panel. |
 | `r` | Run a scan. |
+| `4` | Open the Source Scan tab. |
 | `a` / `A` | Analyze the selected plugin / all plugins. |
 | `m` | Toggle the Analysis lens between Matrix and Graph. |
 | `t` | Trace a plugin and capability class. |
@@ -72,9 +74,29 @@ safety verdict. Cached results are explicitly labeled stale.
 
 - Omarchy with shell plugin support.
 - `omasafe-cli` 0.2.1 or newer on the graphical session `PATH`.
+- Plugin Source Scan requires `omasafe-cli` 0.2.2 or newer.
 
 The widget can be installed before the CLI. Until the CLI is available, it
 shows an unavailable state and never implies that the system is clean.
+
+## Plugin Source Scan
+
+Open the **Source Scan** tab (or choose **Plugin Source Scan** from Overview)
+and paste either a public
+GitHub repository URL or one plain `omarchy plugin add|install URL [--enable]
+[--yes]` command. The input is passed to `omasafe-cli` as one argv value; the
+CLI owns parsing, resolves the moving request to one exact commit, and returns
+an immutable `scan-only` report. The panel displays the resolved repository,
+full commit, acquisition facts, findings, capabilities, coverage limitations,
+and a copyable exact-commit rescan command. When the complete findings list has
+no high or critical item, it also shows a suggested `omarchy plugin add|install`
+command for manual review and copying.
+
+Plugin Source Scan never installs, enables, trusts, suppresses, overrides,
+schedules, or approves the candidate. Archive and registry inputs are not
+accepted by this route. A compact review report can omit entries or analysis
+items, so an empty displayed list is not a safety conclusion when omission
+markers are present; in that case the suggested install command stays hidden.
 
 ## Install the CLI
 

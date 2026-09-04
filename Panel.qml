@@ -7,6 +7,7 @@ import "model/Labels.js" as Labels
 import "model/Glyphs.js" as Glyphs
 import "model/Time.js" as Time
 import "model/ViewModel.js" as ViewModel
+import "model/Candidate.js" as Candidate
 import "graph/FlowLayout.js" as FlowLayout
 import "components"
 import "views"
@@ -128,6 +129,19 @@ Panel {
   property string analysisError: ""
   property bool analysisLoading: false
   property var analysisCache: ({})
+  // Source Scan keeps its normalized result in session memory. The request is kept
+  // only in the active text control; the result cache is keyed by resolved identity,
+  // policy, and profile, never by the mutable pasted URL.
+  property string candidateInput: ""
+  property string candidateState: "idle"
+  property string candidateError: ""
+  property var candidateModel: null
+  property var candidateCache: ({})
+  property var candidateCacheOrder: []
+  property string candidateStdout: ""
+  property string candidateStderr: ""
+  property bool candidateSettled: false
+  property int candidateRequestId: 0
   // Root analysis queue (doc 04 §10.1, T3.8): `a`/`A` in Flow and the detail sheet's
   // Analyze button push ids here; one Process at a time drains them. analysisStateById
   // holds analyzing/unavailable per id (analyzed/not analyzed come from the cache).
@@ -189,7 +203,8 @@ Panel {
   readonly property var tabs: [
     { key: "overview", label: "Overview" },
     { key: "flow", label: "Analysis" },
-    { key: "rules", label: "Rules" }
+    { key: "rules", label: "Rules" },
+    { key: "source-scan", label: "Source Scan" }
   ]
   // The view chips' options (value = tab key). One chip per view.
   readonly property var viewOptions: root.tabs.map(function(t) {
@@ -202,10 +217,21 @@ Panel {
   property bool expanded: false
   readonly property string activeTabKey: root.tabs[root.activeIndex].key
   readonly property bool operationRunning: trustProcess.running || reviewUpdateProcess.running ||
-    enableProcess.running || scheduleInstallProcess.running
+    enableProcess.running || scheduleInstallProcess.running || candidateProcess.running
   readonly property bool navigationLocked: root.operationRunning || root.pendingAction !== ""
   readonly property bool scanAvailable: root.cliVerified &&
     root.statusLevel !== "checking" && !root.navigationLocked
+  readonly property string candidateFeatureMin: "0.2.2"
+  readonly property bool candidateFeatureAvailable: {
+    if (!root.cliVerified || !root.hostWidget) return false
+    var have = root.hostWidget.parseVersion(root.hostWidget.cliVersion)
+    var need = root.hostWidget.parseVersion(root.candidateFeatureMin)
+    return !!have && !!need && root.hostWidget.compareVersion(have, need) >= 0
+  }
+  readonly property bool candidateCanRun: root.activeTabKey === "source-scan" &&
+    root.candidateFeatureAvailable &&
+    !candidateProcess.running && !root.navigationLocked
+  readonly property bool candidateProcessRunning: candidateProcess.running
 
   // First CLI release implementing the expected-identity contracts for Enable and
   // Remove (05 §10). Empty means the capability does not exist yet; no version is
@@ -245,6 +271,7 @@ Panel {
     if (!root.opened) {
       root.expanded = false
       root.clearPendingAction(); root.overviewDepth = 0
+      root.stopCandidate(true)
       // A closed panel drops the analysis sweep: bump the generation so a stale
       // in-flight result never chains, and clear the queue (doc 04 §10.1).
       root.analysisSweepGeneration++
@@ -804,6 +831,10 @@ Panel {
     // The finder owns the whole body while open: one result section.
     if (root.finderActive) return ["results"]
     var out = ["hero", "views"]
+    if (root.activeTabKey === "source-scan") {
+      if (root.sectionCount("source-scan") > 0) out.push("source-scan")
+      return out
+    }
     var candidates
     if (root.activeTabKey === "flow") {
       // hero → views → lens → the one column the cursor sits in → inspector-actions
@@ -827,7 +858,7 @@ Panel {
       candidates = ["trust", "trust-actions", "review", "classes", "coverage",
         "claim-actions", "enforcement", "provenance"]
     else
-      candidates = ["alerts", "plugins", "backups-toggle", "sources"]
+      candidates = ["source-link", "alerts", "plugins", "backups-toggle", "sources"]
     for (var i = 0; i < candidates.length; i++)
       if (root.sectionCount(candidates[i]) > 0) out.push(candidates[i])
     return out
@@ -843,6 +874,7 @@ Panel {
         ? (root.vm.plugins.length + (root.showPluginBackups ? root.vm.backups.length : 0)) : 0
       case "backups-toggle": return (root.vm && root.vm.backupCount > 0) ? 1 : 0
       case "sources":        return root.cliVerified ? 4 : 0
+      case "source-link":    return root.activeTabKey === "overview" && root.cliVerified ? 1 : 0
       case "trust":          return root.trustIdentityRows().length
       case "trust-actions":  return root.trustActionModel().length
       case "review":         return a ? (a.findings ? a.findings.length : 0)
@@ -865,12 +897,14 @@ Panel {
       var ci = Number(section.slice(4))
       return (root.flowNodes[ci] ? root.flowNodes[ci].length : 0)
     }
+    if (section === "source-scan") return root.activeTabKey === "source-scan" ? 1 : 0
     return 0
   }
   function sectionIsHorizontal(section) {
     return section === "hero" || section === "views" || section === "trust-actions"
       || section === "claim-actions" || section === "enforcement"
       || section === "lens" || section === "inspector-actions"
+      || section === "source-link" || section === "source-scan"
   }
   function sectionFirstIndex(section) { return 0 }
   function sectionLastIndex(section) { return Math.max(0, root.sectionCount(section) - 1) }
@@ -968,6 +1002,8 @@ Panel {
         if (i === 1) { root.togglePanelExpanded(); return }
         if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
         return
+      case "source-link": root.openCandidate(); return
+      case "source-scan": root.runCandidate(); return
       case "views":
         if (i >= 0 && i < root.tabs.length) root.setViewByKey(root.tabs[i].key)
         return
@@ -1224,6 +1260,146 @@ Panel {
   }
   function toggleCoverageFileRefs() { root.coverageFileRefsExpanded = !root.coverageFileRefsExpanded }
   function toggleProvenance() { root.provenanceExpanded = !root.provenanceExpanded }
+
+  function candidateAvailabilityText() {
+    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.2.2 or newer."
+    var state = String(root.hostWidget.scanState || "")
+    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.2.2 or newer; no CLI was found."
+    if (state === "incompatible-cli" || !root.cliVerified)
+      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.2.2 or newer."
+    return "Plugin Source Scan is unavailable."
+  }
+
+  function candidateProgressText() {
+    if (root.candidateState === "fetching") return "Resolving complete; fetching the exact Git commit…"
+    if (root.candidateState === "analyzing") return "Analyzing the exact Git tree without installation…"
+    return "Resolving and scanning plugin source; no installation is performed…"
+  }
+
+  function candidateSafeText(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "�")
+      .replace(/[\u202a-\u202e\u2066-\u2069]/g, "�")
+      .slice(0, 2048)
+  }
+
+  function openCandidate() {
+    if (!root.cliVerified) return
+    root.setViewByKey("source-scan")
+    root.cursorActive = false
+    root.focusSection = "source-scan"
+    root.selectedIndex = 0
+    Qt.callLater(function() { if (activeFlick) activeFlick.contentY = 0 })
+  }
+
+  function cancelCandidate() {
+    root.candidateRequestId++
+    candidateResolveTimer.stop()
+    candidateFetchTimer.stop()
+    candidateTimeout.stop()
+    if (candidateProcess.running) {
+      root.candidateSettled = true
+      root.terminateBoundedProcess(candidateProcess)
+    } else {
+      candidateKill.stop()
+    }
+    root.candidateState = "cancelled"
+    root.candidateError = ""
+    root.candidateStdout = ""
+    root.candidateStderr = ""
+    root.candidateSettled = false
+  }
+
+  function stopCandidate(clearInput) {
+    var wasRunning = candidateProcess.running
+    if (wasRunning) root.cancelCandidate()
+    else {
+      candidateResolveTimer.stop()
+      candidateFetchTimer.stop()
+      candidateTimeout.stop()
+      candidateKill.stop()
+    }
+    if (clearInput) root.candidateInput = ""
+  }
+
+  function leaveSourceScan() {
+    if (candidateProcess.running) {
+      root.cancelCandidate()
+      root.close()
+      return
+    }
+    root.setViewByKey("overview")
+  }
+
+  function runCandidate() {
+    if (root.activeTabKey !== "source-scan" || !root.candidateFeatureAvailable || candidateProcess.running) return
+    // QML performs only the empty-input check. The CLI owns all token and URL
+    // parsing and receives the complete value as one argv item.
+    if (String(root.candidateInput || "").trim() === "") {
+      root.candidateState = "idle"
+      root.candidateError = "Paste a GitHub URL or copied install command first."
+      return
+    }
+    root.candidateRequestId++
+    candidateProcess.requestId = root.candidateRequestId
+    root.candidateSettled = false
+    root.candidateModel = null
+    root.candidateError = ""
+    root.candidateStdout = ""
+    root.candidateStderr = ""
+    root.candidateState = "resolving"
+    candidateKill.stop()
+    candidateTimeout.restart()
+    candidateResolveTimer.restart()
+    candidateFetchTimer.stop()
+    candidateProcess.command = root.cliCommand([
+      "scan-plugin", "--request", root.candidateInput,
+      "--report-profile", "review", "--format", "json"
+    ])
+    candidateProcess.running = true
+  }
+
+  function applyCandidate(output, exitCode, requestId) {
+    if (requestId !== root.candidateRequestId) return
+    if (exitCode !== 0 && exitCode !== 4) {
+      root.candidateState = "unavailable"
+      root.candidateError = root.candidateSafeText(root.candidateStderr).trim().split("\n")[0] ||
+        "Source scan failed with exit status " + exitCode + "."
+      return
+    }
+    try {
+      var report = JSON.parse(String(output || ""))
+      var normalized = Candidate.build(report)
+      if (!normalized || normalized.ok !== true)
+        throw new Error(normalized && normalized.error ? normalized.error : "unsupported candidate report")
+      root.candidateModel = normalized
+      // This cache is deliberately identity-based and session-local. It is not
+      // consulted by mutable URL and never persists a pasted request.
+      var key = normalized.target.revision + ":" + normalized.analysis.policyKey + ":review"
+      var next = ({})
+      for (var existing in root.candidateCache) next[existing] = root.candidateCache[existing]
+      next[key] = normalized
+      var order = root.candidateCacheOrder.slice(0)
+      var oldIndex = order.indexOf(key)
+      if (oldIndex >= 0) order.splice(oldIndex, 1)
+      order.push(key)
+      while (order.length > 8) delete next[order.shift()]
+      root.candidateCache = next
+      root.candidateCacheOrder = order
+      root.candidateState = "complete"
+      root.candidateError = ""
+    } catch (error) {
+      root.candidateModel = null
+      root.candidateState = "unavailable"
+      root.candidateError = root.candidateSafeText(error && error.message || error ||
+        "unsupported candidate report")
+    }
+  }
+
+  function copyCandidateCommand() {
+    if (root.candidateModel && root.candidateModel.rescanCommand)
+      root.copyValue(root.candidateModel.rescanCommand)
+  }
 
   function activateReview(i) {
     var a = root.analysisReport
@@ -3559,7 +3735,8 @@ Panel {
     // While the sheet is open, or the finder holds focus, every key goes there
     // (doc 03 §10 invariant 1, §8). The sheet handles Esc → canceled(); the finder
     // handles Esc → hideFinder().
-    blocked: sheet.opened || (finderField && finderField.activeFocus)
+    blocked: sheet.opened || (finderField && finderField.activeFocus) ||
+      (root.activeTabKey === "source-scan" && activeLoader.item && activeLoader.item.inputActiveFocus)
 
     // One cursor over hero → views (doc 03 §13). The first move only reveals the
     // highlight; thereafter j/k walk sections and h/l walk within a horizontal one.
@@ -3572,6 +3749,7 @@ Panel {
     onActivateRequested: if (root.cursorActive) root.activateCursor()
     onCloseRequested: {
       if (root.pendingAction !== "") root.clearPendingAction()
+      else if (root.activeTabKey === "source-scan") root.leaveSourceScan()
       else root.close()
     }
     onTabRequested: function(direction) {
@@ -3580,8 +3758,7 @@ Panel {
     }
     onTextKey: function(t) {
       // Digits and letters share the navigationLocked gate (doc 03 §13). Views are
-      // addressed by key: 1 → Overview, 2 → Flow, 3 → Rules. No digit changed meaning
-      // for an existing view.
+      // addressed by key: 1 → Overview, 2 → Flow, 3 → Rules, 4 → Source Scan.
       if (root.navigationLocked) return
       var inFlow = root.activeTabKey === "flow"
       if (t === "1") root.setViewByKey("overview")
@@ -3592,6 +3769,7 @@ Panel {
         else root.setViewByKey("flow")
       }
       else if (t === "3") root.setViewByKey("rules")
+      else if (t === "4") root.setViewByKey("source-scan")
       else if (t === "-") root.popDepth()
       else if (t === "/") root.showFinder()
       else if (t === "b") { root.toggleBackups(); if (inFlow) root.rebuildFlow() }
@@ -3604,7 +3782,8 @@ Panel {
       else if (t === "g") root.togglePanelExpanded()
       else if (t === "?") { if (inFlow) root.flowLegendVisible = !root.flowLegendVisible }
       else if (t === "r" || t === "R") {
-        if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
+        if (root.activeTabKey === "source-scan") root.runCandidate()
+        else if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
       }
     }
 
@@ -3823,12 +4002,12 @@ Panel {
         Loader {
           id: activeLoader
           width: parent.width
-          // The finder overlays the body; otherwise Overview (list or detail sheet)
-          // or the Rules view.
+          // The finder overlays the body; otherwise render the selected top-level view.
           sourceComponent: root.finderActive ? finderResultsComponent
+            : (root.activeTabKey === "source-scan" ? sourceScanComponent
             : (root.activeTabKey === "flow" ? flowComponent
               : (root.activeTabKey === "rules" ? rulesComponent
-                : (root.overviewDepth >= 1 ? pluginDetailComponent : overviewComponent)))
+                : (root.overviewDepth >= 1 ? pluginDetailComponent : overviewComponent))))
 
           Behavior on opacity {
             NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
@@ -3898,6 +4077,11 @@ Panel {
   Component {
     id: finderResultsComponent
     FinderResultsView { panel: root }
+  }
+
+  Component {
+    id: sourceScanComponent
+    CandidateView { panel: root }
   }
 
   // Inline "Updating catalog… <n> s" counter. Gated on opened && the refresh running,
@@ -5478,5 +5662,112 @@ Panel {
     interval: 3000
     repeat: false
     onTriggered: if (trustProcess.running) trustProcess.signal(9)
+  }
+
+  // Candidate acquisition emits one committed report, so these labels are
+  // intentionally generic progress rather than untrusted streaming target text.
+  Timer {
+    id: candidateResolveTimer
+    interval: 1200
+    repeat: false
+    onTriggered: {
+      if (!candidateProcess.running || root.candidateSettled) return
+      root.candidateState = "fetching"
+      candidateFetchTimer.restart()
+    }
+  }
+
+  Timer {
+    id: candidateFetchTimer
+    interval: 6000
+    repeat: false
+    onTriggered: {
+      if (!candidateProcess.running || root.candidateSettled) return
+      root.candidateState = "analyzing"
+    }
+  }
+
+  Timer {
+    id: candidateTimeout
+    interval: 120000
+    repeat: false
+    onTriggered: {
+      if (root.candidateSettled) return
+      root.candidateSettled = true
+      candidateResolveTimer.stop()
+      candidateFetchTimer.stop()
+      candidateKill.stop()
+      root.candidateState = "unavailable"
+      root.candidateError = "Source scan timed out after 120 seconds."
+      root.candidateStdout = ""
+      root.candidateStderr = ""
+      if (candidateProcess.running) root.terminateBoundedProcess(candidateProcess)
+    }
+  }
+
+  Timer {
+    id: candidateKill
+    interval: 3000
+    repeat: false
+    onTriggered: if (candidateProcess.running) candidateProcess.signal(9)
+  }
+
+  Process {
+    id: candidateProcess
+    property var killTimer: candidateKill
+    property int requestId: 0
+    command: root.cliCommand([])
+
+    // Keep the same character-bound transport used by the existing panel
+    // commands. The CLI's review profile is byte-bounded; this guard protects
+    // the long-lived shell process if a replaced CLI floods either stream.
+    stdout: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (root.candidateSettled) return
+        root.candidateStdout = (root.candidateStdout + String(chunk)).slice(0, root.v02OutputCharCap + 1)
+        if (root.candidateStdout.length > root.v02OutputCharCap) {
+          root.candidateSettled = true
+          candidateResolveTimer.stop()
+          candidateFetchTimer.stop()
+          candidateTimeout.stop()
+          root.candidateState = "unavailable"
+          root.candidateError = "Source scan exceeded the configured stdout output cap."
+          root.candidateStdout = ""
+          root.candidateStderr = ""
+          root.terminateBoundedProcess(candidateProcess)
+        }
+      }
+    }
+
+    stderr: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (root.candidateSettled) return
+        root.candidateStderr = (root.candidateStderr + String(chunk)).slice(0, root.v02OutputCharCap + 1)
+        if (root.candidateStderr.length > root.v02OutputCharCap) {
+          root.candidateSettled = true
+          candidateResolveTimer.stop()
+          candidateFetchTimer.stop()
+          candidateTimeout.stop()
+          root.candidateState = "unavailable"
+          root.candidateError = "Source scan exceeded the configured stderr output cap."
+          root.candidateStdout = ""
+          root.candidateStderr = ""
+          root.terminateBoundedProcess(candidateProcess)
+        }
+      }
+    }
+
+    onExited: function(exitCode) {
+      root.stopBoundedProcessTimers(candidateProcess, candidateTimeout)
+      candidateResolveTimer.stop()
+      candidateFetchTimer.stop()
+      if (root.candidateSettled || candidateProcess.requestId !== root.candidateRequestId) return
+      root.candidateSettled = true
+      root.applyCandidate(root.candidateStdout, exitCode, candidateProcess.requestId)
+      root.candidateStdout = ""
+      root.candidateStderr = ""
+    }
   }
 }
