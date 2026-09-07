@@ -16,6 +16,7 @@ CursorSurface {
   property string severity: ""
   property string severityLevel: "unknown"
   property bool urgent: false
+  property bool backup: false
   property bool pseudo: false
 
   property color dim: Color.foreground
@@ -80,7 +81,7 @@ CursorSurface {
     PanelActionButton {
       id: openButton
       anchors.verticalCenter: parent.verticalCenter
-      visible: !root.pseudo
+      visible: !root.pseudo && !root.backup
       width: visible ? size : 0
       iconText: Glyphs.ui_("open", root.resolvedFamily)
       tooltipText: "Open plugin"

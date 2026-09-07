@@ -49,7 +49,7 @@ Column {
     width: parent.width
     visible: !root.cliVerified
     reason: "unavailable"
-    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.1 or newer is found on PATH."
+    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.3 or newer is found on PATH."
     foreground: root.col("fg"); dim: root.col("dim"); urgent: root.col("urgent")
     fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
   }

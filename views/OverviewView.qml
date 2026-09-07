@@ -4,7 +4,7 @@ import qs.Ui
 import "../components"
 import "../model/Glyphs.js" as Glyphs
 
-// Overview view (doc 03 §4): source scan · ALERTS · PLUGINS · SOURCES with one non-destructive next
+// Overview view (doc 03 §4): ALERTS · PLUGINS · SOURCES with one non-destructive next
 // step per row and the product disclaimer at the foot. Presentational — it binds to
 // `panel.vm` and the panel cursor state, and calls back into `panel` for navigation
 // and actions. The fixed hero / chips / notices live in Panel.qml above the Flickable.
@@ -36,87 +36,12 @@ Column {
     width: parent.width
     visible: !root.cliVerified
     reason: "unavailable"
-    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.1 or newer is found on PATH. Plugin Source Scan requires 0.2.2 or newer."
+    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.3 or newer is found on PATH."
     foreground: panel ? panel.fg : Color.foreground
     dim: panel ? panel.dim : Color.foreground
     urgent: panel ? panel.urgent : Color.urgent
     fontFamily: panel ? panel.fontFamily : Style.font.family
     resolvedFamily: root.rf
-  }
-
-  // Source Scan is a read-only action, separate from installed-plugin rows
-  // and trust/lifecycle actions. The CLI version gate stays visible when an older
-  // general-compatible CLI is configured; no --request process can start below
-  // the hard v0.2.2 feature floor.
-  CursorSurface {
-    id: candidateAction
-    width: parent.width
-    visible: root.cliVerified
-    implicitHeight: candidateContent.implicitHeight +
-      (candidateCaption.visible ? candidateCaption.implicitHeight + Style.space(2) : 0) +
-      Style.spacing.rowPaddingX
-    hasCursor: root.has("candidate", 0)
-    foreground: panel ? panel.fg : Color.foreground
-    onHasCursorChanged: if (hasCursor && panel) panel.ensureCursorVisible(this)
-
-    Row {
-      id: candidateContent
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.top: parent.top
-      anchors.leftMargin: Style.space(10)
-      anchors.rightMargin: Style.space(8)
-      spacing: Style.space(8)
-
-      Text {
-        width: parent.width - scanCandidateButton.width - parent.spacing
-        textFormat: Text.PlainText
-        text: "Plugin Source Scan"
-        color: panel ? panel.fg : Color.foreground
-        font.family: panel ? panel.fontFamily : Style.font.family
-        font.pixelSize: Style.font.body
-        anchors.verticalCenter: parent.verticalCenter
-        elide: Text.ElideRight
-      }
-
-      Button {
-        id: scanCandidateButton
-        text: "Open Source Scan"
-        bordered: true
-        enabled: panel && panel.candidateFeatureAvailable && !panel.navigationLocked
-        foreground: enabled ? (panel ? panel.fg : Color.foreground) : (panel ? panel.faint : Color.foreground)
-        fontFamily: panel ? panel.fontFamily : Style.font.family
-        tooltipText: panel && panel.candidateFeatureAvailable
-          ? "Manually scan a GitHub URL or copied install command without installing it"
-          : (panel ? panel.candidateAvailabilityText() : "Plugin Source Scan requires omasafe-cli 0.2.2 or newer.")
-        onClicked: if (panel) panel.openCandidate()
-        onHovered: function(isHovered) { if (isHovered && panel) panel.hoverCursor("candidate", 0) }
-      }
-    }
-
-    Text {
-      id: candidateCaption
-      width: parent.width - Style.space(38)
-      x: Style.space(30)
-      anchors.top: candidateContent.bottom
-      anchors.topMargin: Style.space(2)
-      visible: true
-      textFormat: Text.PlainText
-      text: panel && panel.candidateFeatureAvailable
-        ? "Manually scan a GitHub URL or copied install command before installing; results stay in memory for this session."
-        : (panel ? panel.candidateAvailabilityText() : "Plugin Source Scan requires omasafe-cli 0.2.2 or newer.")
-      color: panel ? panel.dim : Color.foreground
-      font.family: panel ? panel.fontFamily : Style.font.family
-      font.pixelSize: Style.font.caption
-      wrapMode: Text.WordWrap
-    }
-
-    MouseArea {
-      anchors.fill: parent
-      hoverEnabled: true
-      acceptedButtons: Qt.NoButton
-      onPositionChanged: function(mouse) { if (gate.moved(this, mouse) && panel) panel.hoverCursor("candidate", 0) }
-    }
   }
 
   // ---- ALERTS (only when outstanding > 0) --------------------------------------
@@ -144,6 +69,7 @@ Column {
         severity: modelData.severity
         severityLevel: modelData.severityLevel
         urgent: modelData.urgent
+        backup: modelData.backup
         pseudo: modelData.pseudo
         hasCursor: root.has("alerts", index)
         foreground: panel ? panel.fg : Color.foreground
@@ -406,7 +332,10 @@ Column {
       label: sourcesSection.s ? sourcesSection.s.scheduleLabel : ""
       sublabel: sourcesSection.s ? sourcesSection.s.scheduleSub : ""
       actionText: sourcesSection.s ? sourcesSection.s.scheduleAction : ""
-      actionTooltip: "Install scheduled scan"
+      actionTooltip: sourcesSection.s ? sourcesSection.s.scheduleActionTooltip : ""
+      iconAction: sourcesSection.s && sourcesSection.s.scheduleIconAction
+        ? Glyphs.ui_(sourcesSection.s.scheduleIconAction, root.rf) : ""
+      iconTooltip: sourcesSection.s ? sourcesSection.s.scheduleIconTooltip : ""
       actionEnabled: panel && !panel.navigationLocked
       hasCursor: root.has("sources", 2)
       foreground: panel ? panel.fg : Color.foreground
@@ -414,7 +343,11 @@ Column {
       faint: panel ? panel.faint : Color.foreground
       fontFamily: panel ? panel.fontFamily : Style.font.family
       resolvedFamily: root.rf
-      onActionRequested: if (panel) panel.beginSchedule()
+      onActionRequested: if (panel) {
+        if (sourcesSection.s && sourcesSection.s.scheduleAction === "Disable") panel.beginScheduleDisable()
+        else panel.beginSchedule()
+      }
+      onIconActionRequested: if (panel) panel.beginSchedule()
       onHasCursorChanged: if (hasCursor && panel) panel.ensureCursorVisible(this)
       MouseArea { anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton
         onPositionChanged: function(mouse) { if (gate.moved(this, mouse) && panel) panel.hoverCursor("sources", 2) } }

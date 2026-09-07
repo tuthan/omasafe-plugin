@@ -198,6 +198,24 @@ const preScanVm = ViewModel.build({
   scanMeta: { stale: false, hasResult: false }, nowMs: Date.now()
 })
 eq(preScanVm.plugins[0].healthState, 'unknown', 'unchanged baseline before first scan is not green')
+
+const backupAlertVm = ViewModel.build({
+  inventory: { plugins: [
+    { id: 'live.plugin', classification: 'cloned/local' },
+    { id: '.live.plugin.bak.20260814081802', classification: 'backup' }
+  ] },
+  alerts: [{ key: 'analysis:.live.plugin.bak.20260814081802',
+    plugin_id: '.live.plugin.bak.20260814081802', kind: 'analyzer-policy-update',
+    severity: 'warning' }],
+  scanMeta: { stale: false, hasResult: true, generatedAt: '2026-09-07T10:32:18Z' },
+  nowMs: Date.parse('2026-09-07T10:32:18Z')
+})
+eq(backupAlertVm.plugins.length, 1, 'backup remains out of the live plugin list')
+eq(backupAlertVm.alerts.length, 1, 'first scan keeps backup alert in ALERTS')
+eq(backupAlertVm.alerts[0].pluginId, '.live.plugin.bak.20260814081802',
+   'backup alert retains its plugin id')
+eq(backupAlertVm.alerts[0].backup, true, 'backup alert is identified separately from pseudo alerts')
+eq(backupAlertVm.alerts[0].pseudo, false, 'backup alert is not mislabeled as a pseudo alert')
 const staleVm = ViewModel.build({
   inventory: { plugins: [{ id: 'stale.plugin', classification: 'cloned/local' }] },
   alerts: [{ plugin_id: 'stale.plugin', severity: 'critical' }],
@@ -205,6 +223,49 @@ const staleVm = ViewModel.build({
   scanMeta: { stale: true }, nowMs: Date.now()
 })
 eq(staleVm.plugins[0].healthState, 'stale', 'stale scan never gets green health state')
+
+const scheduledVm = ViewModel.build({
+  inventory: { plugins: [{ id: 'scheduled.plugin', classification: 'cloned/local' }] },
+  alerts: [],
+  schedule: {
+    installed: true, policy: 'advisory', metadata_consistent: true,
+    last_known_execution: {
+      available: true, timer_sub_state: 'waiting',
+      timer_next_run: 'Wed 2026-09-02 12:00:00 UTC',
+      service_finished_at: 'Tue 2026-09-01 12:00:00 UTC',
+      service_result: 'failed', service_exit_code: 1
+    }
+  },
+  statusById: { 'scheduled.plugin': { state: 'unchanged' } },
+  scanMeta: { stale: false, hasResult: true }, nowMs: Date.now()
+})
+eq(scheduledVm.sources.scheduleAction, 'Disable', 'installed schedule offers Disable')
+eq(scheduledVm.sources.scheduleIconAction, 'rescan', 'installed schedule offers reinstall control')
+ok(scheduledVm.sources.scheduleSub.indexOf('next Wed 2026-09-02') >= 0,
+   'schedule row shows next trigger')
+ok(scheduledVm.sources.scheduleSub.indexOf('failed · exit 1') >= 0,
+   'schedule row labels exit 1 as a failure')
+
+const partialScheduleVm = ViewModel.build({
+  inventory: { plugins: [{ id: 'partial.schedule', classification: 'cloned/local' }] },
+  alerts: [],
+  schedule: {
+    installed: true, policy: 'advisory', metadata_consistent: true,
+    last_known_execution: {
+      available: false, timer_sub_state: 'waiting',
+      timer_next_run: 'Thu 2026-09-03 12:00:00 UTC',
+      error: 'service status unavailable'
+    }
+  },
+  statusById: { 'partial.schedule': { state: 'unchanged' } },
+  scanMeta: { stale: false, hasResult: true }, nowMs: Date.now()
+})
+ok(partialScheduleVm.sources.scheduleSub.indexOf('next Thu 2026-09-03') >= 0,
+   'schedule row keeps next trigger when service status is unavailable')
+
+const overviewSource = fs.readFileSync(path.join(ROOT, 'views/OverviewView.qml'), 'utf8')
+ok(overviewSource.indexOf('Plugin Source Scan') < 0,
+   'Overview has no Plugin Source Scan shortcut')
 
 // edge counts by kind
 const kindOf = (ref) => ref[0]

@@ -40,8 +40,8 @@
         "key": "cliVersionMin",
         "type": "string",
         "label": "Minimum omasafe-cli version",
-        "description": "Require this CLI version before running panel commands; candidate review requires 0.2.2 or newer.",
-        "defaultValue": "0.2.1"
+        "description": "Require omasafe-cli 0.2.3 or newer before running panel commands, including cache hydration, scheduled scans, and Source Scan.",
+        "defaultValue": "0.2.3"
       },
       {
         "key": "cliVersionRequireIdentity",

@@ -195,6 +195,58 @@ Column {
       wrapMode: Text.WordWrap
     }
 
+    Text {
+      width: parent.width - Style.space(18)
+      x: Style.space(10)
+      visible: root.candidate && root.candidate.reviewSummary
+      textFormat: Text.PlainText
+      text: root.candidate && root.candidate.reviewSummary
+        ? ("Analysis freshness: " + (root.candidate.freshness || "unknown") +
+          (root.candidate.reviewSummary.analysisProducedAt !== ""
+            ? " · produced " + root.candidate.reviewSummary.analysisProducedAt : "")) : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily")
+      font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    Text {
+      width: parent.width - Style.space(18)
+      x: Style.space(10)
+      visible: root.candidate && root.candidate.reviewSummary &&
+        root.candidate.reviewSummary.untrustedDataNotice !== ""
+      textFormat: Text.PlainText
+      text: root.candidate ? root.candidate.reviewSummary.untrustedDataNotice : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily")
+      font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
+    NoticeRow {
+      width: parent.width
+      visible: root.candidate && root.candidate.reviewSummary && !root.candidate.presentationComplete
+      reason: "unsupported"
+      text: "The scanner marked this presentation incomplete; omitted or shortened evidence is disclosed below."
+      foreground: root.col("fg")
+      dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+      resolvedFamily: root.rf
+    }
+
+    Text {
+      width: parent.width - Style.space(18)
+      x: Style.space(10)
+      visible: root.candidate && root.candidate.analysis.evidenceObservationsOmitted > 0
+      textFormat: Text.PlainText
+      text: root.candidate
+        ? ("Evidence observations omitted: " + root.candidate.analysis.evidenceObservationsOmitted) : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily")
+      font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
     NoticeRow {
       width: parent.width
       visible: root.candidate && root.candidate.installCommand !== ""
@@ -314,7 +366,8 @@ Column {
     SectionHeaderRow {
       text: "FINDINGS"
       value: root.candidate ? (root.candidate.analysis.findingsTotal +
-        (root.candidate.analysis.findingsOmitted > 0 ? " · " + root.candidate.analysis.findingsOmitted + " omitted" : "")) : ""
+        (root.candidate.analysis.findingsOmitted > 0 ? " · " + root.candidate.analysis.findingsOmitted + " omitted" : "") +
+        (root.candidate.analysis.findingsDisplayOmitted > 0 ? " · " + root.candidate.analysis.findingsDisplayOmitted + " hidden in UI" : "")) : ""
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
@@ -343,6 +396,17 @@ Column {
       resolvedFamily: root.rf
     }
 
+    NoticeRow {
+      width: parent.width
+      visible: root.candidate && root.candidate.analysis.findingsDisplayOmitted > 0
+      reason: "unsupported"
+      text: "Some findings are hidden by the UI display limit; the emitted report still contains the complete selected set."
+      foreground: root.col("fg")
+      dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+      resolvedFamily: root.rf
+    }
+
     Repeater {
       model: root.candidate ? root.candidate.analysis.findings : []
       delegate: Column {
@@ -362,11 +426,23 @@ Column {
         Text {
           width: parent.width
           textFormat: Text.PlainText
-          text: modelData.ruleId + " · " + modelData.relativePath +
+          text: modelData.ruleId + " · " + (modelData.displayRelativePath || modelData.relativePath) +
             (modelData.line !== "" ? ":" + modelData.line : "")
           color: root.col("dim")
           font.family: root.col("fontFamily")
           font.pixelSize: Style.font.bodySmall
+          wrapMode: Text.WrapAnywhere
+        }
+        Text {
+          width: parent.width
+          visible: modelData.analysisMethod !== "" || modelData.occurrenceId !== ""
+          textFormat: Text.PlainText
+          text: (modelData.analysisMethod !== "" ? "Method: " + modelData.analysisMethod : "") +
+            (modelData.occurrenceId !== "" ?
+              (modelData.analysisMethod !== "" ? " · occurrence " : "Occurrence ") + modelData.occurrenceId : "")
+          color: root.col("dim")
+          font.family: root.col("fontFamily")
+          font.pixelSize: Style.font.caption
           wrapMode: Text.WrapAnywhere
         }
         Text {
@@ -379,16 +455,59 @@ Column {
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WrapAnywhere
         }
+        Text {
+          width: parent.width
+          visible: modelData.behaviorContext
+          textFormat: Text.PlainText
+          text: modelData.behaviorContext
+            ? ("Behavior: " + (modelData.behaviorContext.connection || "unresolved") +
+              " · source " + (modelData.behaviorContext.sourceClass || "unknown") +
+              " · sink " + (modelData.behaviorContext.sinkKind || "unknown") +
+              " · trigger " + (modelData.behaviorContext.trigger || "unknown")) : ""
+          color: root.col("dim")
+          font.family: root.col("fontFamily")
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WrapAnywhere
+        }
+        Repeater {
+          model: modelData.evidenceSteps || []
+          delegate: Text {
+            required property var modelData
+            width: resultColumn.width - Style.space(28)
+            x: Style.space(20)
+            textFormat: Text.PlainText
+            text: "Step " + (modelData.role || "observation") + " · " +
+              (modelData.displayRelativePath || modelData.relativePath || "") +
+              (modelData.line !== "" ? ":" + modelData.line : "") +
+              (modelData.detail !== "" ? " · " + modelData.detail : "")
+            color: root.col("dim")
+            font.family: root.col("fontFamily")
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WrapAnywhere
+          }
+        }
       }
     }
 
     SectionHeaderRow {
       text: "CAPABILITIES"
       value: root.candidate ? (root.candidate.analysis.capabilitiesTotal +
-        (root.candidate.analysis.capabilitiesOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesOmitted + " omitted" : "")) : ""
+        (root.candidate.analysis.capabilitiesOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesOmitted + " omitted" : "") +
+        (root.candidate.analysis.capabilitiesDisplayOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesDisplayOmitted + " hidden in UI" : "")) : ""
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
+    }
+
+    NoticeRow {
+      width: parent.width
+      visible: root.candidate && root.candidate.analysis.capabilitiesDisplayOmitted > 0
+      reason: "unsupported"
+      text: "Some capabilities are hidden by the UI display limit; review the emitted count in the report."
+      foreground: root.col("fg")
+      dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+      resolvedFamily: root.rf
     }
 
     Repeater {
@@ -409,10 +528,35 @@ Column {
 
     SectionHeaderRow {
       text: "COVERAGE AND LIMITATIONS"
-      value: root.candidate ? (root.candidate.analysis.edgesTotal + " invocation edges") : ""
+      value: root.candidate ? (root.candidate.analysis.edgesTotal + " invocation edges" +
+        (root.candidate.analysis.edgesDisplayOmitted > 0
+          ? " · " + root.candidate.analysis.edgesDisplayOmitted + " hidden in UI" : "") +
+        (root.candidate.analysis.coverageGapsTotal > 0
+          ? " · " + root.candidate.analysis.coverageGapsTotal + " gaps" : "") +
+        (root.candidate.analysis.coverageGapsOmitted > 0
+          ? " · " + root.candidate.analysis.coverageGapsOmitted + " gaps omitted" : "") +
+        (root.candidate.analysis.coverageGapsDisplayOmitted > 0
+          ? " · " + root.candidate.analysis.coverageGapsDisplayOmitted + " gaps hidden in UI" : "")) : ""
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
+    }
+
+    NoticeRow {
+      width: parent.width
+      visible: root.candidate && (root.candidate.analysis.edgesDisplayOmitted > 0 ||
+        root.candidate.analysis.coverageGapsDisplayOmitted > 0)
+      reason: "unsupported"
+      text: root.candidate ? (root.candidate.analysis.edgesDisplayOmitted > 0 &&
+        root.candidate.analysis.coverageGapsDisplayOmitted > 0
+        ? "Some invocation edges and coverage gaps are hidden by the UI display limit."
+        : (root.candidate.analysis.edgesDisplayOmitted > 0
+          ? "Some invocation edges are hidden by the UI display limit."
+          : "Some coverage gaps are hidden by the UI display limit.")) : ""
+      foreground: root.col("fg")
+      dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+      resolvedFamily: root.rf
     }
 
     Text {
@@ -441,6 +585,27 @@ Column {
         x: Style.space(10)
         textFormat: Text.PlainText
         text: "Limitation: " + modelData
+        color: root.col("dim")
+        font.family: root.col("fontFamily")
+        font.pixelSize: Style.font.bodySmall
+        wrapMode: Text.WrapAnywhere
+      }
+    }
+
+    Repeater {
+      model: root.candidate ? root.candidate.analysis.coverageGaps : []
+      delegate: Text {
+        required property var modelData
+        width: resultColumn.width - Style.space(18)
+        x: Style.space(10)
+        textFormat: Text.PlainText
+        text: "Coverage gap: " + (modelData.reason || "unclassified") +
+          (modelData.language !== "" ? " · " + modelData.language : "") +
+          (modelData.impact !== "" ? " · " + modelData.impact : "") +
+          (modelData.displayRelativePath || modelData.relativePath
+            ? " · " + (modelData.displayRelativePath || modelData.relativePath) : "") +
+          (modelData.line !== "" ? ":" + modelData.line : "") +
+          (modelData.detail !== "" ? " · " + modelData.detail : "")
         color: root.col("dim")
         font.family: root.col("fontFamily")
         font.pixelSize: Style.font.bodySmall

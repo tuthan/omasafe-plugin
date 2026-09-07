@@ -42,6 +42,13 @@ Analysis counts are evidence, not permissions or scores. A capability “use” 
 one source-level reference emitted by the analyzer; the file count is the number
 of distinct files containing those references.
 
+Installed analysis results are persisted by the CLI in its private XDG cache and
+restored through bounded cache-only requests when the panel opens after a shell
+restart. The overview can therefore recover analysis counts, while the panel
+still validates the plugin source identity, analyzer policy, and suppression
+configuration before using a saved result. An explicit Analyze action refreshes
+it; a cache miss keeps the honest “Not analyzed” state.
+
 Status markers are shared across the views:
 
 - Green check: a current scan has no active alerts, or a fully analyzed rule has no local hits.
@@ -73,16 +80,14 @@ safety verdict. Cached results are explicitly labeled stale.
 ## Requirements
 
 - Omarchy with shell plugin support.
-- `omasafe-cli` 0.2.1 or newer on the graphical session `PATH`.
-- Plugin Source Scan requires `omasafe-cli` 0.2.2 or newer.
+- `omasafe-cli` 0.2.3 or newer on the graphical session `PATH`.
 
 The widget can be installed before the CLI. Until the CLI is available, it
 shows an unavailable state and never implies that the system is clean.
 
 ## Plugin Source Scan
 
-Open the **Source Scan** tab (or choose **Plugin Source Scan** from Overview)
-and paste either a public
+Open the **Source Scan** tab and paste either a public
 GitHub repository URL or one plain `omarchy plugin add|install URL [--enable]
 [--yes]` command. The input is passed to `omasafe-cli` as one argv value; the
 CLI owns parsing, resolves the moving request to one exact commit, and returns
@@ -144,15 +149,30 @@ omarchy plugin enable io.github.tuthan.omasafe --section right
 Periodic scanning is disabled by default. Enable it in the widget settings and
 choose an interval from 1 to 1440 minutes, or run scans manually.
 
-After a successful scan, the plugin stores a small parsed snapshot at:
+After a successful scan, the CLI stores a small normalized snapshot at:
 
 ```text
-${XDG_CACHE_HOME:-$HOME/.cache}/omasafe/last-scan.json
+${XDG_CACHE_HOME:-$HOME/.cache}/omasafe/scan-snapshots/installed-analysis.json
 ```
 
-The snapshot contains alert and scan metadata only; it excludes raw stdout,
-stderr, and full analysis payloads. After a shell restart, matching cached data
-is shown as stale until a fresh scan replaces it.
+The advisory `scan` profile writes `installed-basic.json`; `--include-analysis`
+and the widget write `installed-analysis.json`. The CLI owns these files and
+the widget reads them only through `omasafe-cli scan-cache show`; QML never
+walks or writes the cache directory. Snapshots contain normalized alert and
+enforcement metadata only, never raw stdout, stderr, or full analysis payloads.
+After a shell restart, matching cached data is shown explicitly as cached and
+stale/unvalidated until the bounded validation command confirms its context.
+
+Cache deletion is safe and removes only startup hydration data. It never removes
+trust baselines, review decisions, enforcement history, or notification state:
+
+```sh
+rm -rf -- "${XDG_CACHE_HOME:-$HOME/.cache}/omasafe/scan-snapshots"
+```
+
+The cache is private to the user (`0700` directory, `0600` files) and is
+recreated by the CLI on the next successful scan. A stale or cached quiet result
+is historical evidence, not a safety verdict.
 
 ## Marketplace data
 

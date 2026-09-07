@@ -128,7 +128,14 @@ Panel {
   property string analysisPolicyKey: ""
   property string analysisError: ""
   property bool analysisLoading: false
+  property bool analysisCacheLoading: false
+  // Session mirror of the CLI-owned persistent analysis-snapshots cache. The CLI
+  // validates source identity, analyzer policy, and suppressions before hydration.
   property var analysisCache: ({})
+  // Cache hydration is read-only and sequential. A miss is left as "not analyzed"
+  // and never falls through to a live analysis; explicit a/A/Analyze actions own
+  // analysis execution.
+  property var analysisHydrationQueue: []
   // Source Scan keeps its normalized result in session memory. The request is kept
   // only in the active text control; the result cache is keyed by resolved identity,
   // policy, and profile, never by the mutable pasted URL.
@@ -151,6 +158,8 @@ Panel {
   property string analysisStdout: ""
   property string analysisStderr: ""
   property bool analysisSettled: false
+  property var analysisReviewSummary: null
+  property var analysisReportProfile: null
   readonly property int v02OutputCharCap: 2 * 1024 * 1024
   property string expandedFindingKey: ""
   property string ruleExplanation: ""
@@ -172,7 +181,7 @@ Panel {
   // one action the open confirmation authorizes, and the only action its confirm
   // button may run. Confirmations never stack: a request arriving while one is open
   // is dropped.
-  readonly property var pendingActions: ["record", "replace", "remove", "enable", "review-update", "schedule"]
+  readonly property var pendingActions: ["record", "replace", "remove", "enable", "review-update", "schedule", "schedule-disable"]
 
   // Capability classes in catalog order (02 §2.7, rules catalog v7). Grouped capability
   // output sorts by this ranking so a class's position means the same on every plugin;
@@ -221,7 +230,7 @@ Panel {
   readonly property bool navigationLocked: root.operationRunning || root.pendingAction !== ""
   readonly property bool scanAvailable: root.cliVerified &&
     root.statusLevel !== "checking" && !root.navigationLocked
-  readonly property string candidateFeatureMin: "0.2.2"
+  readonly property string candidateFeatureMin: "0.2.3"
   readonly property bool candidateFeatureAvailable: {
     if (!root.cliVerified || !root.hostWidget) return false
     var have = root.hostWidget.parseVersion(root.hostWidget.cliVersion)
@@ -276,6 +285,7 @@ Panel {
       // in-flight result never chains, and clear the queue (doc 04 §10.1).
       root.analysisSweepGeneration++
       root.analysisQueue = []
+      root.analysisHydrationQueue = []
     } else { root.cursorActive = false; root.focusSection = "hero"; root.selectedIndex = 0 }
   }
 
@@ -358,6 +368,8 @@ Panel {
     if (root.hostWidget.scanState === "missing-cli") return "omasafe-cli not found"
     if (root.hostWidget.scanState === "incompatible-cli") return "omasafe-cli incompatible"
     if (root.hostWidget.scanState === "unavailable") return "Scan unavailable"
+    if (root.hostWidget.cacheFeatureUnavailable) return "Cache upgrade needed"
+    if (root.hostWidget.cacheState === "cached-valid" || root.hostWidget.cacheState === "cached-unvalidated" || root.hostWidget.cacheState === "cached-stale") return "Cached scan"
     if (root.statusLevel === "critical") return "Critical finding"
     if (root.statusLevel === "warning") return "Review needed"
     if (root.statusLevel === "normal") return "No outstanding changes"
@@ -373,6 +385,14 @@ Panel {
         "The resolved omasafe-cli is not a compatible version; scans are disabled."
     if (root.hostWidget.scanState === "unavailable")
       return root.hostWidget.cliError || "The latest scan could not be completed."
+    if (root.hostWidget.cacheFeatureUnavailable)
+      return "Persistent scan hydration requires omasafe-cli 0.2.3; manual scans remain available."
+    if (root.hostWidget.cacheState === "cached-stale")
+      return "Showing a cached result; " + root.hostWidget.cacheStaleReasonLabel(root.hostWidget.cacheStaleReason) + "."
+    if (root.hostWidget.cacheState === "cached-unvalidated")
+      return "Showing a cached result pending context validation."
+    if (root.hostWidget.cacheState === "cached-valid")
+      return "Showing a cached result whose context was validated; it is still historical data."
     if (root.hostWidget.scanState === "ready")
       return "Click Run scan to inspect the installed plugin state."
     if (root.statusLevel === "checking") return "Reading installed plugin state…"
@@ -422,6 +442,8 @@ Panel {
     if (root.scanState === "incompatible-cli")
       return String(root.hostWidget.cliVersion || "") + " found · " +
         String(root.hostWidget.cliVersionMin || "") + " or newer required"
+    if (root.hostWidget.cacheFeatureUnavailable)
+      return "cache requires omasafe-cli 0.2.3"
     var frags = []
     var plugins = root.visiblePlugins().length
     if (plugins > 0) frags.push(plugins + " plugins")
@@ -435,6 +457,14 @@ Panel {
       } else {
         frags.push("no earlier results")
       }
+      return frags.join(" · ")
+    }
+    if (["cached-valid", "cached-unvalidated", "cached-stale"].indexOf(String(root.hostWidget.cacheState || "")) >= 0) {
+      frags.push("Cached")
+      if (root.hostWidget.cacheState === "cached-stale") frags.push("stale: " + root.hostWidget.cacheStaleReasonLabel(root.hostWidget.cacheStaleReason))
+      else if (root.hostWidget.cacheState === "cached-valid") frags.push("validated")
+      var cachedAge = Time.relative(root.hostWidget.lastScanAt)
+      if (cachedAge !== "") frags.push("scanned " + cachedAge)
       return frags.join(" · ")
     }
     if (root.checking) { frags.push("reading installed state"); return frags.join(" · ") }
@@ -858,7 +888,7 @@ Panel {
       candidates = ["trust", "trust-actions", "review", "classes", "coverage",
         "claim-actions", "enforcement", "provenance"]
     else
-      candidates = ["source-link", "alerts", "plugins", "backups-toggle", "sources"]
+      candidates = ["alerts", "plugins", "backups-toggle", "sources"]
     for (var i = 0; i < candidates.length; i++)
       if (root.sectionCount(candidates[i]) > 0) out.push(candidates[i])
     return out
@@ -874,7 +904,6 @@ Panel {
         ? (root.vm.plugins.length + (root.showPluginBackups ? root.vm.backups.length : 0)) : 0
       case "backups-toggle": return (root.vm && root.vm.backupCount > 0) ? 1 : 0
       case "sources":        return root.cliVerified ? 4 : 0
-      case "source-link":    return root.activeTabKey === "overview" && root.cliVerified ? 1 : 0
       case "trust":          return root.trustIdentityRows().length
       case "trust-actions":  return root.trustActionModel().length
       case "review":         return a ? (a.findings ? a.findings.length : 0)
@@ -904,7 +933,7 @@ Panel {
     return section === "hero" || section === "views" || section === "trust-actions"
       || section === "claim-actions" || section === "enforcement"
       || section === "lens" || section === "inspector-actions"
-      || section === "source-link" || section === "source-scan"
+      || section === "source-scan"
   }
   function sectionFirstIndex(section) { return 0 }
   function sectionLastIndex(section) { return Math.max(0, root.sectionCount(section) - 1) }
@@ -1002,14 +1031,13 @@ Panel {
         if (i === 1) { root.togglePanelExpanded(); return }
         if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
         return
-      case "source-link": root.openCandidate(); return
       case "source-scan": root.runCandidate(); return
       case "views":
         if (i >= 0 && i < root.tabs.length) root.setViewByKey(root.tabs[i].key)
         return
       case "alerts": {
         var al = root.vm && root.vm.alerts[i]
-        if (al && !al.pseudo) root.openPluginFromAlert(al.pluginId)
+        if (al && !al.pseudo && !al.backup) root.openPluginFromAlert(al.pluginId)
         return
       }
       case "plugins":
@@ -1183,7 +1211,8 @@ Panel {
   }
 
   function openPluginFromAlert(pluginId) {
-    if (root.pluginById(pluginId)) root.openPlugin(pluginId)
+    var plugin = root.pluginById(pluginId)
+    if (plugin && plugin.classification !== "backup") root.openPlugin(pluginId)
   }
 
   // Open a plugin's detail sheet from a LOCAL HITS row in the Rules view: this crosses
@@ -1225,8 +1254,13 @@ Panel {
   }
   function toggleOverrides() { root.overrideDetailsExpanded = !root.overrideDetailsExpanded }
   function updateCatalog() { if (!root.navigationLocked) root.updateMarketplace() }
-  function beginSchedule() { root.beginScheduleInstall(root.schedulePolicyChoice || "advisory") }
-  function analyzeSelected() { root.ensureAnalysis() }
+  function beginSchedule() {
+    var current = root.scheduleReport && root.scheduleReport.metadata_consistent === true
+      ? root.enforcementEnum(root.scheduleReport.policy, ["advisory", "hardened"]) : ""
+    root.beginScheduleInstall(current === "advisory" || current === "hardened"
+      ? current : (root.schedulePolicyChoice || "advisory"))
+  }
+  function analyzeSelected() { root.ensureAnalysis(true) }
 
   function activateSource(i) {
     if (i === 1) root.updateCatalog()
@@ -1262,11 +1296,11 @@ Panel {
   function toggleProvenance() { root.provenanceExpanded = !root.provenanceExpanded }
 
   function candidateAvailabilityText() {
-    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.2.2 or newer."
+    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.2.3 or newer."
     var state = String(root.hostWidget.scanState || "")
-    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.2.2 or newer; no CLI was found."
+    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.2.3 or newer; no CLI was found."
     if (state === "incompatible-cli" || !root.cliVerified)
-      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.2.2 or newer."
+      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.2.3 or newer."
     return "Plugin Source Scan is unavailable."
   }
 
@@ -1824,6 +1858,39 @@ Panel {
     m[id] = state
     root.analysisStateById = m
   }
+  function queueAnalysisCacheHydration() {
+    if (!root.opened || !root.cliVerified || !root.inventoryReport) return
+    var q = []
+    var plugins = root.inventoryReport.plugins || []
+    for (var i = 0; i < plugins.length; i++) {
+      var plugin = plugins[i]
+      if (!plugin || plugin.classification === "backup") continue
+      if (root.resolvedAnalysisFor(plugin) || root.analysisStateById[plugin.id] === "analyzing") continue
+      q.push(String(plugin.id))
+    }
+    root.analysisHydrationQueue = q
+    root.startNextAnalysisHydration()
+  }
+  function startNextAnalysisHydration() {
+    if (analysisProcess.running) return
+    var q = root.analysisHydrationQueue.slice()
+    if (q.length === 0) {
+      root.startNextAnalysis()
+      return
+    }
+    var id = q.shift()
+    root.analysisHydrationQueue = q
+    var plugin = root.pluginById(id)
+    if (!plugin) { root.startNextAnalysisHydration(); return }
+    root.setAnalysisState(id, "analyzing")
+    root.analysisRequestId++
+    if (id === root.selectedPluginId && root.analysisReport === null) {
+      root.analysisLoading = true
+      root.analysisCacheLoading = true
+    }
+    analysisProcess.sweepGeneration = root.analysisSweepGeneration
+    analysisProcess.startFor(id, root.analysisRequestId, false, true)
+  }
   function startNextAnalysis() {
     if (analysisProcess.running) return
     if (root.analysisQueue.length === 0) return
@@ -1835,7 +1902,7 @@ Panel {
     root.setAnalysisState(id, "analyzing")
     root.analysisRequestId++
     analysisProcess.sweepGeneration = root.analysisSweepGeneration
-    analysisProcess.startFor(id, root.analysisRequestId)
+    analysisProcess.startFor(id, root.analysisRequestId, false, false)
   }
   function flowEnqueueAnalysis(id) {
     if (!id || !root.cliVerified) return
@@ -2576,6 +2643,7 @@ Panel {
   // The confirm button's only entry point. One switch, no if-order.
   function runPendingAction() {
     if (root.pendingAction === "schedule") root.runScheduleInstall()
+    else if (root.pendingAction === "schedule-disable") root.runScheduleDisable()
     else if (root.pendingAction === "review-update") root.runReviewUpdate()
     else if (root.pendingAction === "enable") root.runEnable()
     else if (root.baselineWritePending) root.trustSelectedPlugin()
@@ -2597,6 +2665,7 @@ Panel {
       case "enable":        return "Enable plugin?"
       case "review-update": return "Update at the catalog-claimed commit?"
       case "schedule":      return "Install scheduled scan?"
+      case "schedule-disable": return "Disable scheduled scan?"
     }
     return ""
   }
@@ -2616,6 +2685,8 @@ Panel {
       case "schedule":
         return "Installs or replaces omasafe-scan.timer / omasafe-scan.service with " +
           root.scheduleInstallLabel() + " policy. Scheduled scans report only; hardened adds analysis and does not disable a running plugin. No plugin identity is involved."
+      case "schedule-disable":
+        return "Stops and removes the OmaSafe-owned daily timer and service. A running scan is allowed to finish; no plugin files or trust records are changed."
     }
     return ""
   }
@@ -2628,13 +2699,14 @@ Panel {
       case "enable":        return "Enable"
       case "review-update": return "Update"
       case "schedule":      return "Install"
+      case "schedule-disable": return "Disable"
     }
     return "Confirm"
   }
 
   function sheetDestructive() {
     return root.pendingAction === "remove" || root.pendingAction === "enable" ||
-      root.pendingAction === "review-update"
+      root.pendingAction === "review-update" || root.pendingAction === "schedule-disable"
   }
 
   function sheetShowPolicy() {
@@ -2665,6 +2737,11 @@ Panel {
         (root.scheduleInstallLabel() === "hardened" ? " --include-analysis" : "")
       rows.push({ label: "Unit", value: "omasafe-scan.timer · omasafe-scan.service" })
       rows.push({ label: "ExecStart", value: argv, mono: true })
+      return rows
+    }
+    if (root.pendingAction === "schedule-disable") {
+      rows.push({ label: "Unit", value: "omasafe-scan.timer · omasafe-scan.service" })
+      rows.push({ label: "Action", value: "disable timer and remove units" })
       return rows
     }
     if (root.pendingAction === "remove") {
@@ -3033,7 +3110,10 @@ Panel {
     root.selectedError = ""
     root.mutationMessage = ""
     root.analysisReport = null
+    root.analysisReviewSummary = null
+    root.analysisReportProfile = null
     root.analysisCoverageStates = null
+    root.analysisCacheLoading = false
     root.analysisPluginId = ""
     root.analysisDigest = ""
     root.analysisCliVersion = ""
@@ -3101,6 +3181,16 @@ Panel {
     if (!root.requestConfirmation("schedule")) return
   }
 
+  function beginScheduleDisable() {
+    if (!root.cliVerified || root.operationRunning || !root.scheduleReport ||
+        root.scheduleReport.installed !== true || root.scheduleReport.metadata_consistent !== true)
+      return
+    root.scheduleInstallError = ""
+    root.scheduleInstallMessage = ""
+    root.scheduleInstallSettled = false
+    if (!root.requestConfirmation("schedule-disable")) return
+  }
+
   function runScheduleInstall() {
     if (root.pendingAction !== "schedule" || !root.cliVerified || root.operationRunning) return
     var policy = root.scheduleInstallLabel()
@@ -3110,10 +3200,26 @@ Panel {
     root.scheduleInstallStderr = ""
     root.scheduleInstallSettled = false
     scheduleInstallProcess.policy = policy
+    scheduleInstallProcess.operation = "install"
     scheduleInstallProcess.settled = false
     scheduleInstallKill.stop()
     scheduleInstallProcess.command = root.cliCommand(["schedule", "install", "--policy", policy])
     scheduleInstallTimeout.restart()
+    scheduleInstallProcess.running = true
+  }
+
+  function runScheduleDisable() {
+    if (root.pendingAction !== "schedule-disable" || !root.cliVerified || root.operationRunning) return
+    root.scheduleInstallError = ""
+    root.scheduleInstallMessage = ""
+    root.scheduleInstallStdout = ""
+    root.scheduleInstallStderr = ""
+    root.scheduleInstallSettled = false
+    scheduleInstallProcess.operation = "disable"
+    scheduleInstallProcess.settled = false
+    scheduleInstallKill.stop()
+    scheduleInstallTimeout.restart()
+    scheduleInstallProcess.command = root.cliCommand(["schedule", "uninstall"])
     scheduleInstallProcess.running = true
   }
 
@@ -3210,6 +3316,10 @@ Panel {
         initialId = plugins[0].id
       root.selectPlugin(initialId, initialAlert)
       root.refreshPluginStatuses()
+      // Restore persisted per-plugin analysis into the session mirror after a shell
+      // restart. This is a cache-only sweep: misses remain "not analyzed" and do
+      // not trigger analysis work.
+      Qt.callLater(root.queueAnalysisCacheHydration)
       // selectPlugin clears the display slot but the cache now survives (T0.16). When
       // a detail sheet is open, rehydrate its analysis from cache rather than leaving
       // it blank (P2); the Overview list reads the cache through vm without a fetch.
@@ -3343,16 +3453,16 @@ Panel {
     return plugin ? String(plugin.content_digest || plugin.head || plugin.tree || "") : ""
   }
 
-  function ensureAnalysis() {
+  function ensureAnalysis(forceRefresh) {
     var plugin = root.selectedPlugin()
     if (!plugin || !root.cliVerified) return
     var digest = root.analysisDigestFor(plugin)
     var cliVersion = String(root.hostWidget && root.hostWidget.cliVersion || "")
-    if (root.analysisPluginId === plugin.id && root.analysisDigest === digest &&
+    if (!forceRefresh && root.analysisPluginId === plugin.id && root.analysisDigest === digest &&
         root.analysisCliVersion === cliVersion &&
         (root.analysisReport !== null || root.analysisLoading)) return
     var cached = root.analysisCache[plugin.id]
-    if (cached && cached.digest === digest && cached.cliVersion === cliVersion &&
+    if (!forceRefresh && cached && cached.digest === digest && cached.cliVersion === cliVersion &&
         cached.policyKey !== undefined &&
         cached.policyKey === root.analysisPolicyKeyFor(cached.report)) {
       root.analysisPluginId = plugin.id
@@ -3360,6 +3470,8 @@ Panel {
       root.analysisCliVersion = cliVersion
       root.analysisPolicyKey = cached.policyKey
       root.analysisReport = cached.report
+      root.analysisReviewSummary = cached.reviewSummary || null
+      root.analysisReportProfile = cached.reportProfile || null
       root.analysisCoverageStates = cached.coverageStates || null
       root.analysisError = ""
       root.analysisLoading = false
@@ -3371,36 +3483,59 @@ Panel {
     root.analysisCliVersion = cliVersion
     root.analysisPolicyKey = ""
     root.analysisReport = null
+    root.analysisReviewSummary = null
+    root.analysisReportProfile = null
     root.analysisCoverageStates = null
     root.analysisError = ""
     root.analysisLoading = true
+    root.analysisCacheLoading = false
     root.setAnalysisState(plugin.id, "analyzing")
     analysisProcess.sweepGeneration = root.analysisSweepGeneration
-    analysisProcess.startFor(plugin.id, root.analysisRequestId)
+    analysisProcess.startFor(plugin.id, root.analysisRequestId, !!forceRefresh, false)
   }
 
   function analysisPolicyKeyFor(report) {
     return root.analysisPolicyIdentityKey(report)
   }
 
-  // Populate the analysis display slot from a VALID cache entry only — never starts a
-  // process. Called on opening a detail sheet so a previously-analyzed plugin shows its
-  // cached results while an un-analyzed one keeps the explicit "not analyzed" state
-  // until the user presses a / Analyze (doc 03 §5.2, P11: analysis runs on a/A only).
+  // Populate the analysis display slot from a VALID session or CLI-persisted cache
+  // entry. Cache hydration is read-only and never analyzes source; a cache miss keeps
+  // the explicit "not analyzed" state until the user presses a / Analyze (doc 03
+  // §5.2, P11: analysis runs on a/A only).
   function hydrateAnalysis() {
     var plugin = root.selectedPlugin()
     if (!plugin) return
     var report = root.resolvedAnalysisFor(plugin)
-    if (!report) return
-    var cached = root.analysisCache[plugin.id]
+    if (report) {
+      var cached = root.analysisCache[plugin.id]
+      root.analysisPluginId = plugin.id
+      root.analysisDigest = root.analysisDigestFor(plugin)
+      root.analysisCliVersion = String(root.hostWidget && root.hostWidget.cliVersion || "")
+      root.analysisPolicyKey = root.analysisPolicyKeyFor(report)
+      root.analysisReport = report
+      root.analysisReviewSummary = (cached && cached.reviewSummary) || null
+      root.analysisReportProfile = (cached && cached.reportProfile) || null
+      root.analysisCoverageStates = (cached && cached.coverageStates) || null
+      root.analysisError = ""
+      root.analysisLoading = false
+      root.analysisCacheLoading = false
+      return
+    }
+    if (!root.cliVerified || root.analysisCacheLoading || analysisProcess.running) return
+    root.analysisRequestId++
     root.analysisPluginId = plugin.id
     root.analysisDigest = root.analysisDigestFor(plugin)
     root.analysisCliVersion = String(root.hostWidget && root.hostWidget.cliVersion || "")
-    root.analysisPolicyKey = root.analysisPolicyKeyFor(report)
-    root.analysisReport = report
-    root.analysisCoverageStates = (cached && cached.coverageStates) || null
+    root.analysisPolicyKey = ""
+    root.analysisReport = null
+    root.analysisReviewSummary = null
+    root.analysisReportProfile = null
+    root.analysisCoverageStates = null
     root.analysisError = ""
-    root.analysisLoading = false
+    root.analysisLoading = true
+    root.analysisCacheLoading = true
+    analysisProcess.sweepGeneration = root.analysisSweepGeneration
+    analysisProcess.startFor(plugin.id, root.analysisRequestId, false, true)
   }
 
   // After a trust / enable / review-update mutation: re-fetch the selected plugin's
@@ -3455,7 +3590,7 @@ Panel {
     return root.scheduleInstallError !== "" || root.marketplaceRefreshError !== ""
   }
 
-  function cacheAnalysis(id, digest, report, coverageStates) {
+  function cacheAnalysis(id, digest, report, coverageStates, reviewSummary, reportProfile) {
     var next = ({})
     for (var key in root.analysisCache) next[key] = root.analysisCache[key]
     next[id] = {
@@ -3463,7 +3598,9 @@ Panel {
       cliVersion: String(root.hostWidget && root.hostWidget.cliVersion || ""),
       policyKey: root.analysisPolicyKeyFor(report),
       report: report,
-      coverageStates: coverageStates || null
+      coverageStates: coverageStates || null,
+      reviewSummary: reviewSummary || null,
+      reportProfile: reportProfile || null
     }
     root.analysisCache = next
   }
@@ -3474,10 +3611,14 @@ Panel {
     // generation and drop the queue so no old-context output is cached (doc 04 §10.1).
     root.analysisSweepGeneration++
     root.analysisQueue = []
+    root.analysisHydrationQueue = []
     root.analysisStateById = ({})
     root.analysisLoading = false
+    root.analysisCacheLoading = false
     root.analysisCache = ({})
     root.analysisReport = null
+    root.analysisReviewSummary = null
+    root.analysisReportProfile = null
     root.analysisCoverageStates = null
     root.analysisPluginId = ""
     root.analysisDigest = ""
@@ -3503,8 +3644,11 @@ Panel {
       root.analysisCliVersion = ""
       root.analysisPolicyKey = ""
       root.analysisReport = null
+      root.analysisReviewSummary = null
+      root.analysisReportProfile = null
       root.analysisCoverageStates = null
       root.analysisLoading = false
+      root.analysisCacheLoading = false
       root.analysisDetailsExpanded = false
     }
   }
@@ -3559,6 +3703,7 @@ Panel {
       coverage: root.coverageReport,
       rulesList: root.rulesListReport,
       schedule: root.scheduleReport,
+      scheduleError: root.scheduleError,
       overrides: root.overrideReport,
       cliVersion: root.hostWidget ? String(root.hostWidget.cliVersion || "") : "",
       nowMs: Date.now()
@@ -3671,7 +3816,7 @@ Panel {
     enableProcess.policy = root.enablePolicyChoice
     // Target contract (05 §10): the CLI compares this exact identity before enabling;
     // digest is mandatory, git fields passed when present. Gated off until a CLI
-    // release implements it (identitySafeMutations), so these never run on 0.2.1.
+    // release implements it (identitySafeMutations), so these never run below 0.2.3.
     var enableArgs = ["plugins", "enable", root.enablePluginId, "--policy", root.enablePolicyChoice]
     if (root.authorizedHead !== "") enableArgs.push("--expected-head", root.authorizedHead)
     if (root.authorizedTree !== "") enableArgs.push("--expected-tree", root.authorizedTree)
@@ -3897,7 +4042,7 @@ Panel {
           width: parent.width
           reason: "unavailable"
           text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli " +
-            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.2.1") + " or newer is found on PATH."
+            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.2.3") + " or newer is found on PATH."
           foreground: root.fg
           dim: root.dim
           urgent: root.urgent
@@ -4100,6 +4245,7 @@ Panel {
     function onCliVerifiedChanged() {
       if (root.opened && root.cliVerified) {
         if (root.inventoryReport === null) root.loadInventory()
+        else Qt.callLater(root.queueAnalysisCacheHydration)
         root.loadScheduleStatus()
         root.loadOverrides()
         if (root.activeTabKey === "rules") { root.ensureRulesList(); root.ensureCoverage() }
@@ -4107,6 +4253,7 @@ Panel {
         // CLI gate loss: discard any in-flight analysis and the queue (doc 04 §10.1).
         root.analysisSweepGeneration++
         root.analysisQueue = []
+        root.analysisHydrationQueue = []
         root.analysisStateById = ({})
       }
     }
@@ -4125,6 +4272,8 @@ Panel {
       root.ruleExplanationError = ""
       root.ruleExplanationKey = ""
       root.ruleExplanationLoading = false
+      if (root.opened && root.inventoryReport !== null)
+        Qt.callLater(root.queueAnalysisCacheHydration)
     }
     function onAlertsChanged() {
       // A scan whose alerts change no longer clears the whole cache: drop only the
@@ -4731,7 +4880,8 @@ Panel {
         if (exitCode === 0) root.applyScheduleStatus(scheduleStatusProcess.stdoutBuffer)
         else {
           root.scheduleReport = null
-          root.scheduleError = "Schedule status is unavailable."
+          var error = String(scheduleStatusProcess.stderrBuffer || "").trim()
+          root.scheduleError = error === "" ? "Schedule status is unavailable." : error.split("\n")[0]
         }
         root.scheduleLoading = false
       }
@@ -4764,6 +4914,7 @@ Panel {
     id: scheduleInstallProcess
     property var killTimer: scheduleInstallKill
     property string policy: "advisory"
+    property string operation: "install"
     property string stdoutBuffer: ""
     property string stderrBuffer: ""
     property bool settled: false
@@ -4775,7 +4926,9 @@ Panel {
           (scheduleInstallProcess.stdoutBuffer + String(chunk)).slice(0, root.v02OutputCharCap + 1)
         if (scheduleInstallProcess.stdoutBuffer.length > root.v02OutputCharCap) {
           scheduleInstallProcess.settled = true
-          root.scheduleInstallError = "Schedule install output exceeded the configured output cap."
+          root.scheduleInstallError = scheduleInstallProcess.operation === "disable"
+            ? "Schedule disable output exceeded the configured output cap."
+            : "Schedule install output exceeded the configured output cap."
           root.clearPendingAction()
           scheduleInstallTimeout.stop()
           root.terminateBoundedProcess(scheduleInstallProcess)
@@ -4790,7 +4943,9 @@ Panel {
           (scheduleInstallProcess.stderrBuffer + String(chunk)).slice(0, root.v02OutputCharCap + 1)
         if (scheduleInstallProcess.stderrBuffer.length > root.v02OutputCharCap) {
           scheduleInstallProcess.settled = true
-          root.scheduleInstallError = "Schedule install error output exceeded the configured output cap."
+          root.scheduleInstallError = scheduleInstallProcess.operation === "disable"
+            ? "Schedule disable error output exceeded the configured output cap."
+            : "Schedule install error output exceeded the configured output cap."
           root.clearPendingAction()
           scheduleInstallTimeout.stop()
           root.terminateBoundedProcess(scheduleInstallProcess)
@@ -4804,13 +4959,15 @@ Panel {
         if (exitCode === 0) {
           root.clearPendingAction()
           root.scheduleInstallError = ""
-          root.scheduleInstallMessage = "Installed " + scheduleInstallProcess.policy +
-            " report-only schedule."
+          root.scheduleInstallMessage = scheduleInstallProcess.operation === "disable"
+            ? "Disabled and removed the report-only schedule."
+            : "Installed " + scheduleInstallProcess.policy + " report-only schedule."
           root.scheduleReport = null
           root.loadScheduleStatus()
         } else {
           root.scheduleInstallError = String(scheduleInstallProcess.stderrBuffer || "").trim() ||
-            "Schedule installation failed."
+            (scheduleInstallProcess.operation === "disable"
+              ? "Schedule disable failed." : "Schedule installation failed.")
           root.scheduleLoading = false
         }
       }
@@ -4828,7 +4985,9 @@ Panel {
     onTriggered: {
       if (scheduleInstallProcess.settled) return
       scheduleInstallProcess.settled = true
-      root.scheduleInstallError = "Schedule installation timed out after 30 seconds."
+      root.scheduleInstallError = scheduleInstallProcess.operation === "disable"
+        ? "Schedule disable timed out after 30 seconds."
+        : "Schedule installation timed out after 30 seconds."
       root.clearPendingAction()
       root.terminateBoundedProcess(scheduleInstallProcess)
     }
@@ -5113,10 +5272,12 @@ Panel {
     property var killTimer: analysisKill
     property string pluginId: ""
     property int requestId: 0
+    property bool refresh: false
+    property bool cacheOnly: false
     property string nextPluginId: ""
     property int nextRequestId: 0
     property int sweepGeneration: 0     // the analysisSweepGeneration this run belongs to
-    function startFor(id, request) {
+    function startFor(id, request, refreshAnalysis, cacheOnlyAnalysis) {
       if (running) {
         nextPluginId = id
         nextRequestId = request
@@ -5125,12 +5286,17 @@ Panel {
       }
       pluginId = id
       requestId = request
+      refresh = refreshAnalysis === true
+      cacheOnly = cacheOnlyAnalysis === true
       root.analysisStdout = ""
       root.analysisStderr = ""
       root.analysisSettled = false
       analysisKill.stop()
       analysisTimeout.restart()
-      command = root.cliCommand(["plugins", "analyze", id, "--format", "json"])
+      var argv = ["plugins", "analyze", id, "--format", "json"]
+      if (cacheOnly) argv.push("--cached")
+      else if (refresh) argv.push("--refresh")
+      command = root.cliCommand(argv)
       running = true
     }
     stdout: SplitParser {
@@ -5141,6 +5307,7 @@ Panel {
         if (root.analysisStdout.length > root.v02OutputCharCap) {
           root.analysisSettled = true
           root.analysisLoading = false
+          root.analysisCacheLoading = false
           root.analysisError = "Analysis output exceeded the configured output cap."
           if (analysisProcess.pluginId !== "") root.setAnalysisState(analysisProcess.pluginId, "unavailable")
           analysisTimeout.stop()
@@ -5156,6 +5323,7 @@ Panel {
         if (root.analysisStderr.length > root.v02OutputCharCap) {
           root.analysisSettled = true
           root.analysisLoading = false
+          root.analysisCacheLoading = false
           root.analysisError = "Analysis error output exceeded the configured output cap."
           if (analysisProcess.pluginId !== "") root.setAnalysisState(analysisProcess.pluginId, "unavailable")
           analysisTimeout.stop()
@@ -5166,12 +5334,15 @@ Panel {
     onExited: function(exitCode) {
       root.stopBoundedProcessTimers(analysisProcess, analysisTimeout)
       var pid = analysisProcess.pluginId
+      var cacheOnly = analysisProcess.cacheOnly
       // Discard a result from a stale context: the panel closed, the CLI version/gate
       // changed, or `x` dropped the sweep — all bump analysisSweepGeneration (doc 04
       // §10.1). Caching it would stamp old output with the CURRENT CLI version.
       var stale = analysisProcess.sweepGeneration !== root.analysisSweepGeneration
       if (!root.analysisSettled && stale) {
         root.analysisSettled = true
+        root.analysisLoading = false
+        root.analysisCacheLoading = false
         root.analysisStdout = ""; root.analysisStderr = ""
         // Drop any deferred preempt too (T4.0): its generation is gone, so a stale
         // selected-plugin request must not survive to be chained by a later, current
@@ -5179,6 +5350,8 @@ Panel {
         // clearing here is the one path that otherwise leaks a request across runs.
         analysisProcess.nextPluginId = ""
         analysisProcess.nextRequestId = 0
+        if (root.opened && root.cliVerified && root.analysisHydrationQueue.length > 0)
+          Qt.callLater(root.startNextAnalysisHydration)
         return   // no apply, no cache, no state, no chain (the queue was cleared)
       }
       if (!root.analysisSettled) {
@@ -5188,7 +5361,49 @@ Panel {
         // of the current selection; the display slots update only when it is selected.
         var isSelected = (pid === root.selectedPluginId && analysisProcess.requestId === root.analysisRequestId)
         var plugin = root.pluginById(pid)
-        if (exitCode === 0 || exitCode === 4) {
+        if (cacheOnly) {
+          // A cache miss is an expected cold-start result, not an analysis
+          // failure. The detail sheet remains in the explicit "not analyzed"
+          // state until the user presses Analyze.
+          if (exitCode === 0) {
+            try {
+              var cachedReport = JSON.parse(root.analysisStdout)
+              if (String(cachedReport.schema || "") !== "omasafe.report.v1" ||
+                  !cachedReport.result || !cachedReport.result.analysis ||
+                  String(cachedReport.result.analysis.schema || "") !== "omasafe.analysis.v1")
+                throw new Error("missing cached result.analysis")
+              var cachedAnalysis = cachedReport.result.analysis
+              var cachedCoverageStates = cachedReport.result.payload_inventory
+                ? cachedReport.result.payload_inventory.coverage_states : null
+              var cachedReviewSummary = cachedReport.result.review_summary || null
+              var cachedReportProfile = cachedReport.result.report_profile || null
+              if (plugin) root.cacheAnalysis(pid, root.analysisDigestFor(plugin), cachedAnalysis, cachedCoverageStates,
+                cachedReviewSummary, cachedReportProfile)
+              root.setAnalysisState(pid, "analyzed")
+              if (isSelected) {
+                root.analysisReport = cachedAnalysis
+                root.analysisReviewSummary = cachedReviewSummary
+                root.analysisReportProfile = cachedReportProfile
+                root.analysisCoverageStates = cachedCoverageStates
+                root.analysisPolicyKey = root.analysisPolicyKeyFor(cachedAnalysis)
+                root.analysisError = ""
+              }
+            } catch (error) {
+              root.setAnalysisState(pid, "unavailable")
+              if (isSelected) root.analysisError = stderr || "Saved analysis is invalid."
+            }
+          } else if (exitCode === 1) {
+            // `--cached` uses exit 1 for a normal cache miss. It must not leave the
+            // background hydration state stuck at "analyzing".
+            root.setAnalysisState(pid, "not analyzed")
+            if (isSelected) root.analysisError = ""
+          } else {
+            root.setAnalysisState(pid, "unavailable")
+            if (isSelected) root.analysisError = stderr || "Saved analysis is unavailable."
+          }
+          root.analysisLoading = false
+          root.analysisCacheLoading = false
+        } else if (exitCode === 0 || exitCode === 4) {
           try {
             var report = JSON.parse(root.analysisStdout)
             if (String(report.schema || "") !== "omasafe.report.v1" ||
@@ -5199,10 +5414,15 @@ Panel {
             var analysis = report.result.analysis || {}
             var coverageStates = report.result.payload_inventory
               ? report.result.payload_inventory.coverage_states : null
-            if (plugin) root.cacheAnalysis(pid, root.analysisDigestFor(plugin), analysis, coverageStates)
+            var reviewSummary = report.result.review_summary || null
+            var reportProfile = report.result.report_profile || null
+            if (plugin) root.cacheAnalysis(pid, root.analysisDigestFor(plugin), analysis, coverageStates,
+              reviewSummary, reportProfile)
             root.setAnalysisState(pid, "analyzed")
             if (isSelected) {
               root.analysisReport = analysis
+              root.analysisReviewSummary = reviewSummary
+              root.analysisReportProfile = reportProfile
               root.analysisCoverageStates = coverageStates
               root.analysisPolicyKey = root.analysisPolicyKeyFor(analysis)
               root.analysisError = ""
@@ -5212,6 +5432,8 @@ Panel {
             root.setAnalysisState(pid, "unavailable")
             if (isSelected) {
               root.analysisReport = null
+              root.analysisReviewSummary = null
+              root.analysisReportProfile = null
               root.analysisError = stderr || "CLI returned an invalid analysis report."
               root.analysisLoading = false
             }
@@ -5220,6 +5442,8 @@ Panel {
           root.setAnalysisState(pid, "unavailable")
           if (isSelected) {
             root.analysisReport = null
+            root.analysisReviewSummary = null
+            root.analysisReportProfile = null
             root.analysisError = stderr || "Analysis failed with exit status " + exitCode + "."
             root.analysisLoading = false
           }
@@ -5227,15 +5451,24 @@ Panel {
       }
       root.analysisStdout = ""
       root.analysisStderr = ""
+      analysisProcess.cacheOnly = false
+      analysisProcess.refresh = false
       // Chain: a selected-path preempt (nextPluginId) wins; otherwise drain the queue,
       // but only if this run's generation is still current (x / close bumps it).
       if (analysisProcess.nextPluginId !== "") {
         var nextPlugin = analysisProcess.nextPluginId
         var nextRequest = analysisProcess.nextRequestId
         analysisProcess.nextPluginId = ""
-        analysisProcess.startFor(nextPlugin, nextRequest)
+        analysisProcess.startFor(nextPlugin, nextRequest, false, false)
       } else if (analysisProcess.sweepGeneration === root.analysisSweepGeneration) {
-        root.startNextAnalysis()
+        // Explicit analysis requests have priority over the background cache pass;
+        // once they drain, resume hydration so one preempted queue cannot strand it.
+        if (root.analysisQueue.length > 0)
+          root.startNextAnalysis()
+        else if (root.analysisHydrationQueue.length > 0)
+          root.startNextAnalysisHydration()
+        else
+          root.startNextAnalysis()
       }
       if (root.activeTabKey === "flow") Qt.callLater(root.rebuildFlow)
     }
@@ -5249,6 +5482,7 @@ Panel {
       if (root.analysisSettled) return
       root.analysisSettled = true
       root.analysisLoading = false
+      root.analysisCacheLoading = false
       root.analysisError = "Plugin analysis timed out after 30 seconds."
       if (analysisProcess.pluginId !== "") root.setAnalysisState(analysisProcess.pluginId, "unavailable")
       root.terminateBoundedProcess(analysisProcess)

@@ -219,11 +219,18 @@ function buildBackups(input) {
 function buildAlerts(input, pluginsById) {
   var alerts = _arr(input.alerts)
   var scanMeta = input.scanMeta || {}
+  var backupIds = {}
+  var inventoryPlugins = _arr((input.inventory || {}).plugins)
+  for (var b = 0; b < inventoryPlugins.length; b++) {
+    if (_str(inventoryPlugins[b].classification) === "backup")
+      backupIds[_str(inventoryPlugins[b].id)] = true
+  }
   var now = input.nowMs
   var out = []
   for (var i = 0; i < alerts.length; i++) {
     var a = alerts[i]
     var pid = _str(a.plugin_id)
+    var isBackup = backupIds[pid] === true
     var kindLabel = Labels.alertKind(a.kind)
     if (_str(a.kind) === "finding-regression" && _str(a.rule || a.rule_id) !== "")
       kindLabel = kindLabel + ": " + _str(a.rule || a.rule_id)
@@ -240,7 +247,12 @@ function buildAlerts(input, pluginsById) {
       urgent: Labels.alertIsUrgent(a.severity),
       severityRank: _severityRank(a.severity),
       isNew: a.new === true,
-      pseudo: !pluginsById[pid]
+      // Backups are omitted from the live plugin index, but their scan alerts
+      // still belong in ALERTS (the scanner reports them explicitly). Keep them
+      // distinct from system-level pseudo alerts so future filtering cannot drop
+      // a backup alert accidentally.
+      backup: isBackup,
+      pseudo: !pluginsById[pid] && !isBackup
     })
   }
   // highest severity first, then new before acknowledged, then plugin id.
@@ -260,21 +272,60 @@ function buildSources(input) {
   var schedule = input.schedule || null
   var overrides = input.overrides ? _arr(input.overrides.overrides) : []
 
+  var scheduleError = _str(input.scheduleError)
   var scheduleLabel, scheduleSub = "", scheduleAction = ""
+  var scheduleIconAction = "", scheduleActionTooltip = "", scheduleIconTooltip = ""
   if (!schedule) {
-    scheduleLabel = "Scheduled scan · loading…"
+    scheduleLabel = scheduleError === "" ? "Scheduled scan · loading…" : "Scheduled scan · unavailable"
+    scheduleSub = scheduleError
   } else if (schedule.installed === false) {
     scheduleLabel = "Scheduled scan · not installed"; scheduleAction = "Install"
+    scheduleActionTooltip = "Install daily scheduled scan"
+  } else if (schedule.metadata_consistent !== true) {
+    scheduleLabel = "Scheduled scan · unmanaged"
+    scheduleSub = "OmaSafe ownership could not be verified; units were left unchanged."
   } else {
     scheduleLabel = "Scheduled scan · " + Labels.scheduleStatus(schedule.policy)
     var lke = schedule.last_known_execution
-    if (lke && lke.service_finished_at !== undefined && lke.service_finished_at !== null) {
-      scheduleSub = "Last run " + (Time.relative(lke.service_finished_at, input.nowMs) || "unavailable")
-        + " · exit " + _str(lke.service_exit_code)
+    if (lke && lke.available === false) {
+      // A failed service query must not hide a usable timer query. In particular,
+      // the next run is still actionable information when the last service result
+      // cannot be read.
+      var partialExecution = []
+      var partialTimerState = _str(lke.timer_sub_state || lke.timer_active_state)
+      if (partialTimerState !== "") partialExecution.push("timer " + partialTimerState)
+      if (_str(lke.timer_next_run) !== "") partialExecution.push("next " + _str(lke.timer_next_run))
+      var partialLastRun = _str(lke.service_finished_at || lke.timer_last_trigger)
+      if (partialLastRun !== "")
+        partialExecution.push("last " + (Time.relative(partialLastRun, input.nowMs) || partialLastRun))
+      scheduleSub = partialExecution.length > 0 ? partialExecution.join(" · ") + " · " : ""
+      scheduleSub += "status unavailable" + (_str(lke.error) !== "" ? " · " + _str(lke.error) : "")
+    } else if (lke) {
+      var executionParts = []
+      var timerState = _str(lke.timer_sub_state || lke.timer_active_state)
+      if (timerState !== "") executionParts.push("timer " + timerState)
+      if (_str(lke.timer_next_run) !== "") executionParts.push("next " + _str(lke.timer_next_run))
+      var lastRun = _str(lke.service_finished_at || lke.timer_last_trigger)
+      if (lastRun !== "") {
+        executionParts.push("last " + (Time.relative(lastRun, input.nowMs) || lastRun))
+      } else {
+        executionParts.push("last not run")
+      }
+      var outcome = _str(lke.service_result)
+      var exitCode = lke.service_exit_code === null || lke.service_exit_code === undefined
+        ? "unknown" : _str(lke.service_exit_code)
+      if (outcome === "findings") executionParts.push("findings · exit " + exitCode)
+      else if (outcome === "failed") executionParts.push("failed · exit " + exitCode)
+      else if (outcome === "success") executionParts.push("success · exit " + exitCode)
+      else if (outcome !== "") executionParts.push(outcome + " · exit " + exitCode)
+      scheduleSub = executionParts.join(" · ")
     } else {
       scheduleSub = "Last run unavailable"
     }
-    scheduleAction = "Reinstall"
+    scheduleAction = "Disable"
+    scheduleActionTooltip = "Disable and remove scheduled scan"
+    scheduleIconAction = "rescan"
+    scheduleIconTooltip = "Reinstall or change schedule policy"
   }
 
   return {
@@ -287,6 +338,9 @@ function buildSources(input) {
     scheduleLabel: scheduleLabel,
     scheduleSub: scheduleSub,
     scheduleAction: scheduleAction,
+    scheduleActionTooltip: scheduleActionTooltip,
+    scheduleIconAction: scheduleIconAction,
+    scheduleIconTooltip: scheduleIconTooltip,
     scheduleMetadataInconsistent: schedule ? (schedule.metadata_consistent === false) : false,
     scheduleMetadataError: schedule ? _str(schedule.metadata_error) : "",
     overrideCount: overrides.length,

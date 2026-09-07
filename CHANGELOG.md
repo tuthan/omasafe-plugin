@@ -4,6 +4,43 @@ All notable changes to the OmaSafe plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 semantic versioning (`0.4.0` for the current Phase 5 feature).
 
+## [Unreleased] — v0.2.4 review evidence compatibility
+
+### Added
+
+- Source Scan and installed Analysis retain review freshness, presentation completeness,
+  occurrence IDs, analysis methods, structured evidence steps, behavior context, and
+  typed coverage gaps while keeping legacy reports readable.
+- Review collection counts distinguish CLI omissions from the UI display cap; contradictory
+  summary arithmetic is rejected before it can become a quiet-state presentation.
+
+## [Unreleased] — v0.2.3 Cached installed-scan hydration
+
+### Added
+
+- **CLI-owned scan cache** — the widget hydrates the installed-analysis profile
+  through `scan-cache show`, labels cached/validated/stale provenance, and keeps
+  prior rows visible when a later scan fails. Cache files are private and safe to
+  delete without affecting trust or enforcement history.
+- **Lazy panel cache validation** — startup performs a bounded show-only request;
+  the first panel open may request read-only context validation.
+- **Enforcement summary badge** — ordinary scan reports now surface typed block
+  decisions when the CLI provides them.
+- **Persistent analysis details** — installed-plugin analysis survives shell restarts
+  through the CLI-owned bounded cache; opening the panel restores cached analysis
+  counts across the overview and detail views, while an explicit Analyze action
+  refreshes the result.
+- **Schedule controls and execution status** — the Sources row shows the next trigger,
+  last outcome, and offers confirmed Disable plus reinstall/policy controls.
+
+### Changed
+
+- The widget now requires CLI `0.2.3` for the cache and schedule lifecycle; Source
+  Scan remains a separate tab rather than an Overview shortcut.
+- The legacy `last-scan.json` QML cache is no longer read or written.
+- Schedule exit 3 is rendered as findings, while exit 1 is rendered as a failed run;
+  the timer's next trigger is shown when systemd provides it.
+
 ## [Unreleased] — v0.2.2 Plugin Source Scan
 
 ### Added

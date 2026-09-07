@@ -24,6 +24,10 @@ CursorSurface {
   property string evidenceText: ""
   property string explanation: ""
   property string reviewGuidance: ""
+  property string analysisMethod: ""
+  property string occurrenceId: ""
+  property var evidenceSteps: []
+  property var behaviorContext: null
 
   property color dim: Color.foreground
   property color urgentColor: Color.urgent
@@ -137,6 +141,19 @@ CursorSurface {
 
       Text {
         width: parent.width - parent.leftPadding
+        visible: root.analysisMethod !== "" || root.occurrenceId !== ""
+        textFormat: Text.PlainText
+        text: (root.analysisMethod !== "" ? "Method: " + root.analysisMethod : "") +
+          (root.occurrenceId !== "" ?
+            (root.analysisMethod !== "" ? " · occurrence " : "Occurrence ") + root.occurrenceId : "")
+        color: root.dim
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WrapAnywhere
+      }
+
+      Text {
+        width: parent.width - parent.leftPadding
         visible: root.evidenceText !== ""
         textFormat: Text.PlainText
         text: "Evidence\n" + root.evidenceText
@@ -155,6 +172,39 @@ CursorSurface {
         font.family: root.fontFamily
         font.pixelSize: Style.font.body
         wrapMode: Text.WordWrap
+      }
+
+      Text {
+        width: parent.width - parent.leftPadding
+        visible: root.behaviorContext !== null
+        textFormat: Text.PlainText
+        text: root.behaviorContext
+          ? ("Behavior: " + String(root.behaviorContext.connection || "unresolved") +
+            " · source " + String(root.behaviorContext.source_class || "unknown") +
+            " · sink " + String(root.behaviorContext.sink_kind || "unknown") +
+            " · trigger " + String(root.behaviorContext.trigger || "unknown")) : ""
+        color: root.dim
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WrapAnywhere
+      }
+
+      Repeater {
+        model: root.evidenceSteps || []
+        delegate: Text {
+          required property var modelData
+          width: parent.width - parent.leftPadding - Style.space(8)
+          x: parent.leftPadding + Style.space(8)
+          textFormat: Text.PlainText
+          text: "Step " + String(modelData.role || "observation") + " · " +
+            String(modelData.display_relative_path || modelData.relative_path || "") +
+            (modelData.line !== null && modelData.line !== undefined ? ":" + String(modelData.line) : "") +
+            (modelData.detail ? " · " + String(modelData.detail) : "")
+          color: root.dim
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WrapAnywhere
+        }
       }
 
       Text {

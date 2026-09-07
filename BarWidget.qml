@@ -56,22 +56,26 @@ BarWidget {
   // a later callback cannot re-parse output or overwrite the resulting state.
   property bool scanSettled: false
 
-  // The scan result is a small, parsed snapshot so a shell restart can show the
-  // last known state without pretending it is fresh. Raw stdout/stderr and the
-  // potentially large analysis payload never enter this cache.
-  readonly property string cacheHome: {
-    var configured = String(Quickshell.env("XDG_CACHE_HOME") || "").trim()
-    var home = String(Quickshell.env("HOME") || "").trim()
-    return configured !== "" ? configured : home + "/.cache"
-  }
-  readonly property string scanCacheDir: root.cacheHome + "/omasafe"
-  readonly property string scanCachePath: root.scanCacheDir + "/last-scan.json"
-  property bool scanCacheDirReady: false
-  property bool scanCacheReady: false
-  property bool scanCacheHydrated: false
-  property var pendingScanCache: null
-  property var cachedScanSnapshot: null
-  property string scanCacheError: ""
+  // The CLI owns persistent snapshots. The widget keeps only the normalized
+  // response in memory and never discovers, creates, reads, or writes XDG
+  // cache paths itself.
+  property string cacheState: "missing"
+  property string cacheStaleReason: ""
+  property string cacheGeneration: ""
+  property bool cacheValidationRequested: false
+  property int requestGeneration: 0
+  property string cacheStdout: ""
+  property string cacheStderr: ""
+  property bool cacheSettled: false
+  property int cacheRequestId: 0
+  property int cacheRequestScanGeneration: 0
+  // A cache request may finish after a live scan. Track completed live results
+  // separately from scan starts so an older snapshot can never replace fresh
+  // state (or clear it after persistence failed).
+  property int liveResultRevision: 0
+  property int cacheRequestLiveResultRevision: 0
+  property bool cacheRequestHadLiveResult: false
+  property int scanGeneration: 0
 
   // Single authorization gate for every operational CLI command (scan and every
   // panel command). A command may only run once resolution completed, a path was
@@ -79,18 +83,23 @@ BarWidget {
   readonly property bool cliVerified: root.cliResolved && root.cliCompatible &&
     root.cliPath !== ""
 
-  // v0.2 features require the CLI floor; operators may raise it in settings.
+  // Persistent analysis hydration and schedule controls require the CLI floor;
+  // operators may raise it in settings.
   readonly property string configuredCliVersionMin: settings &&
     settings.cliVersionMin !== undefined ? String(settings.cliVersionMin) : ""
   readonly property bool cliVersionMinInvalid: settings &&
     settings.cliVersionMin !== undefined &&
     !/^\d+\.\d+(?:\.\d+)?$/.test(root.configuredCliVersionMin.trim())
   readonly property string cliVersionMin: {
-    var floor = [0, 2, 1]
+    var floor = [0, 2, 3]
     var configured = root.parseVersion(root.configuredCliVersionMin)
     return configured && root.compareVersion(configured, floor) > 0
-      ? configured.join(".") : "0.2.1"
+      ? configured.join(".") : "0.2.3"
   }
+  readonly property string cacheCliVersionMin: "0.2.3"
+  readonly property bool cliCacheCompatible: root.cliCompatible &&
+    root.compareVersion(root.parseVersion(root.cliVersion) || [0, 0, 0], [0, 2, 3]) >= 0
+  readonly property bool cacheFeatureUnavailable: root.cliCompatible && !root.cliCacheCompatible
   readonly property bool cliVersionRequireIdentity: settings &&
     settings.cliVersionRequireIdentity === true
 
@@ -114,7 +123,13 @@ BarWidget {
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
 
   function open() {
-    if (panelLoader.item) panelLoader.item.open()
+    if (!panelLoader.item) {
+      panelLoader.active = true
+      pendingPanelOpen = true
+      return
+    }
+    panelLoader.item.open()
+    if (!root.cacheValidationRequested && root.cliVerified) root.requestCacheShow(true)
   }
 
   function close() {
@@ -122,8 +137,15 @@ BarWidget {
   }
 
   function togglePanel() {
-    if (panelLoader.item) panelLoader.item.toggle()
+    if (!panelLoader.item) {
+      panelLoader.active = true
+      pendingPanelOpen = true
+      return
+    }
+    panelLoader.item.toggle()
   }
+
+  property bool pendingPanelOpen: false
 
   onBarChanged: injectPanel()
   onSettingsChanged: injectPanel()
@@ -171,11 +193,19 @@ BarWidget {
     if (root.scanState === "incompatible-cli")
       return "OmaSafe: omasafe-cli " + root.cliVersion + " found; " +
         root.cliVersionMin + " or newer required"
+    if (root.cacheFeatureUnavailable)
+      return "OmaSafe: cached hydration requires omasafe-cli 0.2.3; manual scans remain available"
     if (root.scanState === "unavailable")
       return root.earlierResultKept
         ? "OmaSafe: last scan failed; showing results from " + root.relativeScanAge()
         : "OmaSafe: last scan failed; results unavailable"
-    if (root.scanState === "ready") return "OmaSafe: click to scan"
+    if (root.scanState === "ready") return "OmaSafe: click to open; use Run scan to refresh"
+    if (root.cacheState === "cached-stale")
+      return "OmaSafe: cached result is stale (" + root.cacheStaleReasonLabel(root.cacheStaleReason) + ")"
+    if (root.cacheState === "cached-valid")
+      return "OmaSafe: cached result validated; scanned " + root.relativeScanAge()
+    if (root.cacheState === "cached-unvalidated")
+      return "OmaSafe: cached result from " + root.relativeScanAge() + "; validation pending"
     if (root.scanResultsStale && root.lastScanAt !== "")
       return "OmaSafe: showing cached results from " + root.relativeScanAge()
     if (root.urgentBadge) return "OmaSafe: 1 critical alert to review"
@@ -183,6 +213,34 @@ BarWidget {
       return "OmaSafe: " + root.outstandingCount +
         (root.outstandingCount === 1 ? " alert to review" : " alerts to review")
     return "OmaSafe: no outstanding alerts"
+  }
+
+  function cacheStaleReasonSupported(reason) {
+    return ["unvalidated", "inventory-changed", "trust-changed", "marketplace-changed",
+      "analysis-policy-changed", "enforcement-changed", "runtime-changed", "expired",
+      "state-lock-busy", "state-input-invalid", "context-changed-during-validation",
+      "incompatible", "corrupt"].indexOf(String(reason || "")) >= 0
+  }
+
+  function cacheStaleReasonLabel(reason) {
+    switch (String(reason || "")) {
+    case "unvalidated": return "validation pending"
+    case "inventory-changed": return "installed inventory changed"
+    case "trust-changed": return "trust state changed"
+    case "marketplace-changed": return "marketplace state changed"
+    case "analysis-policy-changed": return "analysis policy changed"
+    case "enforcement-changed": return "enforcement state changed"
+    case "runtime-changed": return "runtime context changed"
+    case "expired": return "the cached validity window expired"
+    case "state-lock-busy": return "state is busy; validation pending"
+    case "state-input-invalid": return "state could not be validated"
+    case "context-changed-during-validation": return "context changed during validation"
+    default: return "context changed"
+    }
+  }
+
+  function severityRank(value) {
+    return ["none", "info", "low", "medium", "warning", "error", "high", "critical"].indexOf(String(value || "").toLowerCase())
   }
 
   function relativeScanAge() {
@@ -251,7 +309,7 @@ BarWidget {
       root.cliCompatible = false
       root.cliVersion = parsed.join(".")
       root.scanState = "incompatible-cli"
-      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.2.1"
+      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.2.3"
       return
     }
     var min = root.cliVersionMin ? root.parseVersion(root.cliVersionMin) : null
@@ -268,105 +326,196 @@ BarWidget {
     root.cliError = ""
   }
 
+  function normalizeReport(output, expectedCache) {
+    var report = typeof output === "string" ? JSON.parse(output) : output
+    if (!report || String(report.schema || "") !== "omasafe.report.v1" || !report.result)
+      throw new Error("unsupported scan report envelope")
+    var result = report.result
+    if (expectedCache) {
+      if (String(result.schema || "") !== "omasafe.scan-cache-result.v1")
+        throw new Error("unsupported cache result schema")
+      if (String(result.scan_profile || "") !== "installed-analysis")
+        throw new Error("unsupported cache profile")
+      if (typeof result.generation !== "number" || !isFinite(result.generation) ||
+          result.generation < 1 || Math.floor(result.generation) !== result.generation ||
+          result.generation > 9007199254740991)
+        throw new Error("invalid cache generation")
+    }
+    if (!Array.isArray(result.alerts) || result.alerts.length > 4096)
+      throw new Error("alerts are not bounded")
+    var alerts = []
+    var keys = {}
+    result.alerts.forEach(function(alert) {
+      if (!alert || typeof alert !== "object") throw new Error("invalid alert")
+      var key = String(alert.key || "")
+      var severity = String(alert.severity || "").toLowerCase()
+      var reason = String(alert.reason_code || "")
+      if (!key || key.length > 16384 || String(alert.plugin_id || "").length > 16384 ||
+          String(alert.kind || "").length > 16384 || String(alert.message || "").length > 16384 ||
+          ["info", "low", "medium", "warning", "error", "high", "critical"].indexOf(severity) < 0 ||
+          ["inventory", "plugin-unscannable", "partial-coverage", "source-drift", "missing-plugin", "marketplace", "bar-replacement", "provenance-conflict", "analysis", "trust-history", "unknown"].indexOf(reason) < 0 || keys[key])
+        throw new Error("invalid or duplicate alert")
+      keys[key] = true
+      alerts.push({key: key, plugin_id: String(alert.plugin_id || ""), kind: String(alert.kind || ""),
+        severity: severity, reason_code: reason, message: String(alert.message || ""),
+        post_change: alert.post_change === true})
+    })
+    var integer = function(value) {
+      return typeof value === "number" && isFinite(value) && value >= 0 && Math.floor(value) === value
+    }
+    if (!integer(result.outstanding) || !integer(result.new) || result.outstanding > 4096 || result.new > 4096)
+      throw new Error("invalid alert counts")
+    if (result.new > result.outstanding || (expectedCache && result.outstanding !== alerts.length))
+      throw new Error("contradictory alert counts")
+    var quiet = result.quiet === true
+    if (quiet && alerts.length > 0) throw new Error("contradictory quiet aggregate")
+    var highest = String(result.highest_severity || "none").toLowerCase()
+    if (["none", "info", "low", "medium", "warning", "error", "high", "critical"].indexOf(highest) < 0)
+      throw new Error("unknown highest severity")
+    var generatedAt = expectedCache ? String(result.generated_at || "") : String(report.generated_at || "")
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(generatedAt))
+      throw new Error("invalid generation timestamp")
+    var summary = result.enforcement_summary
+    var decisions = summary && Array.isArray(summary.decisions) ? summary.decisions : []
+    if (summary) {
+      if (typeof summary !== "object" || String(summary.schema || "") !== "omasafe.enforcement-summary.v1" ||
+          typeof summary.available !== "boolean" || !Array.isArray(summary.decisions) ||
+          summary.decisions.length > 4096)
+        throw new Error("unsupported enforcement summary")
+      if (summary.error !== undefined && summary.error !== null &&
+          (typeof summary.error !== "string" || summary.error.length > 16384))
+        throw new Error("invalid enforcement limitation")
+    }
+    decisions.forEach(function(decision) {
+      if (!decision || typeof decision !== "object" ||
+          !Object.prototype.hasOwnProperty.call(decision, "evaluation_state") ||
+          !Object.prototype.hasOwnProperty.call(decision, "outcome") ||
+          !Object.prototype.hasOwnProperty.call(decision, "authorization_basis") ||
+          !Object.prototype.hasOwnProperty.call(decision, "evaluated_at") ||
+          ["evaluated", "not-evaluated"].indexOf(String(decision.evaluation_state || "")) < 0 ||
+          ["block", "allow"].indexOf(String(decision.outcome || "")) < 0 ||
+          (decision.authorization_basis !== null &&
+            ["policy", "override"].indexOf(String(decision.authorization_basis || "")) < 0) ||
+          typeof decision.evaluated_at !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(decision.evaluated_at))
+        throw new Error("invalid enforcement decision")
+    })
+    if (quiet && decisions.some(function(decision) { return String(decision.outcome) === "block" }))
+      throw new Error("contradictory enforcement aggregate")
+    if (quiet && result.outstanding !== 0)
+      throw new Error("contradictory quiet count")
+    if (!quiet && result.outstanding === 0 && decisions.every(function(decision) {
+        return String(decision.outcome) !== "block"
+      }))
+      throw new Error("contradictory non-quiet count")
+    if (expectedCache && ((alerts.length === 0 && highest !== "none") ||
+        (alerts.length > 0 && highest === "none")))
+      throw new Error("contradictory severity aggregate")
+    if (expectedCache) {
+      var derivedHighest = alerts.reduce(function(current, alert) {
+        return root.severityRank(alert.severity) > root.severityRank(current) ? alert.severity : current
+      }, "none")
+      if (highest !== derivedHighest) throw new Error("contradictory highest severity")
+    }
+    var staleReasons = expectedCache && Array.isArray(result.stale_reasons) ? result.stale_reasons : []
+    if (expectedCache && staleReasons.length > 16)
+      throw new Error("stale reasons are not bounded")
+    staleReasons.forEach(function(reason) {
+      if (typeof reason !== "string" || reason.length === 0 || reason.length > 128 ||
+          !root.cacheStaleReasonSupported(reason))
+        throw new Error("unsupported stale reason")
+    })
+    return {alerts: alerts, outstanding: Number(result.outstanding), new: Number(result.new),
+      highest_severity: highest, quiet: quiet, generated_at: generatedAt,
+      generation: expectedCache ? String(result.generation || "") : "",
+      enforcement_summary: summary || {decisions: []},
+      blocked: decisions.filter(function(decision) { return String(decision.outcome) === "block" }).length,
+      cache_state: expectedCache ? String(result.state || "") : "fresh",
+      stale_reasons: staleReasons}
+  }
+
+  function commitNormalized(normalized, stale, cacheState) {
+    root.alertCount = normalized.alerts.length
+    root.outstandingCount = normalized.outstanding
+    root.newCount = normalized.new
+    root.alerts = normalized.alerts
+    root.lastScanAt = normalized.generated_at
+    root.highestSeverity = normalized.highest_severity
+    root.blockedDecisions = normalized.blocked
+    root.scanResultsStale = stale === true
+    root.cacheState = cacheState || "fresh"
+    root.cacheStaleReason = normalized.stale_reasons.length ? String(normalized.stale_reasons[0]) : ""
+    root.cacheGeneration = normalized.generation
+    root.scanState = normalized.quiet ? "quiet" : "attention"
+    root.limitation = ""
+    root.cliError = ""
+  }
+
   function applyScan(output) {
     try {
-      var report = JSON.parse(output)
-      if (String(report.schema || "") !== "omasafe.report.v1" ||
-          !report.result || !Array.isArray(report.result.alerts))
-        throw new Error("unsupported scan report")
-      root.applyScanResult(report.result, report.generated_at, false)
-      root.queueScanCache(report)
+      var normalized = root.normalizeReport(output, false)
+      root.commitNormalized(normalized, false, "fresh")
+      root.liveResultRevision += 1
     } catch (error) {
       root.scanResultsStale = true
-      root.scanState = root.cliError.indexOf("omasafe-cli was not found") >= 0
-        ? "missing-cli" : "unavailable"
+      root.scanState = root.cliError.indexOf("omasafe-cli was not found") >= 0 ? "missing-cli" : "unavailable"
       root.limitation = "CLI report unavailable"
     }
   }
 
   function applyScanResult(result, generatedAt, stale) {
-      result = result || {}
-      root.alertCount = (result.alerts || []).length
-      root.outstandingCount = result.outstanding !== undefined
-        ? Number(result.outstanding) : root.alertCount
-      root.newCount = result.new || 0
-      root.alerts = result.alerts || []
-      root.lastScanAt = String(generatedAt || "")
-      var highest = String(result.highest_severity || "").toLowerCase()
-      if (highest === "error") highest = "critical"
-      root.highestSeverity = highest ||
-        (root.alerts.some(function(alert) {
-          return ["critical", "error"].indexOf(String(alert.severity || "").toLowerCase()) >= 0
-        }) ? "critical" : (root.alertCount > 0 ? "warning" : "none"))
-      root.scanState = result.quiet === true ? "quiet" : "attention"
-      // Count recorded enforcement blocks when the report carries a summary; the
-      // urgent badge is raised for a block as well as for critical/error severity.
-      var decisions = (result.enforcement_summary && result.enforcement_summary.decisions) || []
-      root.blockedDecisions = Array.isArray(decisions)
-        ? decisions.filter(function(d) { return String(d.outcome || "") === "block" }).length : 0
-      root.scanResultsStale = stale === true
-      root.limitation = ""
-      root.cliError = ""
-  }
-
-  function scanCacheSnapshot(report) {
-    var result = report && report.result ? report.result : {}
-    return {
-      schema: "omasafe.scan-cache.v1",
-      generated_at: String(report && report.generated_at || ""),
-      cli_version: String(root.cliVersion || ""),
-      result: {
-        alerts: Array.isArray(result.alerts) ? result.alerts : [],
-        outstanding: result.outstanding,
-        "new": result.new,
-        highest_severity: result.highest_severity,
-        quiet: result.quiet === true,
-        enforcement_summary: result.enforcement_summary || null
-      }
-    }
-  }
-
-  function queueScanCache(report) {
-    root.pendingScanCache = root.scanCacheSnapshot(report)
-    root.flushScanCache()
-  }
-
-  function flushScanCache() {
-    if (!root.scanCacheReady || !root.scanCacheDirReady || !root.pendingScanCache) return
     try {
-      scanCacheFile.setText(JSON.stringify(root.pendingScanCache, null, 2) + "\n")
-      root.pendingScanCache = null
-      root.scanCacheError = ""
+      root.commitNormalized(root.normalizeReport({schema: "omasafe.report.v1", generated_at: generatedAt, result: result}, false), stale, stale ? "cached-unvalidated" : "fresh")
     } catch (error) {
-      root.scanCacheError = "Could not save the last scan snapshot."
+      root.scanResultsStale = true
+      root.scanState = "unavailable"
+      root.limitation = "CLI report unavailable"
     }
   }
 
-  function loadScanCache(raw) {
-    if (root.scanCacheHydrated) return
-    root.scanCacheHydrated = true
-    root.scanCacheReady = true
-    try {
-      var snapshot = JSON.parse(String(raw || ""))
-      if (String(snapshot.schema || "") !== "omasafe.scan-cache.v1" ||
-          !snapshot.result || !Array.isArray(snapshot.result.alerts) ||
-          String(snapshot.generated_at || "") === "") throw new Error("invalid cache")
-      root.cachedScanSnapshot = snapshot
-      root.applyCachedScan()
-    } catch (error) {
-      root.cachedScanSnapshot = null
-    }
-    root.flushScanCache()
-  }
-
-  function applyCachedScan() {
-    var snapshot = root.cachedScanSnapshot
-    if (!snapshot || !root.cliVerified) return
-    if (String(snapshot.cli_version || "") !== String(root.cliVersion || "")) {
-      root.scanCacheError = "Cached scan was produced by a different CLI version."
+  function applyCacheResponse(output) {
+    var result = JSON.parse(output).result
+    var state = String(result.state || "")
+    if (["missing", "incompatible", "corrupt", "cached-unvalidated", "cached-valid", "cached-stale"].indexOf(state) < 0)
+      throw new Error("unsupported cache state")
+    if (["missing", "incompatible", "corrupt"].indexOf(state) >= 0) {
+      root.alerts = []
+      root.alertCount = 0
+      root.outstandingCount = 0
+      root.newCount = 0
+      root.blockedDecisions = 0
+      root.lastScanAt = ""
+      root.highestSeverity = "none"
+      root.cacheState = state
+      root.cacheStaleReason = state
+      root.scanResultsStale = true
+      root.scanState = state === "missing" ? "ready" : "unavailable"
+      root.limitation = state === "missing" ? "No cached result" : (state === "corrupt" ? "Cached result unreadable" : "Cached result requires a compatible CLI")
       return
     }
-    root.applyScanResult(snapshot.result, snapshot.generated_at, true)
+    var normalized = root.normalizeReport(output, true)
+    if (state === "cached-stale" && normalized.stale_reasons.length === 0)
+      throw new Error("stale cache has no reason")
+    if (state === "cached-unvalidated" && normalized.stale_reasons.length === 0)
+      throw new Error("unvalidated cache has no reason")
+    if (state === "cached-valid" && normalized.stale_reasons.length > 0)
+      throw new Error("valid cache has stale reasons")
+    root.commitNormalized(normalized, true, state)
+  }
+
+  function requestCacheShow(validate) {
+    if (!root.cliCacheCompatible || cacheProcess.running) return
+    root.cacheValidationRequested = validate === true
+    root.requestGeneration += 1
+    root.cacheRequestId = root.requestGeneration
+    root.cacheRequestScanGeneration = root.scanGeneration
+    root.cacheRequestLiveResultRevision = root.liveResultRevision
+    root.cacheRequestHadLiveResult = root.liveResultRevision > 0
+    root.cacheStdout = ""
+    root.cacheStderr = ""
+    root.cacheSettled = false
+    cacheTimeout.restart()
+    cacheProcess.running = true
   }
 
   function runScan() {
@@ -393,6 +542,7 @@ BarWidget {
       return
     }
     if (!scanProcess.running) {
+      root.scanGeneration += 1
       root.cliError = ""
       root.scanStdout = ""
       root.scanStderr = ""
@@ -555,7 +705,9 @@ BarWidget {
       if (root.cliCompatible) {
         root.scanState = "ready"
         root.cliError = ""
-        root.applyCachedScan()
+        // Login hydration is deliberately a bounded show-only request. It does
+        // not walk installed plugins; validation is deferred until first open.
+        root.requestCacheShow(false)
         // Replay a deferred click, or start the first scan for periodic users
         // so they get a real status at login instead of an idle "ready" badge.
         if (root.scanRequested || root.periodicScanEnabled) root.runScan()
@@ -626,42 +778,106 @@ BarWidget {
     onTriggered: root.runScan()
   }
 
+  Component.onCompleted: {
+    cliResolver.running = true
+  }
+
   Process {
-    id: scanCacheMkdir
-    command: ["/usr/bin/mkdir", "-p", root.scanCacheDir]
+    id: cacheProcess
+    command: root.cliCommand(["scan-cache", "show", "--profile", "installed-analysis"].concat(root.cacheValidationRequested ? ["--validate"] : []).concat(["--format", "json"]))
+    stdout: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (root.cacheSettled || root.cacheRequestId !== root.requestGeneration ||
+            root.cacheRequestScanGeneration !== root.scanGeneration) return
+        root.cacheStdout += String(chunk)
+        if (root.cacheStdout.length > root.scanOutputCharCap) root.failCache("cache response exceeded output cap")
+      }
+    }
+    stderr: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (!root.cacheSettled && root.cacheRequestId === root.requestGeneration &&
+            root.cacheRequestScanGeneration === root.scanGeneration)
+          root.cacheStderr += String(chunk).slice(0, root.scanOutputCharCap)
+      }
+    }
     onExited: function(exitCode) {
-      root.scanCacheDirReady = exitCode === 0
-      if (!root.scanCacheDirReady) root.scanCacheError = "Could not prepare the scan cache directory."
-      else scanCacheFile.reload()
-      root.flushScanCache()
+      cacheTimeout.stop()
+      cacheKill.stop()
+      if (root.cacheSettled) return
+      var response = root.cacheStdout
+      root.cacheStdout = ""
+      root.cacheStderr = ""
+      if (root.cacheRequestId !== root.requestGeneration ||
+          root.cacheRequestScanGeneration !== root.scanGeneration ||
+          root.cacheRequestLiveResultRevision !== root.liveResultRevision ||
+          root.cacheRequestHadLiveResult) {
+        root.cacheSettled = true
+        return
+      }
+      if (exitCode !== 0) {
+        root.failCache("cache status unavailable")
+        return
+      }
+      try {
+        root.applyCacheResponse(response)
+        root.cacheSettled = true
+      }
+      catch (error) { root.failCache("cache response rejected") }
     }
   }
 
-  FileView {
-    id: scanCacheFile
-    path: root.scanCachePath
-    watchChanges: false
-    atomicWrites: true
-    printErrors: false
-    onLoaded: root.loadScanCache(text())
-    onLoadFailed: root.scanCacheReady = true
-    onSaved: root.scanCacheError = ""
-    onSaveFailed: root.scanCacheError = "Could not save the last scan snapshot."
+  function failCache(message) {
+    if (root.cacheSettled) return
+    root.cacheSettled = true
+    cacheTimeout.stop()
+    cacheKill.stop()
+    root.cacheStdout = ""
+    root.cacheStderr = ""
+    if (root.cacheRequestId !== root.requestGeneration ||
+        root.cacheRequestScanGeneration !== root.scanGeneration) {
+      if (cacheProcess.running) cacheProcess.signal(9)
+      return
+    }
+    root.cacheStaleReason = "unavailable"
+    root.limitation = message
+    if (cacheProcess.running) cacheProcess.signal(9)
   }
 
-  Component.onCompleted: {
-    scanCacheMkdir.running = true
-    cliResolver.running = true
+  Timer {
+    id: cacheTimeout
+    interval: 30000
+    repeat: false
+    onTriggered: {
+      root.failCache("cache status timed out after 30 seconds")
+      if (cacheProcess.running) {
+        cacheProcess.running = false
+        cacheKill.restart()
+      }
+    }
+  }
+
+  Timer {
+    id: cacheKill
+    interval: 3000
+    repeat: false
+    onTriggered: if (cacheProcess.running) cacheProcess.signal(9)
   }
 
   Loader {
     id: panelLoader
-    active: true
+    active: false
     source: Qt.resolvedUrl("Panel.qml")
     visible: false
     onLoaded: {
       root.injectPanel()
       Qt.callLater(root.injectPanel)
+      if (root.pendingPanelOpen && panelLoader.item) {
+        root.pendingPanelOpen = false
+        panelLoader.item.open()
+        if (!root.cacheValidationRequested && root.cliVerified) root.requestCacheShow(true)
+      }
     }
   }
 
@@ -718,8 +934,7 @@ BarWidget {
       }
       tooltipText: root.iconTooltip()
       onPressed: function(mouseButton) {
-        if (mouseButton === Qt.LeftButton && panelLoader.item) {
-          root.runScan()
+        if (mouseButton === Qt.LeftButton) {
           root.open()
         } else if (mouseButton === Qt.MiddleButton) {
           root.runScan()

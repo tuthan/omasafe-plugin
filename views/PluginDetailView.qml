@@ -22,6 +22,7 @@ Column {
   PointerMoveGate { id: gate; referenceItem: root }
   readonly property var plugin: (panel && vm && vm.pluginsById) ? vm.pluginsById[panel.selectedPluginId] : null
   readonly property var analysis: panel ? panel.analysisReport : null
+  readonly property var reviewSummary: panel ? panel.analysisReviewSummary : null
   readonly property var status: panel ? panel.statusReport : null
 
   width: parent ? parent.width : implicitWidth
@@ -162,6 +163,28 @@ Column {
     }
   }
 
+  Text {
+    width: parent.width - Style.space(18); x: Style.space(10)
+    visible: !!root.analysis && !!root.reviewSummary
+    textFormat: Text.PlainText
+    text: root.reviewSummary
+      ? ("Analysis freshness: " + String(root.reviewSummary.freshness || "unknown") +
+        (root.reviewSummary.analysis_produced_at
+          ? " · produced " + String(root.reviewSummary.analysis_produced_at) : "")) : ""
+    color: root.col("dim")
+    font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+    wrapMode: Text.WordWrap
+  }
+
+  NoticeRow {
+    width: parent.width
+    visible: !!root.analysis && !!root.reviewSummary && root.reviewSummary.presentation_complete === false
+    reason: "unsupported"
+    text: "The scanner marked this analysis presentation incomplete; omitted or shortened evidence is disclosed by the CLI."
+    foreground: root.col("fg"); dim: root.col("dim")
+    fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
+  }
+
   // ---- WHAT CHANGED (state == changed) -----------------------------------------
   Column {
     width: parent.width
@@ -209,7 +232,7 @@ Column {
     NoticeRow {
       width: parent.width
       visible: panel && panel.analysisLoading && !root.analysis
-      reason: "loading"; text: "Loading analysis…"
+      reason: "loading"; text: panel.analysisCacheLoading ? "Loading saved analysis…" : "Loading analysis…"
       foreground: root.col("fg"); dim: root.col("dim")
       fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
     }
@@ -251,13 +274,19 @@ Column {
         severityLevel: Labels.severityTier(root.findingSeverity(modelData))
         titleBold: root.severityBold(root.findingSeverity(modelData))
         title: String(modelData.title || "")
-        subtitle: String(modelData.rule_id || "") + " · " + String(modelData.relative_path || "") + ":" + String(modelData.line || "")
+        subtitle: String(modelData.rule_id || "") + " · " +
+          String(modelData.display_relative_path || modelData.relative_path || "") +
+          (modelData.line !== null && modelData.line !== undefined ? ":" + String(modelData.line) : "")
         expanded: panel && panel.expandedFindingKey === (panel ? panel.findingKey(modelData) : "")
         severityWord: Labels.severity(root.findingSeverity(modelData)) + " · catalog severity"
         confidenceWord: Labels.confidence(modelData.confidence)
         evidenceText: String(modelData.evidence || "")
         explanation: String(modelData.explanation || "")
         reviewGuidance: String(modelData.review_guidance || "")
+        analysisMethod: String(modelData.analysis_method || "")
+        occurrenceId: String(modelData.occurrence_id || "")
+        evidenceSteps: modelData.evidence_steps || []
+        behaviorContext: modelData.behavior_context || null
         hasCursor: root.has("review", index)
         foreground: root.col("fg"); dim: root.col("dim"); urgentColor: root.col("urgent")
         fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
@@ -336,6 +365,7 @@ Column {
     readonly property var limitLines: (root.analysis && root.analysis.coverage_limitations)
       ? Labels.groupLimitations(root.analysis.coverage_limitations) : []
     readonly property var edges: (root.analysis && root.analysis.invocation_edges) ? root.analysis.invocation_edges : []
+    readonly property var gaps: (root.analysis && root.analysis.coverage_gaps) ? root.analysis.coverage_gaps : []
 
     SectionHeaderRow {
       text: "COVERAGE"
@@ -343,7 +373,9 @@ Column {
         if (!root.analysis) return ""
         if (!Array.isArray(root.analysis.coverage_limitations)) return ""
         var n = root.analysis.coverage_limitations.length
-        return n > 0 ? (n + (n === 1 ? " LIMIT" : " LIMITS")) : "NO LIMITS REPORTED"
+        var g = coverageSection.gaps.length
+        var base = n > 0 ? (n + (n === 1 ? " LIMIT" : " LIMITS")) : "NO LIMITS REPORTED"
+        return g > 0 ? base + " · " + g + (g === 1 ? " GAP" : " GAPS") : base
       }
       foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
@@ -366,6 +398,25 @@ Column {
         width: parent.width - Style.space(38); x: Style.space(30)
         textFormat: Text.PlainText
         text: String(modelData)
+        color: root.col("dim")
+        font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+        wrapMode: Text.WordWrap
+      }
+    }
+
+    Repeater {
+      model: coverageSection.gaps.slice(0, 200)
+      delegate: Text {
+        required property var modelData
+        width: parent.width - Style.space(38); x: Style.space(30)
+        textFormat: Text.PlainText
+        text: "Coverage gap: " + String(modelData.reason || "unclassified") +
+          (modelData.language ? " · " + String(modelData.language) : "") +
+          (modelData.impact ? " · " + String(modelData.impact) : "") +
+          (modelData.display_relative_path || modelData.relative_path
+            ? " · " + String(modelData.display_relative_path || modelData.relative_path) : "") +
+          (modelData.line !== null && modelData.line !== undefined ? ":" + String(modelData.line) : "") +
+          (modelData.detail ? " · " + String(modelData.detail) : "")
         color: root.col("dim")
         font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
         wrapMode: Text.WordWrap
