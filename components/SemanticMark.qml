@@ -43,6 +43,7 @@ Item {
     case "medium": return dark ? "#f2d16b" : "#8a6200"
     case "high": return dark ? "#ffb064" : "#a34f00"
     case "critical": return dark ? "#ff7777" : "#b42318"
+    case "incomplete": return dark ? "#f2a65a" : "#9a4d00"
     case "low": return dark ? "#9bc8ff" : "#2b65a3"
     case "info": return dark ? "#9bc8ff" : "#2b65a3"
     default: return root.dim
@@ -56,6 +57,7 @@ Item {
     case "medium": return "medium"
     case "low":
     case "info": return "info"
+    case "incomplete": return "alert"
     case "checking": return "in-flight"
     default: return "hollow"
     }

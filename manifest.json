@@ -40,8 +40,8 @@
         "key": "cliVersionMin",
         "type": "string",
         "label": "Minimum omasafe-cli version",
-        "description": "Require omasafe-cli 0.2.5 or newer before running panel commands, including cache hydration, scheduled scans, Source Scan, and opaque-code review status.",
-        "defaultValue": "0.2.5"
+        "description": "Require omasafe-cli 0.3.0 or newer before running panel commands, including cache hydration, scheduled scans, Source Scan, and host posture.",
+        "defaultValue": "0.3.0"
       },
       {
         "key": "cliVersionRequireIdentity",

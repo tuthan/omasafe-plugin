@@ -13,6 +13,7 @@ Column {
   property var panel: null
   readonly property var report: panel ? panel.postureReport : null
   readonly property string rf: Style.font.resolvedFamily
+  readonly property int staleAfterSeconds: 86400
 
   width: parent ? parent.width : implicitWidth
   spacing: Style.space(10)
@@ -26,9 +27,22 @@ Column {
     case "informational": return "info"
     case "incomplete": return "incomplete"
     case "error": return "critical"
-    case "not_applicable": return "low"
+    case "not_applicable": return "unknown"
     default: return "unknown"
     }
+  }
+  function resultAgeSeconds() {
+    if (!root.report || root.report.result_age_seconds === undefined) return -1
+    var age = Number(root.report.result_age_seconds)
+    return isFinite(age) && age >= 0 ? Math.floor(age) : -1
+  }
+  function ageText() {
+    var age = root.resultAgeSeconds()
+    if (age < 0) return "not reported"
+    if (age < 60) return "less than 1 minute"
+    if (age < 3600) return Math.floor(age / 60) + " minutes"
+    if (age < 86400) return Math.floor(age / 3600) + " hours"
+    return Math.floor(age / 86400) + " days"
   }
   function stateText(state) { return String(state || "unknown").replace("_", " ").toUpperCase() }
   function coverageText() {
@@ -48,7 +62,8 @@ Column {
       { label: "ARCH", value: String(h.arch || "unknown") },
       { label: "OMARCHY", value: String(h.omarchy_version || h.omarchy_path || "not observed") },
       { label: "KERNEL", value: String(h.kernel || "not observed") },
-      { label: "GENERATED", value: String(root.report ? root.report.generated_at || "" : "") }
+      { label: "GENERATED", value: String(root.report ? root.report.generated_at || "" : "") },
+      { label: "AGE", value: root.ageText() }
     ]
   }
 
@@ -56,7 +71,7 @@ Column {
     width: parent.width
     visible: !root.panel || !root.panel.cliVerified
     reason: "unavailable"
-    text: "Host posture is unavailable until omasafe-cli 0.2.5 or newer is verified."
+    text: "Host posture is unavailable until omasafe-cli 0.3.0 or newer is verified."
     foreground: root.col("fg"); dim: root.col("dim"); urgent: root.col("urgent")
     fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
   }
@@ -120,6 +135,14 @@ Column {
     reason: "unsupported"
     text: "No posture scan has completed yet. Run a scan to establish the first observation; this is not a clean result."
     foreground: root.col("fg"); dim: root.col("dim")
+    fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
+  }
+  NoticeRow {
+    width: parent.width
+    visible: root.report && root.report.status !== "not_yet_run" && root.resultAgeSeconds() >= root.staleAfterSeconds
+    reason: "stale"
+    text: "This posture report is stale (" + root.ageText() + "); run a scan for current observations."
+    foreground: root.col("fg"); dim: root.col("dim"); urgent: root.col("urgent")
     fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
   }
 

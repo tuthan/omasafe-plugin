@@ -245,7 +245,7 @@ Panel {
   readonly property bool navigationLocked: root.operationRunning || root.pendingAction !== ""
   readonly property bool scanAvailable: root.cliVerified &&
     root.statusLevel !== "checking" && !root.navigationLocked
-  readonly property string candidateFeatureMin: "0.2.5"
+  readonly property string candidateFeatureMin: "0.3.0"
   readonly property bool candidateFeatureAvailable: {
     if (!root.cliVerified || !root.hostWidget) return false
     var have = root.hostWidget.parseVersion(root.hostWidget.cliVersion)
@@ -401,7 +401,7 @@ Panel {
     if (root.hostWidget.scanState === "unavailable")
       return root.hostWidget.cliError || "The latest scan could not be completed."
     if (root.hostWidget.cacheFeatureUnavailable)
-      return "Persistent scan hydration requires omasafe-cli 0.2.5; manual scans remain available."
+      return "Persistent scan hydration requires omasafe-cli 0.3.0; manual scans remain available."
     if (root.hostWidget.cacheState === "cached-stale")
       return "Showing a cached result; " + root.hostWidget.cacheStaleReasonLabel(root.hostWidget.cacheStaleReason) + "."
     if (root.hostWidget.cacheState === "cached-unvalidated")
@@ -458,7 +458,7 @@ Panel {
       return String(root.hostWidget.cliVersion || "") + " found · " +
         String(root.hostWidget.cliVersionMin || "") + " or newer required"
     if (root.hostWidget.cacheFeatureUnavailable)
-      return "cache requires omasafe-cli 0.2.5"
+      return "cache requires omasafe-cli 0.3.0"
     var frags = []
     var plugins = root.visiblePlugins().length
     if (plugins > 0) frags.push(plugins + " plugins")
@@ -1324,11 +1324,11 @@ Panel {
   function toggleProvenance() { root.provenanceExpanded = !root.provenanceExpanded }
 
   function candidateAvailabilityText() {
-    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.2.5 or newer."
+    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.3.0 or newer."
     var state = String(root.hostWidget.scanState || "")
-    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.2.5 or newer; no CLI was found."
+    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.3.0 or newer; no CLI was found."
     if (state === "incompatible-cli" || !root.cliVerified)
-      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.2.5 or newer."
+      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.3.0 or newer."
     return "Plugin Source Scan is unavailable."
   }
 
@@ -3911,7 +3911,7 @@ Panel {
     enableProcess.policy = root.enablePolicyChoice
     // Target contract (05 §10): the CLI compares this exact identity before enabling;
     // digest is mandatory, git fields passed when present. Gated off until a CLI
-    // release implements it (identitySafeMutations), so these never run below 0.2.5.
+    // release implements it (identitySafeMutations), so these never run below 0.3.0.
     var enableArgs = ["plugins", "enable", root.enablePluginId, "--policy", root.enablePolicyChoice]
     if (root.authorizedHead !== "") enableArgs.push("--expected-head", root.authorizedHead)
     if (root.authorizedTree !== "") enableArgs.push("--expected-tree", root.authorizedTree)
@@ -4139,7 +4139,7 @@ Panel {
           width: parent.width
           reason: "unavailable"
           text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli " +
-            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.2.5") + " or newer is found on PATH."
+            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.3.0") + " or newer is found on PATH."
           foreground: root.fg
           dim: root.dim
           urgent: root.urgent
@@ -5035,6 +5035,7 @@ Panel {
       root.postureLoading = true
       root.postureError = ""
       postureKill.stop()
+      postureTimeout.interval = operation === "scan" ? 90000 : 15000
       postureTimeout.restart()
       command = root.cliCommand(["posture", operation, "--format", "json"])
       running = true
@@ -5094,7 +5095,8 @@ Panel {
       if (postureProcess.settled) return
       postureProcess.settled = true
       root.postureLoading = false
-      root.postureError = "Host posture timed out after 15 seconds."
+      root.postureError = "Host posture timed out after " +
+        Math.round(postureTimeout.interval / 1000) + " seconds."
       root.terminateBoundedProcess(postureProcess)
     }
   }

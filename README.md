@@ -56,7 +56,8 @@ Status markers are shared across the views:
 - Yellow: medium or warning severity.
 - Amber: high severity.
 - Red: critical, error, or blocked.
-- Gray: stale, unavailable, or incomplete data.
+- Gray: stale or unavailable data. Incomplete coverage is amber and remains
+  visibly non-passing.
 
 Markers always retain the corresponding word or glyph and never represent a
 safety verdict. Cached results are explicitly labeled stale.
@@ -82,7 +83,7 @@ safety verdict. Cached results are explicitly labeled stale.
 ## Requirements
 
 - Omarchy with shell plugin support.
-- `omasafe-cli` 0.2.5 or newer on the graphical session `PATH`.
+- `omasafe-cli` 0.3.0 or newer on the graphical session `PATH`.
 
 The widget can be installed before the CLI. Until the CLI is available, it
 shows an unavailable state and never implies that the system is clean.
@@ -94,7 +95,10 @@ check's state word, evidence, next step, and coverage limitation visible. Use
 **Run posture scan** (or press `r`) to collect a current report. The first
 export may say **not yet run**; that is an absence of observation, not a clean
 result. The CLI owns the report, state history, and optional notification
-behavior; the panel only renders the bounded result.
+behavior; the panel only renders the bounded result. It shows report age and
+marks observations older than 24 hours as stale. The compact bar count remains
+the plugin-alert surface; posture coverage is surfaced in this tab and through
+CLI notifications until the planned M7 bar indicator is implemented.
 
 ## Plugin Source Scan
 

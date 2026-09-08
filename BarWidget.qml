@@ -91,12 +91,12 @@ BarWidget {
     settings.cliVersionMin !== undefined &&
     !/^\d+\.\d+(?:\.\d+)?$/.test(root.configuredCliVersionMin.trim())
   readonly property string cliVersionMin: {
-    var floor = [0, 2, 5]
+    var floor = [0, 3, 0]
     var configured = root.parseVersion(root.configuredCliVersionMin)
     return configured && root.compareVersion(configured, floor) > 0
-      ? configured.join(".") : "0.2.5"
+      ? configured.join(".") : "0.3.0"
   }
-  readonly property string cacheCliVersionMin: "0.2.5"
+  readonly property string cacheCliVersionMin: "0.3.0"
   readonly property bool cliCacheCompatible: root.cliCompatible &&
     root.compareVersion(root.parseVersion(root.cliVersion) || [0, 0, 0], [0, 2, 5]) >= 0
   readonly property bool cacheFeatureUnavailable: root.cliCompatible && !root.cliCacheCompatible
@@ -198,7 +198,7 @@ BarWidget {
       return "OmaSafe: omasafe-cli " + root.cliVersion + " found; " +
         root.cliVersionMin + " or newer required"
     if (root.cacheFeatureUnavailable)
-      return "OmaSafe: cached hydration requires omasafe-cli 0.2.5; manual scans remain available"
+      return "OmaSafe: cached hydration requires omasafe-cli 0.3.0; manual scans remain available"
     if (root.scanState === "unavailable")
       return root.earlierResultKept
         ? "OmaSafe: last scan failed; showing results from " + root.relativeScanAge()
@@ -313,7 +313,7 @@ BarWidget {
       root.cliCompatible = false
       root.cliVersion = parsed.join(".")
       root.scanState = "incompatible-cli"
-      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.2.5"
+      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.3.0"
       return
     }
     var min = root.cliVersionMin ? root.parseVersion(root.cliVersionMin) : null
