@@ -7,7 +7,7 @@ import "../model/Glyphs.js" as Glyphs
 import "../model/Labels.js" as Labels
 
 // Rules view (doc 03 §7): RULE CATALOG over a capped ListView of RuleRows that expand
-// into the rule sheet, and the BASELINE V3 COVERAGE table of RelationRows. Binds to
+// into the rule sheet, and the MARKETPLACE BASELINE V3 reference table of RelationRows. Binds to
 // panel.vm; the expanded rule's `rules explain` relations come from panel.ruleExplanation.
 Column {
   id: root
@@ -44,12 +44,24 @@ Column {
     return out
   }
 
+  function baselineSummary(b) {
+    if (!b || !b.available) return ""
+    var parts = []
+    var same = Number(b.equivalentCount || 0)
+    var partial = Number(b.partialCount || 0)
+    var noCheck = Number(b.notCoveredCount || 0)
+    if (same > 0) parts.push(same + (same === 1 ? " SAME CHECK" : " SAME CHECKS"))
+    if (partial > 0) parts.push(partial + " PARTIAL")
+    if (noCheck > 0) parts.push(noCheck + (noCheck === 1 ? " NO CHECK" : " NO CHECKS"))
+    return parts.join(" · ")
+  }
+
   // ---- CLI unavailable ---------------------------------------------------------
   NoticeRow {
     width: parent.width
     visible: !root.cliVerified
     reason: "unavailable"
-    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.3 or newer is found on PATH."
+    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.5 or newer is found on PATH."
     foreground: root.col("fg"); dim: root.col("dim"); urgent: root.col("urgent")
     fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
   }
@@ -124,7 +136,7 @@ Column {
         relationsLoading: panel && panel.expandedRuleId === modelData.id && panel.ruleExplanationLoading
         relationsError: (panel && panel.expandedRuleId === modelData.id) ? panel.ruleExplanationError : ""
         baselineHeader: (panel && panel.expandedRuleId === modelData.id && root.vm)
-          ? (root.relationsFor(modelData.id).length + " ROWS · MAP " + root.vm.baseline.mapVersion) : ""
+          ? (root.relationsFor(modelData.id).length + " marketplace checks · reference " + root.vm.baseline.mapVersion) : ""
         relations: root.relationsFor(modelData.id)
         hasCursor: root.has("rules", index)
         foreground: root.col("fg"); dim: root.col("dim")
@@ -138,7 +150,7 @@ Column {
     }
   }
 
-  // ---- BASELINE V3 COVERAGE ----------------------------------------------------
+  // ---- MARKETPLACE BASELINE V3 REFERENCE --------------------------------------
   Column {
     id: baselineSection
     width: parent.width
@@ -147,11 +159,19 @@ Column {
     readonly property var b: root.vm ? root.vm.baseline : null
 
     SectionHeaderRow {
-      text: "BASELINE V3 COVERAGE"
-      value: (baselineSection.b && baselineSection.b.available)
-        ? (baselineSection.b.partialCount + " PARTIAL · " + baselineSection.b.notCoveredCount + " NOT COVERED") : ""
+      text: "MARKETPLACE BASELINE V3"
+      value: root.baselineSummary(baselineSection.b)
       foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
+    }
+
+    NoticeRow {
+      width: parent.width
+      visible: baselineSection.b && baselineSection.b.available
+      reason: "none"
+      text: "Reference only, not a scan result. Use the Rule Catalog above for findings in this plugin."
+      foreground: root.col("fg"); dim: root.col("dim")
+      fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
     }
 
     NoticeRow {
@@ -178,6 +198,15 @@ Column {
       text: baselineSection.b ? baselineSection.b.headerLine : ""
       color: root.col("dim")
       font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: baselineSection.b && baselineSection.b.available
+      textFormat: Text.PlainText
+      text: "How to read: ≈ partial match · = same check · no check = OmaSafe has no corresponding marketplace check. Capability and inventory rows are context, not findings."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
       wrapMode: Text.WordWrap
     }
     Text {

@@ -7,7 +7,7 @@ import "../model/Labels.js" as Labels
 
 // Plugin detail sheet (doc 03 §5): TRUST BASELINE · WHAT CHANGED · REVIEW ITEMS ·
 // CAPABILITIES OBSERVED · COVERAGE (file references folded in) · MARKETPLACE CLAIM ·
-// ENFORCEMENT · PROVENANCE (collapsed), disclosed one level at a time. The authority
+// ENFORCEMENT · ANALYSIS DETAILS (collapsed), disclosed one level at a time. The authority
 // sections and action eligibility come from `panel` helpers (where updateEligible /
 // enableEligible live); the analysis sections are mapped here from analysisReport.
 Column {
@@ -23,6 +23,8 @@ Column {
   readonly property var plugin: (panel && vm && vm.pluginsById) ? vm.pluginsById[panel.selectedPluginId] : null
   readonly property var analysis: panel ? panel.analysisReport : null
   readonly property var reviewSummary: panel ? panel.analysisReviewSummary : null
+  readonly property var codeExposure: panel && Array.isArray(panel.analysisCodeExposure)
+    ? panel.analysisCodeExposure : []
   readonly property var status: panel ? panel.statusReport : null
 
   width: parent ? parent.width : implicitWidth
@@ -32,6 +34,28 @@ Column {
     return panel && panel.cursorActive && panel.focusSection === section && panel.selectedIndex === index
   }
   function col(name) { return panel ? panel[name] : Color.foreground }
+
+  function codeExposureText(value, limit) {
+    var text = String(value === null || value === undefined ? "" : value)
+    text = text.replace(/[\r\n]/g, function(value) {
+      return value === "\r" ? "\\r" : "\\n"
+    }).replace(/\t/g, "\\t")
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u0080-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g,
+        function(value) { return "\\u{" + value.charCodeAt(0).toString(16) + "}" })
+    return text.slice(0, limit)
+  }
+
+  function codeExposureLine(entry) {
+    var path = root.codeExposureText(entry && entry.relative_path || "unavailable", 1024)
+    var format = root.codeExposureText(entry && entry.native_format || "opaque-executable", 128)
+    var exposure = root.codeExposureText(entry && entry.exposure || "unknown", 128)
+    var review = root.codeExposureText(entry && entry.review_status || "unreviewed", 128)
+    var exactSha256 = root.codeExposureText(entry && entry.exact_sha256 || "", 64)
+    var digest = exactSha256 === ""
+      ? root.codeExposureText(entry && entry.digest_state || "unavailable", 64)
+      : "sha256 " + exactSha256.slice(0, 16) + "…"
+    return path + " · " + format + " · " + exposure + " · review " + review + " · " + digest
+  }
 
   // ---- severity glyph for a review item ----------------------------------------
   function severityGlyphKey(sev) {
@@ -381,6 +405,15 @@ Column {
       fontFamily: root.col("fontFamily")
     }
 
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: "Coverage shows what OmaSafe could inspect. A limit or gap means some parts may not have been checked."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
     // lexical-only notice, always first when parser == null.
     NoticeRow {
       width: parent.width
@@ -410,7 +443,7 @@ Column {
         required property var modelData
         width: parent.width - Style.space(38); x: Style.space(30)
         textFormat: Text.PlainText
-        text: "Coverage gap: " + String(modelData.reason || "unclassified") +
+        text: "Coverage gap: " + Labels.coverageGapReason(modelData.reason) +
           (modelData.language ? " · " + String(modelData.language) : "") +
           (modelData.impact ? " · " + String(modelData.impact) : "") +
           (modelData.display_relative_path || modelData.relative_path
@@ -420,6 +453,37 @@ Column {
         color: root.col("dim")
         font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
         wrapMode: Text.WordWrap
+      }
+    }
+
+    SectionHeaderRow {
+      text: "OPAQUE EXECUTABLES"
+      value: root.codeExposure.filter(function(entry) { return entry && entry.opaque_review_required === true }).length
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+      visible: root.codeExposure.filter(function(entry) { return entry && entry.opaque_review_required === true }).length > 0
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root.codeExposure.filter(function(entry) { return entry && entry.opaque_review_required === true }).length > 0
+      textFormat: Text.PlainText
+      text: "Opaque executable files are not behaviorally analyzed. Hardened enable/update requires a matching accepted review for each exact digest."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    Repeater {
+      model: root.codeExposure.filter(function(entry) { return entry && entry.opaque_review_required === true }).slice(0, 128)
+      delegate: Text {
+        required property var modelData
+        width: parent.width - Style.space(38); x: Style.space(30)
+        textFormat: Text.PlainText
+        text: root.codeExposureLine(modelData)
+        color: root.col("dim")
+        font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+        wrapMode: Text.WrapAnywhere
       }
     }
 
@@ -477,6 +541,15 @@ Column {
       fontFamily: root.col("fontFamily")
     }
 
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: "This compares the installed copy with the version listed by the marketplace. It does not approve the plugin."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
     Repeater {
       model: panel ? panel.claimRows() : []
       delegate: Text {
@@ -516,6 +589,15 @@ Column {
       fontFamily: root.col("fontFamily")
     }
 
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: "This records whether OmaSafe allowed or blocked a request to enable or update the plugin."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
     Repeater {
       model: panel ? panel.enforcementRows() : []
       delegate: Text {
@@ -542,7 +624,7 @@ Column {
     }
   }
 
-  // ---- PROVENANCE (collapsed) --------------------------------------------------
+  // ---- ANALYSIS DETAILS (collapsed) --------------------------------------------
   Column {
     width: parent.width
     visible: !!root.analysis
@@ -550,7 +632,8 @@ Column {
 
     SourceRow {
       width: parent.width
-      label: "PROVENANCE"
+      label: "ANALYSIS DETAILS"
+      sublabel: "Shows which analyzer, rules, and file readers produced this result."
       expandable: true
       expanded: panel && panel.provenanceExpanded
       hasCursor: root.has("provenance", 0)

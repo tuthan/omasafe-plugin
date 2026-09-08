@@ -127,6 +127,10 @@ Panel {
   property string analysisCliVersion: ""
   property string analysisPolicyKey: ""
   property string analysisError: ""
+  // Bounded per-file exposure rows retained from the CLI's payload inventory.
+  // These are evidence only; the CLI remains authoritative for review status
+  // and enforcement decisions.
+  property var analysisCodeExposure: []
   property bool analysisLoading: false
   property bool analysisCacheLoading: false
   // Session mirror of the CLI-owned persistent analysis-snapshots cache. The CLI
@@ -161,6 +165,11 @@ Panel {
   property var analysisReviewSummary: null
   property var analysisReportProfile: null
   readonly property int v02OutputCharCap: 2 * 1024 * 1024
+  // `marketplace refresh --latest` may resolve HEAD, fetch a pinned commit,
+  // verify ancestry, and read the catalog as separate bounded Git operations.
+  // Keep the UI budget above that aggregate while still guaranteeing cleanup.
+  readonly property int marketplaceRefreshTimeoutSeconds: 300
+  readonly property int marketplaceRefreshTimeoutMs: marketplaceRefreshTimeoutSeconds * 1000
   property string expandedFindingKey: ""
   property string ruleExplanation: ""
   // The structured `rules explain` result (carries external_equivalences for the rule
@@ -230,7 +239,7 @@ Panel {
   readonly property bool navigationLocked: root.operationRunning || root.pendingAction !== ""
   readonly property bool scanAvailable: root.cliVerified &&
     root.statusLevel !== "checking" && !root.navigationLocked
-  readonly property string candidateFeatureMin: "0.2.3"
+  readonly property string candidateFeatureMin: "0.2.5"
   readonly property bool candidateFeatureAvailable: {
     if (!root.cliVerified || !root.hostWidget) return false
     var have = root.hostWidget.parseVersion(root.hostWidget.cliVersion)
@@ -386,7 +395,7 @@ Panel {
     if (root.hostWidget.scanState === "unavailable")
       return root.hostWidget.cliError || "The latest scan could not be completed."
     if (root.hostWidget.cacheFeatureUnavailable)
-      return "Persistent scan hydration requires omasafe-cli 0.2.3; manual scans remain available."
+      return "Persistent scan hydration requires omasafe-cli 0.2.5; manual scans remain available."
     if (root.hostWidget.cacheState === "cached-stale")
       return "Showing a cached result; " + root.hostWidget.cacheStaleReasonLabel(root.hostWidget.cacheStaleReason) + "."
     if (root.hostWidget.cacheState === "cached-unvalidated")
@@ -443,7 +452,7 @@ Panel {
       return String(root.hostWidget.cliVersion || "") + " found · " +
         String(root.hostWidget.cliVersionMin || "") + " or newer required"
     if (root.hostWidget.cacheFeatureUnavailable)
-      return "cache requires omasafe-cli 0.2.3"
+      return "cache requires omasafe-cli 0.2.5"
     var frags = []
     var plugins = root.visiblePlugins().length
     if (plugins > 0) frags.push(plugins + " plugins")
@@ -533,9 +542,15 @@ Panel {
 
   function enforcementDecisionIsSupported(decision) {
     if (!decision || typeof decision !== "object") return false
+    var schema = String(decision.schema || "")
+    if (["omasafe.enforcement.v1", "omasafe.enforcement.v2"].indexOf(schema) < 0) return false
     if (!Object.prototype.hasOwnProperty.call(decision, "evaluation_state") ||
         !Object.prototype.hasOwnProperty.call(decision, "outcome") ||
         !Object.prototype.hasOwnProperty.call(decision, "authorization_basis")) return false
+    if (schema === "omasafe.enforcement.v2" &&
+        (!Array.isArray(decision.blockers) || decision.blockers.length > 4096 ||
+         !Array.isArray(decision.opaque_code_items) || decision.opaque_code_items.length > 4096 ||
+         decision.executable_review_policy_version !== "omasafe.executable-review-policy.v1")) return false
     var evaluation = root.enforcementEnum(decision.evaluation_state,
       ["evaluated", "not-evaluated"])
     var outcome = root.enforcementEnum(decision.outcome, ["allow", "block"])
@@ -1185,9 +1200,9 @@ Panel {
       "edges show the cursor's one hop or the pinned path, not the whole weave\n" +
       "thin ≤ 3 · medium 4–9 · thick ≥ 10 occurrences\n" +
       "digits = occurrences · RULES digits = local hits (occurrences + review items)\n" +
-      "= equivalent check · ≈ partially covered\n" +
-      "class glyph on a BASELINE row = covered at class level\n" +
-      "no mark, dim = not covered by OmaSafe · 󰝦 not analyzed\n" +
+      "= same check · ≈ partial match\n" +
+      "class glyph on a BASELINE row = matched via a capability class\n" +
+      "no mark, dim = no matching OmaSafe check · 󰝦 not analyzed\n" +
       "green check = current no-alert/no-hit fact · yellow = medium · amber = high · red = critical/blocked\n" +
       "focused medium/high/critical marker may pulse briefly; graph geometry never moves\n" +
       "bold = outstanding alert · 󰂭 blocked by policy\n" +
@@ -1296,11 +1311,11 @@ Panel {
   function toggleProvenance() { root.provenanceExpanded = !root.provenanceExpanded }
 
   function candidateAvailabilityText() {
-    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.2.3 or newer."
+    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.2.5 or newer."
     var state = String(root.hostWidget.scanState || "")
-    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.2.3 or newer; no CLI was found."
+    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.2.5 or newer; no CLI was found."
     if (state === "incompatible-cli" || !root.cliVerified)
-      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.2.3 or newer."
+      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.2.5 or newer."
     return "Plugin Source Scan is unavailable."
   }
 
@@ -2079,10 +2094,10 @@ Panel {
   }
   function flowMarketplaceLine(id) {
     var mk = root.marketplaceByPlugin(id)
-    if (!mk) return "Catalog entry not matched · Catalog says: not stated"
+    if (!mk) return "Marketplace listing not matched · Marketplace listing has no verification status"
     var claim = root.marketplaceClaim(mk)
-    var verif = claim ? String(claim.verification_status || "unverified") : "not stated"
-    return Labels.marketplaceStatusShort(mk.status) + " · Catalog says: " + verif
+    return Labels.marketplaceStatusShort(mk.status) + " · " +
+      Labels.verificationStatus(claim ? claim.verification_status : null)
   }
   function flowInspectClass(id, node) {
     var lines = [node.occurrences + " occurrences in " + node.plugins + " plugins"
@@ -2102,14 +2117,14 @@ Panel {
       action: "Open rule (Enter)", actionEnabled: true, actionKind: "open" }
   }
   function flowInspectBaseline(id, node) {
-    var line = node.covered
+    var detail = node.covered
       ? ((node.viaRules && node.viaRules.length > 0)
           ? (Labels.relation(node.relation) + " · via rule " + node.viaRules[0])
           : ((node.viaClasses && node.viaClasses.length > 0)
               ? ("via class " + Labels.capability(node.viaClasses[0]) + " · " + Labels.relation(node.relation))
               : (Labels.relation(node.relation))))
-      : "Not covered by OmaSafe"
-    return { title: id, lines: [line], action: "Open coverage row (Enter)",
+      : Labels.relation(node.relation)
+    return { title: id, lines: ["Marketplace reference: " + detail], action: "Open coverage row (Enter)",
       actionEnabled: true, actionKind: "open" }
   }
 
@@ -2212,7 +2227,7 @@ Panel {
       if (String(finds[fi].rule_id || "") !== "") ruleSet[String(finds[fi].rule_id)] = true
     var rules = Object.keys(ruleSet)
 
-    // Baseline V3 relations on THIS path: rows whose omaRuleId is a covering rule
+    // Marketplace baseline references on THIS path: rows whose omaRuleId is a covering rule
     // (rule → baseline chain), and rows whose omaCapability is this class (class-level).
     var cov = root.coverageReport
     var covRows = (cov && cov.coverage) ? cov.coverage : []
@@ -2338,7 +2353,7 @@ Panel {
   function claimRows() {
     var sel = root.vm && root.vm.pluginsById ? root.vm.pluginsById[root.selectedPluginId] : null
     var m = sel ? sel.marketplace : null
-    if (!m) return ["Catalog snapshot unavailable"]
+    if (!m) return ["Marketplace information unavailable"]
     var claim = sel.claim
     var stale = root.inventoryReport && root.inventoryReport.marketplace_stale === true
     var rows = [Labels.marketplaceStatus(m.status)]
@@ -2357,27 +2372,36 @@ Panel {
   }
   function claimActionModel() {
     var elig = root.updateEligible()
-    return [{ label: "Review update", enabled: elig, tooltip: elig ? "Review update" : "Review update unavailable" }]
+    return [{ label: "Review update", enabled: elig, tooltip: elig ? "Review update" : root.claimCondition() }]
   }
   function claimCondition() {
     if (root.updateEligible()) return ""
     var m = root.marketplaceByPlugin(root.selectedPluginId)
     var claim = root.marketplaceClaim(m)
-    if (!m || ["listed", "installed-differs"].indexOf(String(m.status)) < 0)
-      return "needs catalog status listed (at or off the listed commit)"
+    if (!m) return "Update unavailable: marketplace information is unavailable."
+    if (["listed", "installed-differs"].indexOf(String(m.status)) < 0)
+      return String(m.status) === "conflict"
+        ? "Update unavailable: the marketplace listing could not be matched to this installed copy."
+        : "Update unavailable: this plugin is not in the marketplace list."
     var st = root.statusReport ? String(root.statusReport.state) : ""
-    if (!(root.statusReport && root.statusReport.trusted && ["unchanged", "clean", "acknowledged"].indexOf(st) >= 0))
-      return "needs a matching baseline (" + (root.statusReport ? Labels.trustShort(root.statusReport.state, root.statusReport.reason, 0) : "unavailable") + ")"
+    if (!(root.statusReport && root.statusReport.trusted))
+      return "Update unavailable: record a baseline for this plugin first."
+    if (st === "changed")
+      return "Update unavailable: the installed copy differs from the saved baseline."
+    if (st === "partial")
+      return "Update unavailable: the saved baseline has limited coverage."
+    if (["unchanged", "clean", "acknowledged"].indexOf(st) < 0)
+      return "Update unavailable: refresh this plugin's current status first."
     if (!(claim && String(claim.upstream_observed_commit || "") !== ""))
-      return "needs an upstream commit claimed by the catalog"
-    return "needs an analysis of the installed source (press a)"
+      return "Update unavailable: the marketplace list has no specific version to update to."
+    return "Update unavailable: analyze this plugin before reviewing an update."
   }
   function claimActionTriggered(i) { root.beginReviewUpdate() }
 
   function enforcementHeaderValue() {
     var d = root.enforcementDecision
     if (root.enforcementLoading && d === null) return ""
-    if (d === null) return "NO DECISION"
+    if (d === null) return "NOT CHECKED YET"
     return Labels.evaluationState(d.evaluation_state).replace(/-/g, " ").toUpperCase()
   }
   function enforcementRows() {
@@ -2389,20 +2413,38 @@ Panel {
     rows.push(Labels.enforcementOutcome(d.outcome, d.authorization_basis, d.reason_codes,
       d.override_binding ? d.override_binding.expires_at : ""))
     rows.push(String(d.operation || "") + " · " + String(d.evaluated_at || ""))
+    var blockers = Array.isArray(d.blockers) ? d.blockers : []
+    for (var i = 0; i < Math.min(blockers.length, 16); i++) {
+      var blocker = blockers[i] || {}
+      var detail = String(blocker.code || "unsupported").slice(0, 128)
+      if (blocker.relative_path) detail += " · " + String(blocker.relative_path).slice(0, 1024)
+      if (blocker.digest_state) detail += " · digest " + String(blocker.digest_state).slice(0, 64)
+      rows.push("Review blocker: " + detail)
+    }
+    if (blockers.length > 16) rows.push("Review blockers omitted: " + (blockers.length - 16))
     return rows
   }
   function enforcementActionModel() {
     var elig = root.enableEligible() && root.identitySafeMutations
-    return [{ label: "Enable", enabled: elig, tooltip: elig ? "Enable" : "Enable unavailable" }]
+    return [{ label: "Enable", enabled: elig, tooltip: elig ? "Enable this plugin" : root.enforcementCondition() }]
   }
   function enforcementCondition() {
+    var plugin = root.selectedPlugin()
     if (root.enableEligible() && root.identitySafeMutations) return ""
-    if (!root.enableEligible()) return "Enable applies only to plugins that are disabled and inactive."
-    return "Enable needs a CLI that can verify the displayed source identity."
+    if (!root.cliVerified) return "Enable unavailable: OmaSafe CLI is not ready."
+    if (!plugin) return "Enable unavailable: no plugin is selected."
+    if (plugin.classification === "backup") return "Backup copies cannot be enabled here."
+    if (plugin.enabled === true) return "This plugin is already enabled."
+    if (plugin.enabled !== false || plugin.active === undefined || plugin.active === null)
+      return "Enable unavailable: OmaSafe could not confirm that this plugin is turned off and not running."
+    if (plugin.active !== false) return "Enable unavailable: stop this plugin before enabling it here."
+    if (!root.identitySafeMutations)
+      return "Enable unavailable: the current OmaSafe CLI cannot verify the exact installed files before enabling."
+    return "Enable unavailable."
   }
   function enforcementActionTriggered(i) { root.beginEnable() }
 
-  // Format a provenance value: scalars verbatim, objects as `k: v · k: v` (never
+  // Format an analysis-detail value: scalars verbatim, objects as `k: v · k: v` (never
   // [object Object]), null/empty as "unavailable".
   function _provValue(v) {
     if (v === null || v === undefined || v === "") return "unavailable"
@@ -2426,22 +2468,22 @@ Panel {
         mono: mono === true, copyable: copyable === true && value !== null && value !== undefined && value !== "" }
     }
     var rows = [
-      row("Analysis fingerprint", a.analysis_fingerprint, true, true),
-      row("Analyzer version", pid.analyzer_version, false, false),
-      row("Rule catalog", pid.rule_catalog_version, false, false),
-      row("Rule catalog fingerprint", pid.rule_catalog_fingerprint, true, true),
-      row("Severity table", pid.severity_table_version, false, false),
-      row("Parser versions", pid.parser_versions, false, false),
-      row("Limits fingerprint", pid.limits_fingerprint, true, true),
-      row("Equivalence map version", pid.equivalence_map_version, false, false),
-      row("Supported surface", pid.supported_surface_version, false, false),
-      row("Parser", parser, false, false),
-      row("Equivalence", eq, false, false)
+      row("Purpose", "Identifies the analyzer, rules, file readers, and policy used for this result. It does not approve the plugin.", false, false),
+      row("Result ID", a.analysis_fingerprint, true, true),
+      row("Analyzer", pid.analyzer_version, false, false),
+      row("Rules used", pid.rule_catalog_version, false, false),
+      row("Rules ID", pid.rule_catalog_fingerprint, true, true),
+      row("Severity rules", pid.severity_table_version, false, false),
+      row("File readers", pid.parser_versions, false, false),
+      row("Limits ID", pid.limits_fingerprint, true, true),
+      row("Rule mapping", pid.equivalence_map_version, false, false),
+      row("File support", pid.supported_surface_version, false, false),
+      row("Reader details", parser, false, false),
+      row("Mapping details", eq, false, false)
     ]
     if (d) {
-      // A hash shown as one; never interpreted as a mode (doc 03 §5.4).
-      rows.push(row("Enforcement policy fingerprint", d.enforcement_policy_identity, true, true))
-      rows.push(row("Audit event id", d.audit_event_id, false, true))
+      rows.push(row("Decision policy ID", d.enforcement_policy_identity, true, true))
+      rows.push(row("Decision record ID", d.audit_event_id, false, true))
     }
     return rows
   }
@@ -3113,6 +3155,7 @@ Panel {
     root.analysisReviewSummary = null
     root.analysisReportProfile = null
     root.analysisCoverageStates = null
+    root.analysisCodeExposure = []
     root.analysisCacheLoading = false
     root.analysisPluginId = ""
     root.analysisDigest = ""
@@ -3363,8 +3406,7 @@ Panel {
       if (!report.result || !Object.prototype.hasOwnProperty.call(report.result, "decision"))
         throw new Error("missing enforcement decision")
       var decision = report.result ? report.result.decision : null
-      if (decision !== null && (typeof decision !== "object" ||
-          String(decision.schema || "") !== "omasafe.enforcement.v1"))
+      if (decision !== null && !root.enforcementDecisionIsSupported(decision))
         throw new Error("unsupported enforcement decision")
       root.enforcementDecision = decision
       root.enforcementError = ""
@@ -3473,6 +3515,7 @@ Panel {
       root.analysisReviewSummary = cached.reviewSummary || null
       root.analysisReportProfile = cached.reportProfile || null
       root.analysisCoverageStates = cached.coverageStates || null
+      root.analysisCodeExposure = Array.isArray(cached.codeExposure) ? cached.codeExposure : []
       root.analysisError = ""
       root.analysisLoading = false
       return
@@ -3486,6 +3529,7 @@ Panel {
     root.analysisReviewSummary = null
     root.analysisReportProfile = null
     root.analysisCoverageStates = null
+    root.analysisCodeExposure = []
     root.analysisError = ""
     root.analysisLoading = true
     root.analysisCacheLoading = false
@@ -3516,6 +3560,7 @@ Panel {
       root.analysisReviewSummary = (cached && cached.reviewSummary) || null
       root.analysisReportProfile = (cached && cached.reportProfile) || null
       root.analysisCoverageStates = (cached && cached.coverageStates) || null
+      root.analysisCodeExposure = (cached && Array.isArray(cached.codeExposure)) ? cached.codeExposure : []
       root.analysisError = ""
       root.analysisLoading = false
       root.analysisCacheLoading = false
@@ -3531,6 +3576,7 @@ Panel {
     root.analysisReviewSummary = null
     root.analysisReportProfile = null
     root.analysisCoverageStates = null
+    root.analysisCodeExposure = []
     root.analysisError = ""
     root.analysisLoading = true
     root.analysisCacheLoading = true
@@ -3590,7 +3636,7 @@ Panel {
     return root.scheduleInstallError !== "" || root.marketplaceRefreshError !== ""
   }
 
-  function cacheAnalysis(id, digest, report, coverageStates, reviewSummary, reportProfile) {
+  function cacheAnalysis(id, digest, report, coverageStates, reviewSummary, reportProfile, codeExposure) {
     var next = ({})
     for (var key in root.analysisCache) next[key] = root.analysisCache[key]
     next[id] = {
@@ -3599,6 +3645,7 @@ Panel {
       policyKey: root.analysisPolicyKeyFor(report),
       report: report,
       coverageStates: coverageStates || null,
+      codeExposure: Array.isArray(codeExposure) ? codeExposure : [],
       reviewSummary: reviewSummary || null,
       reportProfile: reportProfile || null
     }
@@ -3620,6 +3667,7 @@ Panel {
     root.analysisReviewSummary = null
     root.analysisReportProfile = null
     root.analysisCoverageStates = null
+    root.analysisCodeExposure = []
     root.analysisPluginId = ""
     root.analysisDigest = ""
     root.analysisCliVersion = ""
@@ -3647,6 +3695,7 @@ Panel {
       root.analysisReviewSummary = null
       root.analysisReportProfile = null
       root.analysisCoverageStates = null
+      root.analysisCodeExposure = []
       root.analysisLoading = false
       root.analysisCacheLoading = false
       root.analysisDetailsExpanded = false
@@ -3788,7 +3837,7 @@ Panel {
           !report.result || !report.result.decision)
         return null
       var decision = report.result.decision
-      if (String(decision.schema || "") !== "omasafe.enforcement.v1") return null
+      if (!root.enforcementDecisionIsSupported(decision)) return null
       if (String(report.result.plugin_id || pluginId) !== pluginId) return null
       root.enforcementDecision = decision
       root.enforcementError = ""
@@ -3816,7 +3865,7 @@ Panel {
     enableProcess.policy = root.enablePolicyChoice
     // Target contract (05 §10): the CLI compares this exact identity before enabling;
     // digest is mandatory, git fields passed when present. Gated off until a CLI
-    // release implements it (identitySafeMutations), so these never run below 0.2.3.
+    // release implements it (identitySafeMutations), so these never run below 0.2.5.
     var enableArgs = ["plugins", "enable", root.enablePluginId, "--policy", root.enablePolicyChoice]
     if (root.authorizedHead !== "") enableArgs.push("--expected-head", root.authorizedHead)
     if (root.authorizedTree !== "") enableArgs.push("--expected-tree", root.authorizedTree)
@@ -4042,7 +4091,7 @@ Panel {
           width: parent.width
           reason: "unavailable"
           text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli " +
-            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.2.3") + " or newer is found on PATH."
+            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.2.5") + " or newer is found on PATH."
           foreground: root.fg
           dim: root.dim
           urgent: root.urgent
@@ -4229,7 +4278,7 @@ Panel {
     CandidateView { panel: root }
   }
 
-  // Inline "Updating catalog… <n> s" counter. Gated on opened && the refresh running,
+  // Inline "Updating marketplace snapshot… <n> s" counter. Gated on opened && the refresh running,
   // so it never ticks while closed or idle (doc 02 §2.6 / P11).
   Timer {
     interval: 1000
@@ -4454,12 +4503,13 @@ Panel {
 
   Timer {
     id: marketplaceRefreshTimeout
-    interval: 60000
+    interval: root.marketplaceRefreshTimeoutMs
     repeat: false
     onTriggered: {
       if (marketplaceRefreshProcess.running) {
         root.marketplaceRefreshSettled = true
-        root.marketplaceRefreshError = "Marketplace update timed out after 60 seconds."
+        root.marketplaceRefreshError = "Marketplace update timed out after " +
+          root.marketplaceRefreshTimeoutSeconds + " seconds."
         root.terminateBoundedProcess(marketplaceRefreshProcess)
       }
     }
@@ -5375,16 +5425,19 @@ Panel {
               var cachedAnalysis = cachedReport.result.analysis
               var cachedCoverageStates = cachedReport.result.payload_inventory
                 ? cachedReport.result.payload_inventory.coverage_states : null
+              var cachedCodeExposure = cachedReport.result.payload_inventory
+                ? cachedReport.result.payload_inventory.code_exposure : []
               var cachedReviewSummary = cachedReport.result.review_summary || null
               var cachedReportProfile = cachedReport.result.report_profile || null
               if (plugin) root.cacheAnalysis(pid, root.analysisDigestFor(plugin), cachedAnalysis, cachedCoverageStates,
-                cachedReviewSummary, cachedReportProfile)
+                cachedReviewSummary, cachedReportProfile, cachedCodeExposure)
               root.setAnalysisState(pid, "analyzed")
               if (isSelected) {
                 root.analysisReport = cachedAnalysis
                 root.analysisReviewSummary = cachedReviewSummary
                 root.analysisReportProfile = cachedReportProfile
                 root.analysisCoverageStates = cachedCoverageStates
+                root.analysisCodeExposure = Array.isArray(cachedCodeExposure) ? cachedCodeExposure : []
                 root.analysisPolicyKey = root.analysisPolicyKeyFor(cachedAnalysis)
                 root.analysisError = ""
               }
@@ -5414,16 +5467,19 @@ Panel {
             var analysis = report.result.analysis || {}
             var coverageStates = report.result.payload_inventory
               ? report.result.payload_inventory.coverage_states : null
+            var codeExposure = report.result.payload_inventory
+              ? report.result.payload_inventory.code_exposure : []
             var reviewSummary = report.result.review_summary || null
             var reportProfile = report.result.report_profile || null
             if (plugin) root.cacheAnalysis(pid, root.analysisDigestFor(plugin), analysis, coverageStates,
-              reviewSummary, reportProfile)
+              reviewSummary, reportProfile, codeExposure)
             root.setAnalysisState(pid, "analyzed")
             if (isSelected) {
               root.analysisReport = analysis
               root.analysisReviewSummary = reviewSummary
               root.analysisReportProfile = reportProfile
               root.analysisCoverageStates = coverageStates
+              root.analysisCodeExposure = Array.isArray(codeExposure) ? codeExposure : []
               root.analysisPolicyKey = root.analysisPolicyKeyFor(analysis)
               root.analysisError = ""
               root.analysisLoading = false

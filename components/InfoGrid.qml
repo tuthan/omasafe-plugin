@@ -61,7 +61,7 @@ Column {
         id: copyButton
         visible: line.modelData.copyable === true
         iconText: Glyphs.ui_("copy", Style.font.resolvedFamily)
-        tooltipText: "Copy full digest"
+        tooltipText: "Copy value"
         foreground: root.foreground
         fontFamily: root.fontFamily
         onClicked: root.copyRequested(String(line.modelData.value || ""))

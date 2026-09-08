@@ -52,10 +52,10 @@ principles from the Quattro research are cited as E1–E14.
   validates listings, not plugin security (its own `disclaimer` field says so), and a stale snapshot makes even that
   claim old news.
 - **Do.** Headers `TRUST BASELINE` (no right value — the body's first line names the recorder), `MARKETPLACE CLAIM |
-  CATALOG 65b6385 · 15 MIN`, `ENFORCEMENT | EVALUATED` / `NOT EVALUATED` / `NO DECISION` (the right value is the
+  CATALOG 65b6385 · 15 MIN`, `ENFORCEMENT | EVALUATED` / `NOT EVALUATED` / `NOT CHECKED YET` (the right value is the
   decision's `evaluation_state`; a recorded decision carries no advisory/hardened mode, so the header never prints one —
   03 §5.4). `registry_claim.verification_status`
-  is prefixed `Catalog says:`; the CLI's correlation `status` renders as its §3.4 sentence, unprefixed and never as a
+  renders as a full marketplace-list sentence; the CLI's correlation `status` renders as its §3.4 sentence, unprefixed and never as a
   bare enum word (the single rule of GR2, referenced by every other document). When `marketplace_stale` is true the word "verified" is suppressed
   in the whole section. The disclaimer string from `marketplace[].disclaimer` is quoted verbatim, once, in that section.
   Coverage maps are attributed to `rules coverage` `verified_at_commit` (964dc08…), never to the snapshot commit.
@@ -63,9 +63,8 @@ principles from the Quattro research are cited as E1–E14.
   one IDENTITY block that mixes local and catalog facts.
 - **Review test.** Search the rendered strings of every screen: no row contains both a trust word (`matches`, `differs`,
   `no baseline`) and a catalog word (`listed`, `listed commit`, `verified`, `unlisted`, `conflict`). `matches` and
-  `differs` are reserved for the TRUST BASELINE comparison; the catalog's commit comparison says `is the listed commit` /
-  `is not the listed commit` (§3.4), so the test also fails on any MARKETPLACE CLAIM string containing `matches` or
-  `differs`.
+  `differs` are reserved for the TRUST BASELINE comparison; marketplace wording uses `is the version listed by the marketplace` /
+  `is different from the marketplace version` (§3.4), so the two comparisons remain distinguishable.
 
 ### P3 Fail closed, in words (GR3)
 
@@ -357,14 +356,14 @@ Hue never carries meaning alone and there are no opacity ramps. Nothing below en
 | Health `healthy` / `stale` / `incomplete` | No active alerts / cached result / analysis incomplete | check / hollow glyph | green only for current healthy; gray otherwise |
 | Confidence `ast-backed` / `lexical-fallback` / `null` | parser-backed / text match only / no parser | none in rows; Flow edges solid / dashed / dashed | — |
 | Scan alert row | kind label (§3.3) | `󰀦` in fg; `urgent` only for `critical` / `error` | bold primary line |
-| Catalog claim | Catalog says: … | none — never a pill, never beside a trust word | regular |
+| Catalog claim | Marketplace listing: … | none — never a pill, never beside a trust word | regular |
 | Snapshot stale | Snapshot N days old (stale) | none | dim; "verified" suppressed in the section |
 | Enforcement `block` | Blocked: <reason codes> | `󰂭` in `urgent` | row `Border.flat(urgent, Style.normalBorderWidth)` |
 | Enforcement `allow` / `decision: null` | Allowed by policy · Allowed by override · two-sentence null (§3.3) | none | regular / dim |
 | Unavailable / unsupported / not analyzed | the literal word; `–` in a count or cell slot | hollow `󰝦` on graph nodes only | dim; hero glyph `iconOpacity 0.5` |
 | Lexical-only build (`parser == null`) | Lexical-only analysis (no QML parser). Review items are text matches. | `󰀦` in fg | persistent `NoticeRow` |
 | Coverage limitations | N limits (header right value) | none | fg, rows expand inline |
-| Relation `structural-equivalent` / `partial-overlap` / `not-covered` | Equivalent check / Partially covered / Not covered by OmaSafe | `=` / `≈` / none (no mark; the dim word `not covered` where a slot has room, 04 §2.1) | regular / regular / dim, row present |
+| Relation `structural-equivalent` / `partial-overlap` / `not-covered` | Same check / Partial match / No OmaSafe check | `=` / `≈` / none (no mark; the dim words `no OmaSafe check` where a slot has room, 04 §2.1) | regular / regular / dim, row present |
 | Occurrence / edge weight | digits | edge thickness `space(1)` ≤ 3 · `space(2)` 4–9 · `space(3)` ≥ 10 | never area, angle or hue |
 | Cursor / current | — | — | `CursorSurface.hasCursor` → `hoverFill` + `Border.controlSpec("hover-cursor")`; `current` → `selectedFill` |
 
@@ -529,7 +528,7 @@ bind their rest alpha to `Style.hoverBorderAlpha` so the theme's own control-bor
 Factual, present tense. Sentence case with a period for messages; uppercase for hero meta (the kit uppercases) and
 section headers (literal). No exclamation marks, no "Are you sure?", no adjectives of judgment. Banned words in UI
 copy: clean, safe, protected, verified (bare), risk, dangerous, permission, unknown, gate, preflight, mutation,
-fingerprint (outside PROVENANCE), interposed, equivalence map. Test for every string: prefix "It is a fact that…" and it
+fingerprint (outside ANALYSIS DETAILS), interposed, equivalence map. Test for every string: prefix "It is a fact that…" and it
 stays true given only the CLI JSON. "Trusted" appears only in the PLUGINS footer definition and in confirm titles
 ("trust baseline").
 
@@ -541,7 +540,7 @@ stays true given only the CLI JSON. "Trusted" appears only in the PLUGINS footer
 | review item (rule match) | finding (in UI), vulnerability, issue | "finding" stays in code and JSON |
 | alert (scan alert) | finding, item to review, warning (noun) | ends both collisions |
 | baseline · Record / Replace / Remove baseline · matches / differs from baseline · no baseline · baseline revoked | Trust source / identity, trusted, untrusted, clean, changed (alone) | trust is the user's act; the state is a comparison |
-| Catalog says: … · catalog snapshot · listed | verified plugin, marketplace verified | attribution every time (GR2) |
+| Marketplace listing: … · marketplace list · listed | verified plugin, marketplace verified | attribution every time (GR2) |
 | snapshot integrity verified | verified (bare) | it is the file, not the plugin |
 | catalog severity | risk, danger level | the rule's default class |
 | parser-backed · text match only · no parser | confidence high / low | names the evidence source |
@@ -574,7 +573,11 @@ own, so a change to the CLI's policy never leaves the two disagreeing. The same 
 MARKETPLACE CLAIM (§3.4).
 
 Loading (one verb): `Loading plugins…` · `Loading analysis…` · `Loading rules…` · `Loading coverage map…` · `Loading
-catalog…` · `Loading decision…` · `Checking baseline…` (per row) · `Updating catalog… <n> s` · `Scanning…`.
+catalog…` · `Loading decision…` · `Checking baseline…` (per row) · `Updating marketplace snapshot… <n> s` · `Scanning…`.
+
+Marketplace snapshot refresh has a five-minute UI budget. `--latest` can perform
+several sequential bounded Git operations (resolve, fetch, verify, and read), so
+the panel must not stop it at the single-operation Git budget.
 
 Unavailable: `<Noun> unavailable: <verbatim CLI reason>.` · `omasafe-cli timed out after 30 seconds.` · `Output was
 larger than 2 MiB and was discarded. Run \`omasafe-cli <command>\` in a terminal.` · `omasafe-cli is not installed or
@@ -582,8 +585,8 @@ not on PATH.` · gate: `Plugins, review items, rules and the trust flow are unav
 is found on PATH.`
 
 Empty (reasoned, never blank): `No alerts outstanding.` · `No plugins installed.` · `No review items in analyzed files.
-<n> files were not analyzed.` · `No capabilities observed in analyzed files.` · `No decision has been recorded. A
-decision exists only after a gated enable or reviewed update.` · `No override records. This panel cannot create
+<n> files were not analyzed.` · `No capabilities observed in analyzed files.` · `OmaSafe has not checked an enable or update
+request for this plugin yet.` · `No override records. This panel cannot create
 overrides.` · `No plugin, class, rule or baseline id matches "<text>".` · `Not analyzed. Press a or Analyze.` (no
 timing promise — the 126–182 ms figure is a warm-cache measurement on one machine; the `Analyze` button's tooltip carries
 the key).
@@ -631,21 +634,21 @@ plugins safe.`
 |---|---|
 | `classification` | `Git-managed` → Git checkout · `built-in` → Installed without git · `cloned/local` → Installed without git (local copy) · `backup` → Backup copy (not scanned) · `unscannable` → Unscannable: <classification_reason> · other → Unsupported classification: "<value>". All five are emitted values (omasafe-plugin-trust/src/lib.rs:340–370: non-git is `built-in` only when the shell reports `first_party == true` or `cloned_from == ""`, else `cloned/local`). `built-in` carries no parenthesis: the `cloned_from == ""` branch makes it true for plugins the shell does not call first-party (fixture: `io.github.tuthan.omasafe` and `io.github.hvo.omarchy-unraid` are `built-in` with `first_party: false`), so "shell built-in" would assert what the CLI did not |
 | `first_party` (plugin record) | `true` → First-party: yes · `false` → First-party: no · null → First-party: not stated (null on every `backup` record in the fixture). A separate `InfoGrid` fact line in the detail sheet, never folded into the classification label |
-| marketplace `status` | `listed` → Listed in catalog snapshot · `installed-differs` → Listed; installed commit is not the listed commit · `unlisted` → Not in catalog snapshot · `conflict` → Catalog entry not matched: installed repository conflicts with the listing or is unavailable · `incomplete` → Catalog entry incomplete. One-line contexts (the Flow inspector line, 04 §5) use `Labels.marketplaceStatusShort`: `listed` → Listed in snapshot · `installed-differs` → Listed; not at listed commit · `unlisted` → Not in snapshot · `conflict` → Catalog entry not matched · `incomplete` → Catalog entry incomplete. `conflict` is followed by the CLI `reason` verbatim, and when `plugin.repository == null` by the fact line `Installed repository: unavailable (no git remote)` — the CLI emits `conflict` whenever the id matched but no repository matched, including when the repository was simply absent (omasafe-marketplace/src/lib.rs:367–371; in the fixture `io.github.tuthan.omasafe` and `io.github.hvo.omarchy-unraid` are this case), so the label must not assert a definite conflict (GR3). `matches` / `differs` never appear in a marketplace label: they are the TRUST BASELINE comparison words (§3.2, P2), and a reader who has learned `differs` = source drift would read `installed-differs` as drift from the baseline; the catalog comparison is always phrased against "the listed commit" |
-| `registry_claim.verification_status` | `verified` → Catalog says: verified · `unverified` → Catalog says: unverified · null → Catalog says: not stated · other → Catalog says: "<value>" |
-| `registry_claim.upstream_moved` | true → Upstream has moved past the validated commit · false → Upstream still at the validated commit · null → Upstream movement not stated (`Option<bool>`, lib.rs:85; null whenever `listing_validated_commit` or `upstream_observed_commit` is absent, lib.rs:392–398) |
-| `registry_claim.installed_matches_listing` | true → Installed commit is the listed commit · false → Installed commit is not the listed commit · null → Listing commit not stated (`Option<bool>`, lib.rs:86; null when either commit is absent, lib.rs:387–391) |
+| marketplace `status` | `listed` → This plugin appears in the marketplace list · `installed-differs` → Marketplace lists this plugin, but the installed copy is different · `unlisted` → This plugin is not in the marketplace list · `conflict` → The marketplace listing could not be matched to this installed copy · `incomplete` → The marketplace listing is incomplete. One-line contexts use the shorter equivalents. `conflict` is followed by the CLI `reason` verbatim, and when `plugin.repository == null` by the fact line `Installed repository: unavailable (no git remote)` |
+| `registry_claim.verification_status` | `verified` → Marketplace listing is marked verified · `unverified` → Marketplace listing is marked unverified · null → Marketplace listing has no verification status · other → Marketplace listing status: "<value>" |
+| `registry_claim.upstream_moved` | true → The repository has newer changes than the listed version · false → The repository has not changed since the listed version · null → The marketplace did not say whether the repository changed |
+| `registry_claim.installed_matches_listing` | true → The installed copy is the version listed by the marketplace · false → The installed copy is different from the marketplace version · null → The marketplace did not specify an installed version |
 | `marketplace_source` | `pinned-fetch` → pinned fetch, snapshot integrity verified · `unverified-cache` → cached snapshot, not re-verified · `local-file` → local catalog file · absent → snapshot unavailable |
 | `marketplace_stale` | true → Snapshot <n> days old (stale); "verified" suppressed in the section |
 | trust `state` | `untrusted` (+`reason`) → no baseline / baseline revoked · `unchanged` → matches baseline · `partial` → matches · coverage limited · `changed` → differs · <n> files · panel `unavailable` |
 | coverage state | `analyzed` → analyzed · `partial` → partially analyzed · `skipped` → skipped · `truncated` → truncated · `unsupported` → not analyzable · `unreferenced` → nothing observed |
 | `confidence` | `ast-backed` → parser-backed · `lexical-fallback` → text match only · null → no parser |
 | `severity` (rule default and alert) | `info` `low` `medium` `high` `critical` → the word; alert `warning` / `error` → the word; other → unsupported |
-| `relation` | `structural-equivalent` → Equivalent check · `partial-overlap` → Partially covered · `not-covered` → Not covered by OmaSafe · row with neither `omaRuleId` nor `omaCapability` → Inventory behaviour only (see note) |
+| `relation` | `structural-equivalent` → Same check · `partial-overlap` → Partial match · `not-covered` → No OmaSafe check · row with neither `omaRuleId` nor `omaCapability` → Inventory context only (see note) |
 | enforcement | `evaluation_state` `evaluated` / `not-evaluated` → Evaluated / Not evaluated · `outcome` `allow` + `authorization_basis` `policy` → Allowed by policy · `override` → Allowed by override · expires <date> · `block` → Blocked: <reason codes, hyphens replaced by spaces> · `decision: null` → the two-sentence empty state |
 | schedule (`Labels.schedulePolicy`) | `installed: false` → not installed · `policy` `advisory` → Advisory: daily drift scan, reports only · `hardened` → Hardened: daily drift scan with analysis, reports only · `last_known_execution` → Last run <relative> · exit <n> / Last run unavailable · `metadata_consistent: false` → Unit metadata inconsistent. The only effect of `--policy hardened` on the unit is ` --include-analysis` appended to `ExecStart=… scan --notify --only-new`, and `report_only` is always `true` (main.rs:3424–3500); a scheduled scan never refuses enable or update |
 | enforcement policy (`Labels.enforcementPolicy`, enable and review update only) | `advisory` → Advisory: reports and proceeds · `hardened` → Hardened: may refuse. Never reused for the schedule row |
-| limitation code | four grammars (01 §8.3), matched in this order — the parser tests the known-code prefixes of (2), (3) and (4) first and falls back to the file grammar (1) only for an unknown kind, because a `<code>:<value>` code read under (1) would print its value as a file name: (1) `kind[:sub]:file[:line[:target]]` parsed and grouped by file then kind: `LidService.qml · 5 sink references rejected (absolute) · 8 missing local target` (the fixture's 13 `lgse.sandman` codes), `dataflow-assignment-depth-limit:Panel.qml` → `Panel.qml · dataflow depth limit reached`; (2) `sink-reference-rejections-truncated:<n>` → `<n> further sink-reference rejections not listed`; (3) bare codes with no file segment — `analysis_time_budget_exhausted`, `time_budget_exhausted`, `file_limit_exceeded`, `aggregate_byte_limit_reached`, `tree_depth_limit_exceeded`, `directory_entry_limit_exceeded`, `symlink_target_truncated`, `staged-script-analysis-budget-exhausted` — are known codes rendered verbatim as their own group (`Analysis limits · <code> · <code>`), never as "unsupported limitation"; (4) `<code>:<value>` codes with no file, appended by `plugins analyze` (omasafe-cli/src/main.rs:5404–5411, 5457–5459, 5470–5473) — `suppressions-unreadable:<error text>` (the value is free-form and may itself contain colons; everything after the first colon is the value), `suppression-reconfirmation-required:<n>`, `equivalence-map-stale:map-v<x>-observed-v<y>` — are known codes rendered as their own group `Suppressions and equivalence map` with the value verbatim: `Suppressions unreadable: <error text>` · `<n> suppressions need reconfirmation` · `Equivalence map stale: map-v<x>-observed-v<y>`. Raw codes one Enter away; anything else → verbatim + unsupported limitation |
+| limitation code | Known analysis-limit codes are rendered as plain-language explanations, for example `staged-script-analysis-budget-exhausted` → `script could not be fully checked within the analysis limit`; file references, truncation notices, suppressions, and unsupported values remain attributed and visible. |
 
 ### 3.5 Coverage, Baseline V3 and ineligible verbs
 
@@ -655,18 +658,22 @@ percentage); header `COVERAGE | 13 LIMITS` or `COVERAGE | NO LIMITS REPORTED`; `
 (unanalyzed plugins are never hidden, so no `NOT ANALYZED` fragment exists); `b` on replaces it with `SHOWING 7 BACKUPS
 (NOT SCANNED)`.
 
-Baseline V3 header lines: `automated-security-baseline v3 · map 2 · checked against marketplace commit 964dc08` (from
+Marketplace Baseline V3 header lines: `MARKETPLACE BASELINE V3` with the right-side counts for `SAME CHECK`, `PARTIAL`
+and `NO CHECK`, followed by `Reference only, not a scan result. Use the Rule Catalog above for findings in this plugin.`
+Attribution: `Source: marketplace automated-security-baseline v3 · reference version 2 · snapshot commit 964dc08` (from
 `verified_at_commit`; never the bare word "verified", which the same view family suppresses for stale catalog claims —
-03 §7.2) · `Relations are coverage claims about rules; no plugin is checked against Baseline V3 here.` Footer: `Not
-covered by OmaSafe: cargo-git-unpinned · remote-build · remote-git-execution-unpinned`. Dash rule: rule rows and
+03 §7.2). The reading aid explains `≈` as partial match, `=` as same check and no mark as no matching OmaSafe check;
+capability and inventory rows are context, not findings. Footer: `No OmaSafe check for: cargo-git-unpinned · remote-build ·
+remote-git-execution-unpinned`. Dash rule: rule rows and
 `LOCAL HITS | –` print `–` (not yet measured) only while zero plugins are analyzed; once n ≥ 1 they print the measured
 value, including `not observed in <n> analyzed plugins` under a covering rule (03 §7.2). Unanalyzed plugins are listed
 as `not analyzed`, never omitted. No plugin count is ever placed on a Baseline V3 row itself.
 
-Ineligible verbs stay visible, dim, with the unmet condition named: `Review update needs: catalog status listed (at or
-off the listed commit) · a baseline that matches · an upstream commit claimed by the catalog · an analysis of the
-installed source (press a).` (03 §5.4 prints the first unmet condition alone under the button) · `Enable applies only to
-plugins that are disabled and inactive.` · `Enable needs a CLI that can verify the displayed source identity.` ·
+Ineligible verbs stay visible, dim, with the unmet condition named: `Update unavailable: record a baseline for this plugin
+first.` / `Update unavailable: the installed copy differs from the saved baseline.` / `Update unavailable: analyze this
+plugin before reviewing an update.` (03 §5.4 prints the first unmet condition alone under the button) · `Enable unavailable:
+OmaSafe could not confirm that this plugin is turned off and not running.` · `Enable unavailable: the current OmaSafe CLI cannot verify the
+exact installed files before enabling.` · `Backup copies cannot be enabled here.` ·
 `Remove baseline needs a recorded baseline and a CLI that can verify its digest.` Record and Replace are one state-matched
 surface, so no separate unavailable Replace control or copy exists.
 
@@ -759,7 +766,7 @@ Mark each item Y / N. Any N in the blocker block rejects the change.
 - [ ] No `Color.muted`; no `Util.alpha(fg, …)` outside `graph/EdgeLayer.qml`.
 - [ ] Renders in `white`, `catppuccin-latte`, `retro-82`, `oxocarbon`, `ame-quattro` at base 9, 12, 16, 20 with no clipping and every state distinguishable with hue removed.
 - [ ] No string fails the "It is a fact that…" test; no banned word from §3.1 in UI copy.
-- [ ] Catalog and trust facts never share a row, pill or glyph; every `registry_claim.verification_status` value starts `Catalog says:`; the correlation `status` is a §3.4 sentence, never a bare enum word and never prefixed.
+- [ ] Catalog and trust facts never share a row, pill or glyph; every `registry_claim.verification_status` value is a full marketplace-list sentence; the correlation `status` is a §3.4 sentence, never a bare enum word and never prefixed.
 
 **Interaction**
 

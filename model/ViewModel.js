@@ -417,7 +417,7 @@ function buildRules(input, plugins) {
 
 function buildBaseline(input, plugins, analyzedCount) {
   var cov = input.coverage || null
-  if (!cov) return { available: false, rows: [], partialCount: 0, notCoveredCount: 0 }
+  if (!cov) return { available: false, rows: [], equivalentCount: 0, partialCount: 0, notCoveredCount: 0 }
   var entries = _arr(cov.coverage)
   var notCovered = _arr(cov.not_covered).map(_str)
   var analysisById = input.analysisById || {}
@@ -442,7 +442,7 @@ function buildBaseline(input, plugins, analyzedCount) {
                  : "not observed in " + analyzedCount + " analyzed plugins"
   }
 
-  var rows = [], partialCount = 0
+  var rows = [], equivalentCount = 0, partialCount = 0
   for (var o = 0; o < order.length; o++) {
     var xid2 = order[o]
     var grp = groups[xid2]
@@ -450,7 +450,8 @@ function buildBaseline(input, plugins, analyzedCount) {
     var relWord = Labels.relation(relation)
     var mark = relation === "structural-equivalent" ? "=" : (relation === "partial-overlap" ? "≈" : "")
     var covered = relation !== "not-covered"
-    if (relation === "partial-overlap" || relation === "structural-equivalent") partialCount++
+    if (relation === "structural-equivalent") equivalentCount++
+    else if (relation === "partial-overlap") partialCount++
 
     var ruleIds = [], hasCapability = false, note = ""
     for (var g = 0; g < grp.length; g++) {
@@ -461,10 +462,10 @@ function buildBaseline(input, plugins, analyzedCount) {
     }
 
     var line2
-    if (!covered) line2 = "Not covered by OmaSafe"
-    else if (ruleIds.length > 0) line2 = (ruleIds.length === 1 ? "1 OmaSafe rule" : ruleIds.length + " OmaSafe rules") + " · " + relWord
-    else if (hasCapability) line2 = Labels.capability(_str(grp[0].omaCapability)) + " (class) · " + relWord
-    else line2 = "Inventory behaviour only (see note) · " + relWord
+    if (!covered) line2 = relWord
+    else if (ruleIds.length > 0) line2 = "Mapped to " + (ruleIds.length === 1 ? "1 OmaSafe rule" : ruleIds.length + " OmaSafe rules") + " · " + relWord
+    else if (hasCapability) line2 = "Mapped to capability: " + Labels.capability(_str(grp[0].omaCapability)) + " · " + relWord
+    else line2 = "Inventory context only (see note) · " + relWord
 
     var covering = []
     for (var c = 0; c < ruleIds.length; c++)
@@ -487,14 +488,15 @@ function buildBaseline(input, plugins, analyzedCount) {
   return {
     available: true,
     rows: rows,
+    equivalentCount: equivalentCount,
     partialCount: partialCount,
     notCoveredCount: notCovered.length,
     mapVersion: _str(cov.map_version),
     verifiedCommit7: _commit7(cov.verified_at_commit),
-    headerLine: name + " v" + version + " · map " + _str(cov.map_version)
-      + " · checked against marketplace commit " + _commit7(cov.verified_at_commit),
-    headerSentence: "Relations are coverage claims about rules; no plugin is checked against Baseline V3 here.",
-    notCoveredFooter: notCovered.length > 0 ? "Not covered by OmaSafe: " + notCovered.join(" · ") : ""
+    headerLine: "Source: marketplace " + name + " v" + version + " · reference version " + _str(cov.map_version)
+      + " · snapshot commit " + _commit7(cov.verified_at_commit),
+    headerSentence: "Partial match means the checks overlap only. No OmaSafe check means that marketplace check is not implemented here.",
+    notCoveredFooter: notCovered.length > 0 ? "No OmaSafe check for: " + notCovered.join(" · ") : ""
   }
 }
 

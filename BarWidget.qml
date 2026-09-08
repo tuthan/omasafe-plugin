@@ -91,14 +91,14 @@ BarWidget {
     settings.cliVersionMin !== undefined &&
     !/^\d+\.\d+(?:\.\d+)?$/.test(root.configuredCliVersionMin.trim())
   readonly property string cliVersionMin: {
-    var floor = [0, 2, 3]
+    var floor = [0, 2, 5]
     var configured = root.parseVersion(root.configuredCliVersionMin)
     return configured && root.compareVersion(configured, floor) > 0
-      ? configured.join(".") : "0.2.3"
+      ? configured.join(".") : "0.2.5"
   }
-  readonly property string cacheCliVersionMin: "0.2.3"
+  readonly property string cacheCliVersionMin: "0.2.5"
   readonly property bool cliCacheCompatible: root.cliCompatible &&
-    root.compareVersion(root.parseVersion(root.cliVersion) || [0, 0, 0], [0, 2, 3]) >= 0
+    root.compareVersion(root.parseVersion(root.cliVersion) || [0, 0, 0], [0, 2, 5]) >= 0
   readonly property bool cacheFeatureUnavailable: root.cliCompatible && !root.cliCacheCompatible
   readonly property bool cliVersionRequireIdentity: settings &&
     settings.cliVersionRequireIdentity === true
@@ -124,8 +124,11 @@ BarWidget {
 
   function open() {
     if (!panelLoader.item) {
-      panelLoader.active = true
+      // Set this before activating the Loader. A synchronous Loader can emit
+      // onLoaded during the active assignment, so setting it afterward drops
+      // the first click and makes the user click the icon again after restart.
       pendingPanelOpen = true
+      panelLoader.active = true
       return
     }
     panelLoader.item.open()
@@ -133,13 +136,14 @@ BarWidget {
   }
 
   function close() {
+    pendingPanelOpen = false
     if (panelLoader.item) panelLoader.item.close()
   }
 
   function togglePanel() {
     if (!panelLoader.item) {
-      panelLoader.active = true
       pendingPanelOpen = true
+      panelLoader.active = true
       return
     }
     panelLoader.item.toggle()
@@ -194,7 +198,7 @@ BarWidget {
       return "OmaSafe: omasafe-cli " + root.cliVersion + " found; " +
         root.cliVersionMin + " or newer required"
     if (root.cacheFeatureUnavailable)
-      return "OmaSafe: cached hydration requires omasafe-cli 0.2.3; manual scans remain available"
+      return "OmaSafe: cached hydration requires omasafe-cli 0.2.5; manual scans remain available"
     if (root.scanState === "unavailable")
       return root.earlierResultKept
         ? "OmaSafe: last scan failed; showing results from " + root.relativeScanAge()
@@ -309,7 +313,7 @@ BarWidget {
       root.cliCompatible = false
       root.cliVersion = parsed.join(".")
       root.scanState = "incompatible-cli"
-      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.2.3"
+      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.2.5"
       return
     }
     var min = root.cliVersionMin ? root.parseVersion(root.cliVersionMin) : null

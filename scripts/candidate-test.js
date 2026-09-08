@@ -126,6 +126,21 @@ if (!v024Model.ok || v024Model.freshness !== 'fresh' || !v024Model.reviewSummary
     v024Model.profile.selectionStrategy !== 'severity-family-file-round-robin-v1')
   throw new Error('v0.2.4 review fields were not retained')
 
+const v025 = report()
+v025.tool_version = '0.2.5'
+v025.result.payload_inventory.code_exposure = [{
+  relative_path: 'bin/helper', native_format: 'elf', exposure: 'executable',
+  content_class: 'native-code', digest_state: 'exact', exact_sha256: 'c'.repeat(64),
+  opaque_review_required: true, review_status: 'unreviewed',
+}]
+v025.result.report_profile.omissions.code_exposure = { total: 1, emitted: 1, omitted: 0 }
+const v025Model = sandbox.build(v025)
+if (!v025Model.ok || v025Model.analysis.codeExposureTotal !== 1 ||
+    v025Model.analysis.codeExposure.length !== 1 ||
+    v025Model.analysis.codeExposure[0].nativeFormat !== 'elf' ||
+    v025Model.analysis.codeExposure[0].opaqueReviewRequired !== true)
+  throw new Error('v0.2.5 opaque-code fields were not retained')
+
 const many = report()
 many.tool_version = '0.2.4'
 many.result.analysis.findings = Array.from({ length: 250 }, (_, index) => ({

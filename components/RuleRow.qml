@@ -30,7 +30,7 @@ CursorSurface {
   property bool relationsLoading: false
   property string relationsError: ""
   property string baselineHeader: ""
-  property var relations: []           // [{ mark, externalId, relationWord }]
+  property var relations: []           // [{ mark, externalId, relationWord }], marketplace references
 
   property color dim: Color.foreground
   property string fontFamily: Style.font.family
@@ -231,12 +231,12 @@ CursorSurface {
         font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall
       }
 
-      // BASELINE V3 relations.
+      // MARKETPLACE BASELINE V3 reference.
       Text {
         width: parent.width - parent.leftPadding
         visible: root.baselineHeader !== "" || root.relationsLoading || root.relationsError !== ""
         textFormat: Text.PlainText
-        text: "BASELINE V3  " + root.baselineHeader
+        text: "MARKETPLACE REFERENCE  " + root.baselineHeader
         color: root.dim
         font.family: root.fontFamily; font.pixelSize: Style.font.caption
         font.bold: true
@@ -245,7 +245,7 @@ CursorSurface {
         width: parent.width - parent.leftPadding
         visible: root.relationsLoading
         textFormat: Text.PlainText
-        text: "Loading Baseline V3 relations…"
+        text: "Loading marketplace reference…"
         color: root.dim
         font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall
       }
@@ -253,7 +253,7 @@ CursorSurface {
         width: parent.width - parent.leftPadding
         visible: root.relationsError !== ""
         textFormat: Text.PlainText
-        text: "Baseline V3 relations unavailable: " + root.relationsError + "."
+        text: "Marketplace reference unavailable: " + root.relationsError + "."
         color: root.dim
         font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall
         wrapMode: Text.WordWrap

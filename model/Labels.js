@@ -42,47 +42,47 @@ function firstParty(value) {
 
 function marketplaceStatus(status) {
   switch (String(status || "")) {
-    case "listed":            return "Listed in catalog snapshot"
-    case "installed-differs": return "Listed; installed commit is not the listed commit"
-    case "unlisted":          return "Not in catalog snapshot"
-    case "conflict":          return "Catalog entry not matched: installed repository conflicts with the listing or is unavailable"
-    case "incomplete":        return "Catalog entry incomplete"
+    case "listed":            return "This plugin appears in the marketplace list"
+    case "installed-differs": return "Marketplace lists this plugin, but the installed copy is different"
+    case "unlisted":          return "This plugin is not in the marketplace list"
+    case "conflict":          return "The marketplace listing could not be matched to this installed copy"
+    case "incomplete":        return "The marketplace listing is incomplete"
     default:                  return "Unsupported catalog status: " + _quote(status)
   }
 }
 
 function marketplaceStatusShort(status) {
   switch (String(status || "")) {
-    case "listed":            return "Listed in snapshot"
-    case "installed-differs": return "Listed; not at listed commit"
-    case "unlisted":          return "Not in snapshot"
-    case "conflict":          return "Catalog entry not matched"
-    case "incomplete":        return "Catalog entry incomplete"
+    case "listed":            return "In marketplace list"
+    case "installed-differs": return "Installed copy is different from marketplace version"
+    case "unlisted":          return "Not in marketplace list"
+    case "conflict":          return "Marketplace listing not matched"
+    case "incomplete":        return "Marketplace listing incomplete"
     default:                  return "Unsupported catalog status: " + _quote(status)
   }
 }
 
-// registry_claim.verification_status — always prefixed "Catalog says:", and only
-// this field is (P2). Never a bare enum word.
+// registry_claim.verification_status — always rendered as a full marketplace-list
+// sentence so it cannot be mistaken for a statement about the installed plugin.
 function verificationStatus(value) {
-  if (value === null || value === undefined) return "Catalog says: not stated"
+  if (value === null || value === undefined) return "Marketplace listing has no verification status"
   switch (String(value)) {
-    case "verified":   return "Catalog says: verified"
-    case "unverified": return "Catalog says: unverified"
-    default:           return "Catalog says: " + _quote(value)
+    case "verified":   return "Marketplace listing is marked verified"
+    case "unverified": return "Marketplace listing is marked unverified"
+    default:           return "Marketplace listing status: " + _quote(value)
   }
 }
 
 function upstreamMoved(value) {
-  if (value === true) return "Upstream has moved past the validated commit"
-  if (value === false) return "Upstream still at the validated commit"
-  return "Upstream movement not stated"
+  if (value === true) return "The repository has newer changes than the listed version"
+  if (value === false) return "The repository has not changed since the listed version"
+  return "The marketplace did not say whether the repository changed"
 }
 
 function installedMatchesListing(value) {
-  if (value === true) return "Installed commit is the listed commit"
-  if (value === false) return "Installed commit is not the listed commit"
-  return "Listing commit not stated"
+  if (value === true) return "The installed copy is the version listed by the marketplace"
+  if (value === false) return "The installed copy is different from the marketplace version"
+  return "The marketplace did not specify an installed version"
 }
 
 function marketplaceSource(value) {
@@ -221,9 +221,9 @@ function severityRank(value) {
 // relation (coverage map): the sentence, never a bare enum.
 function relation(value) {
   switch (String(value || "")) {
-    case "structural-equivalent": return "Equivalent check"
-    case "partial-overlap":       return "Partially covered"
-    case "not-covered":           return "Not covered by OmaSafe"
+    case "structural-equivalent": return "Same check"
+    case "partial-overlap":       return "Partial match"
+    case "not-covered":           return "No OmaSafe check"
     default:                      return "Unsupported relation: " + _quote(value)
   }
 }
@@ -235,8 +235,8 @@ function evaluationState(value) {
   return gate(value, ["evaluated", "not-evaluated"])
 }
 
-// The two-sentence empty state when decision is null (never "allowed").
-var enforcementNull = "No decision has been recorded. A decision exists only after a gated enable or reviewed update."
+// The empty state when decision is null (never "allowed").
+var enforcementNull = "OmaSafe has not checked an enable or update request for this plugin yet."
 
 // A recorded decision's outcome line. reasonCodes is the array of reason codes.
 function enforcementOutcome(outcome, basis, reasonCodes, expiresAt) {
@@ -338,8 +338,28 @@ function _fileKindLabel(kind, sub) {
         : "sink references rejected" + (sub ? " (" + sub + ")" : "")
     case "dataflow-assignment-depth-limit":
       return "dataflow depth limit reached"
+    case "staged-script-analysis-budget-exhausted":
+      return "script could not be fully checked within the analysis limit"
     default:
       return String(kind || "").replace(/-/g, " ")
+  }
+}
+
+function coverageGapReason(value) {
+  switch (String(value || "")) {
+    case "staged-script-analysis-budget-exhausted":
+      return "a script could not be fully checked within the analysis limit"
+    case "unsupported-language":
+      return "this language could not be analyzed"
+    case "analysis_time_budget_exhausted":
+    case "time_budget_exhausted":
+      return "analysis stopped at the time limit"
+    case "file_limit_exceeded":
+      return "some files could not be checked because the file limit was reached"
+    case "aggregate_byte_limit_reached":
+      return "some content could not be checked because the size limit was reached"
+    default:
+      return String(value || "unclassified").replace(/-/g, " ")
   }
 }
 
@@ -424,7 +444,7 @@ function groupLimitations(codes) {
     lines.push(fileOrder[f] + " · " + segs.join(" · "))
   }
   for (var t = 0; t < truncation.length; t++) lines.push(truncation[t])
-  if (analysis.length > 0) lines.push("Analysis limits · " + analysis.join(" · "))
+  if (analysis.length > 0) lines.push("Analysis limits · " + analysis.map(coverageGapReason).join(" · "))
   if (suppressions.length > 0) lines.push("Suppressions and equivalence map · " + suppressions.join(" · "))
   for (var u = 0; u < unsupported.length; u++) lines.push(unsupported[u])
   return lines

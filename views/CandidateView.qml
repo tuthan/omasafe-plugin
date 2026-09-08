@@ -577,6 +577,52 @@ Column {
       wrapMode: Text.WordWrap
     }
 
+    SectionHeaderRow {
+      text: "OPAQUE EXECUTABLES"
+      value: root.candidate ? (root.candidate.analysis.codeExposureTotal +
+        (root.candidate.analysis.codeExposureOmitted > 0
+          ? " · " + root.candidate.analysis.codeExposureOmitted + " omitted" : "") +
+        (root.candidate.analysis.codeExposureDisplayOmitted > 0
+          ? " · " + root.candidate.analysis.codeExposureDisplayOmitted + " hidden in UI" : "")) : ""
+      visible: root.candidate && root.candidate.analysis.codeExposureTotal > 0
+      foreground: root.col("dimHeader")
+      valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    Text {
+      width: parent.width - Style.space(18)
+      x: Style.space(10)
+      visible: root.candidate && root.candidate.analysis.codeExposureTotal > 0
+      textFormat: Text.PlainText
+      text: "Opaque executable files are not behaviorally analyzed. Review status is evidence for the exact file digest, not a safety verdict."
+      color: root.col("dim")
+      font.family: root.col("fontFamily")
+      font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    Repeater {
+      model: root.candidate ? root.candidate.analysis.codeExposure : []
+      delegate: Text {
+        required property var modelData
+        width: resultColumn.width - Style.space(18)
+        x: Style.space(10)
+        textFormat: Text.PlainText
+        text: String(modelData.relativePath || "unavailable") + " · " +
+          String(modelData.nativeFormat || "opaque-executable") + " · " +
+          String(modelData.exposure || "unknown") + " · review " +
+          String(modelData.reviewStatus || "unreviewed") + " · " +
+          (modelData.exactSha256 !== ""
+            ? "sha256 " + String(modelData.exactSha256).slice(0, 16) + "…"
+            : String(modelData.digestState || "unavailable"))
+        color: root.col("dim")
+        font.family: root.col("fontFamily")
+        font.pixelSize: Style.font.bodySmall
+        wrapMode: Text.WrapAnywhere
+      }
+    }
+
     Repeater {
       model: root.candidate ? root.candidate.analysis.limitations : []
       delegate: Text {

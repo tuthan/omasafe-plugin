@@ -80,7 +80,7 @@ safety verdict. Cached results are explicitly labeled stale.
 ## Requirements
 
 - Omarchy with shell plugin support.
-- `omasafe-cli` 0.2.3 or newer on the graphical session `PATH`.
+- `omasafe-cli` 0.2.5 or newer on the graphical session `PATH`.
 
 The widget can be installed before the CLI. Until the CLI is available, it
 shows an unavailable state and never implies that the system is clean.

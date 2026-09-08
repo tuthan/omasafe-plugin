@@ -352,6 +352,30 @@ function _edge(value) {
   }
 }
 
+function _sha256(value) {
+  var text = _str(value)
+  return /^[0-9a-f]{64}$/.test(text) ? text : ""
+}
+
+function _codeExposure(value) {
+  var entries = _arr(value), out = []
+  for (var i = 0; i < Math.min(entries.length, MAX_ITEMS); i++) {
+    var entry = _obj(entries[i])
+    if (!entry) continue
+    out.push({
+      relativePath: _display(entry.relative_path, 1024),
+      nativeFormat: _display(entry.native_format || "opaque-executable", 128),
+      exposure: _display(entry.exposure || "unknown", 128),
+      contentClass: _display(entry.content_class || "unknown", 128),
+      digestState: _display(entry.digest_state || "unavailable", 64),
+      exactSha256: _sha256(entry.exact_sha256),
+      opaqueReviewRequired: entry.opaque_review_required === true,
+      reviewStatus: _display(entry.review_status || "unreviewed", 128)
+    })
+  }
+  return out
+}
+
 function build(report) {
   var top = _obj(report)
   if (!top || top.schema !== "omasafe.report.v1" || !_atLeast(top.tool_version, [0, 2, 2]))
@@ -413,13 +437,17 @@ function build(report) {
   var capabilityOmission = _omission(omissions, "capabilities")
   var edgeOmission = _omission(omissions, "invocation_edges")
   var coverageGapOmission = _omission(omissions, "coverage_gaps")
+  var codeExposureOmission = _omission(omissions, "code_exposure")
   var evidenceObservationOmission = _omission(omissions, "evidence_observations")
   var coverageGapsInput = _arr(analysis.coverage_gaps)
+  var codeExposureInput = _arr(payload.code_exposure)
   if (!coverageGapOmission) coverageGapOmission = { total: coverageGapsInput.length, emitted: coverageGapsInput.length, omitted: 0 }
+  if (!codeExposureOmission) codeExposureOmission = { total: codeExposureInput.length, emitted: codeExposureInput.length, omitted: 0 }
   if (!evidenceObservationOmission) evidenceObservationOmission = { total: 0, emitted: 0, omitted: 0 }
   if (!payloadOmission || !findingOmission || !capabilityOmission || !edgeOmission ||
       (omissions && ("coverage_gaps" in omissions && !_omission(omissions, "coverage_gaps"))) ||
       (omissions && ("evidence_observations" in omissions && !_omission(omissions, "evidence_observations"))) ||
+      (omissions && ("code_exposure" in omissions && !_omission(omissions, "code_exposure"))) ||
       !Array.isArray(payload.entries) || payload.entries.length !== 0 ||
       !_obj(payload.totals) || _count(payload.totals.entries) !== payloadOmission.total ||
       findingOmission.emitted > MAX_EMITTED || capabilityOmission.emitted > MAX_EMITTED ||
@@ -427,7 +455,8 @@ function build(report) {
       analysis.findings.length !== findingOmission.emitted ||
       analysis.capabilities.length !== capabilityOmission.emitted ||
       analysis.invocation_edges.length !== edgeOmission.emitted ||
-      coverageGapsInput.length !== coverageGapOmission.emitted)
+      coverageGapsInput.length !== coverageGapOmission.emitted ||
+      codeExposureInput.length !== codeExposureOmission.emitted)
     return _failure("candidate review profile omission data is invalid")
   var rawReviewSummary = _obj(result.review_summary)
   if (rawReviewSummary &&
@@ -447,6 +476,7 @@ function build(report) {
   var capabilities = analysis.capabilities.slice(0, MAX_ITEMS).map(_capability)
   var edges = analysis.invocation_edges.slice(0, MAX_ITEMS).map(_edge)
   var coverageGaps = coverageGapsInput.slice(0, MAX_ITEMS).map(_coverageGap)
+  var codeExposure = _codeExposure(codeExposureInput)
   var highCritical = false
   var classified = true
   for (var f = 0; f < analysis.findings.length; f++) {
@@ -496,7 +526,7 @@ function build(report) {
     ? reviewSummary.presentationComplete
     : (findingOmission.omitted === 0 && capabilityOmission.omitted === 0 &&
       edgeOmission.omitted === 0 && coverageGapOmission.omitted === 0 &&
-      evidenceObservationOmission.omitted === 0)
+      codeExposureOmission.omitted === 0 && evidenceObservationOmission.omitted === 0)
 
   return {
     ok: true,
@@ -544,6 +574,10 @@ function build(report) {
       coverageGapsTotal: coverageGapOmission.total,
       coverageGapsOmitted: coverageGapOmission.omitted,
       coverageGapsDisplayOmitted: Math.max(0, coverageGapOmission.emitted - coverageGaps.length),
+      codeExposure: codeExposure,
+      codeExposureTotal: codeExposureOmission.total,
+      codeExposureOmitted: codeExposureOmission.omitted,
+      codeExposureDisplayOmitted: Math.max(0, codeExposureOmission.emitted - codeExposure.length),
       evidenceObservationsTotal: evidenceObservationOmission.total,
       evidenceObservationsOmitted: evidenceObservationOmission.omitted,
       parsers: _parsers(analysis.parsers),
@@ -566,6 +600,7 @@ function build(report) {
         capabilities: capabilityOmission,
         edges: edgeOmission,
         coverageGaps: coverageGapOmission,
+        codeExposure: codeExposureOmission,
         evidenceObservations: evidenceObservationOmission
       }
     },

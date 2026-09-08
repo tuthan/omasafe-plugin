@@ -3,9 +3,9 @@ import qs.Commons
 import qs.Ui
 import "../model/Glyphs.js" as Glyphs
 
-// One BASELINE V3 COVERAGE row (doc 03 §7.2): line 1 = relation mark (`=` / `≈` /
-// none) · externalId; line 2 = `<n> OmaSafe rules` / `<class> (class)` / `Inventory
-// behaviour only (see note)` · relation word, or `Not covered by OmaSafe` (dim). It
+// One MARKETPLACE BASELINE V3 reference row (doc 03 §7.2): line 1 = relation mark
+// (`=` / `≈` / none) · externalId; line 2 = mapped OmaSafe rules / capability /
+// inventory context · relation word, or `No OmaSafe check` (dim). It
 // expands to the covering OmaSafe rules — each with a fact about that rule only
 // (`observed in <k> analyzed plugins`) — and the map note verbatim. No plugin count
 // is ever placed on the row. Presentational.

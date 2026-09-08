@@ -36,7 +36,7 @@ Column {
     width: parent.width
     visible: !root.cliVerified
     reason: "unavailable"
-    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.3 or newer is found on PATH."
+    text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli 0.2.5 or newer is found on PATH."
     foreground: panel ? panel.fg : Color.foreground
     dim: panel ? panel.dim : Color.foreground
     urgent: panel ? panel.urgent : Color.urgent
@@ -309,7 +309,7 @@ Column {
     SourceRow {
       width: parent.width
       label: panel && panel.catalogUpdating
-        ? ("Updating catalog… " + panel.catalogElapsed + " s")
+        ? ("Updating marketplace snapshot… " + panel.catalogElapsed + " s")
         : ("Catalog snapshot " + (sourcesSection.s ? sourcesSection.s.snapshotCommit7 : "") + " · " + (sourcesSection.s ? sourcesSection.s.snapshotAgeText : ""))
       sublabel: (sourcesSection.s && !panel.catalogUpdating) ? sourcesSection.s.snapshotSourceText : ""
       iconAction: (panel && !panel.catalogUpdating) ? Glyphs.ui_("rescan", root.rf) : ""
