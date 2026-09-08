@@ -8,6 +8,10 @@ semantic versioning (`0.4.0` for the current Phase 5 feature).
 
 ### Added
 
+- **Host Posture tab** — renders the CLI's `omasafe.posture.v1` report with
+  explicit pass, regression, attention, informational, incomplete, and error
+  states, coverage limitations, host facts, and a bounded Run posture scan action.
+
 - Source Scan and installed Analysis retain review freshness, presentation completeness,
   occurrence IDs, analysis methods, structured evidence steps, behavior context, and
   typed coverage gaps while keeping legacy reports readable.

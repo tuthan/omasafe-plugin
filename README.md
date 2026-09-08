@@ -29,13 +29,14 @@ operations.
 
 ## What the panel shows
 
-The panel has three views:
+The panel has five views:
 
 | View | Purpose |
 | --- | --- |
 | **Overview** | Plugin inventory, trust baseline state, scan alerts, and marketplace claims. |
 | **Analysis** | Matrix, graph, trace, detected capabilities, linked rules, and Baseline V3 coverage. |
 | **Rules** | Rule catalog, local hits, and Baseline V3 coverage relations. |
+| **Posture** | Host posture report, coverage state, update awareness, and post-update hook observation. |
 | **Source Scan** | Manual pre-install scan of a public GitHub URL or copied install command. |
 
 Analysis counts are evidence, not permissions or scores. A capability “use” is
@@ -69,7 +70,8 @@ safety verdict. Cached results are explicitly labeled stale.
 | `Enter` | Open a plugin, pin a graph node, or follow a link. |
 | `Esc` | Go back, close a confirmation sheet, or close the panel. |
 | `r` | Run a scan. |
-| `4` | Open the Source Scan tab. |
+| `4` | Open the Posture tab. |
+| `5` | Open the Source Scan tab. |
 | `a` / `A` | Analyze the selected plugin / all plugins. |
 | `m` | Toggle the Analysis lens between Matrix and Graph. |
 | `t` | Trace a plugin and capability class. |
@@ -84,6 +86,15 @@ safety verdict. Cached results are explicitly labeled stale.
 
 The widget can be installed before the CLI. Until the CLI is available, it
 shows an unavailable state and never implies that the system is clean.
+
+## Host Posture
+
+The **Posture** tab reads the CLI's `omasafe.posture.v1` report and keeps each
+check's state word, evidence, next step, and coverage limitation visible. Use
+**Run posture scan** (or press `r`) to collect a current report. The first
+export may say **not yet run**; that is an absence of observation, not a clean
+result. The CLI owns the report, state history, and optional notification
+behavior; the panel only renders the bounded result.
 
 ## Plugin Source Scan
 

@@ -266,6 +266,11 @@ ok(partialScheduleVm.sources.scheduleSub.indexOf('next Thu 2026-09-03') >= 0,
 const overviewSource = fs.readFileSync(path.join(ROOT, 'views/OverviewView.qml'), 'utf8')
 ok(overviewSource.indexOf('Plugin Source Scan') < 0,
    'Overview has no Plugin Source Scan shortcut')
+const panelSource = fs.readFileSync(path.join(ROOT, 'Panel.qml'), 'utf8')
+ok(panelSource.indexOf('{ key: "posture", label: "Posture" }') >= 0,
+   'Panel exposes the Posture tab')
+ok(panelSource.indexOf('posture export --format json') < 0,
+   'Panel builds posture argv through cliCommand')
 
 // edge counts by kind
 const kindOf = (ref) => ref[0]

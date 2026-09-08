@@ -35,6 +35,11 @@ Panel {
   property string scheduleStdout: ""
   property string scheduleStderr: ""
   property bool scheduleSettled: false
+  // Raw host posture report cache. This is intentionally separate from the
+  // plugin report-envelope state and accepts the pre-first-run marker.
+  property var postureReport: null
+  property bool postureLoading: false
+  property string postureError: ""
   property string schedulePolicyChoice: "advisory"
   property string scheduleInstallError: ""
   property string scheduleInstallMessage: ""
@@ -215,13 +220,14 @@ Panel {
   property string authorizedDigest: ""
   property string authorizedBaselineDigest: ""
 
-  // Phase 2 IA: the four tabs collapse to views. Milestone 2a ships Overview (plus
+  // Phase 2 IA: the tabs collapse to views. Milestone 2a ships Overview (plus
   // its plugin detail sheet at depth 1); 2b adds Rules at key 3. Flow (key 2) is
   // hidden until Phase 3, so no digit ever changes meaning.
   readonly property var tabs: [
     { key: "overview", label: "Overview" },
     { key: "flow", label: "Analysis" },
     { key: "rules", label: "Rules" },
+    { key: "posture", label: "Posture" },
     { key: "source-scan", label: "Source Scan" }
   ]
   // The view chips' options (value = tab key). One chip per view.
@@ -840,6 +846,7 @@ Panel {
       if (activeFlick) activeFlick.contentY = 0
     })
     if (root.opened && root.activeTabKey === "rules") { root.ensureRulesList(); root.ensureCoverage() }
+    if (root.opened && root.activeTabKey === "posture") root.loadPosture()
     if (root.opened && root.activeTabKey === "flow") {
       // Flow needs the rule catalog and the coverage map for the RULES / BASELINE
       // layers (T2.9 caches). Enter Z0 fresh; a new orderEpoch re-sorts (§4.1 step 2).
@@ -878,6 +885,10 @@ Panel {
     var out = ["hero", "views"]
     if (root.activeTabKey === "source-scan") {
       if (root.sectionCount("source-scan") > 0) out.push("source-scan")
+      return out
+    }
+    if (root.activeTabKey === "posture") {
+      if (root.sectionCount("posture") > 0) out.push("posture")
       return out
     }
     var candidates
@@ -942,13 +953,14 @@ Panel {
       return (root.flowNodes[ci] ? root.flowNodes[ci].length : 0)
     }
     if (section === "source-scan") return root.activeTabKey === "source-scan" ? 1 : 0
+    if (section === "posture") return root.activeTabKey === "posture" ? 1 : 0
     return 0
   }
   function sectionIsHorizontal(section) {
     return section === "hero" || section === "views" || section === "trust-actions"
       || section === "claim-actions" || section === "enforcement"
       || section === "lens" || section === "inspector-actions"
-      || section === "source-scan"
+      || section === "source-scan" || section === "posture"
   }
   function sectionFirstIndex(section) { return 0 }
   function sectionLastIndex(section) { return Math.max(0, root.sectionCount(section) - 1) }
@@ -1047,6 +1059,7 @@ Panel {
         if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
         return
       case "source-scan": root.runCandidate(); return
+      case "posture": root.runPostureScan(); return
       case "views":
         if (i >= 0 && i < root.tabs.length) root.setViewByKey(root.tabs[i].key)
         return
@@ -3189,6 +3202,7 @@ Panel {
     root.controller.show()
     root.loadInventory()
     root.loadScheduleStatus()
+    root.loadPosture()
     root.loadOverrides()
     if (root.activeTabKey === "rules") { root.ensureRulesList(); Qt.callLater(root.ensureCoverage) }
   }
@@ -3211,6 +3225,20 @@ Panel {
     root.scheduleLoading = true
     root.scheduleError = ""
     scheduleStatusProcess.startRequest()
+  }
+
+  function loadPosture() {
+    if (!root.cliVerified || postureProcess.running) return
+    root.postureLoading = true
+    root.postureError = ""
+    postureProcess.startRequest("export")
+  }
+
+  function runPostureScan() {
+    if (!root.cliVerified || postureProcess.running) return
+    root.postureLoading = true
+    root.postureError = ""
+    postureProcess.startRequest("scan")
   }
 
   function beginScheduleInstall(policy) {
@@ -3429,6 +3457,24 @@ Panel {
     } catch (error) {
       root.scheduleReport = null
       root.scheduleError = "Schedule status is unavailable."
+    }
+  }
+
+  function applyPosture(output) {
+    try {
+      var report = JSON.parse(output)
+      if (String(report.schema || "") !== "omasafe.posture.v1")
+        throw new Error("unsupported posture schema")
+      if (String(report.status || "") === "not_yet_run") {
+        if (!Array.isArray(report.checks)) report.checks = []
+      } else if (!Array.isArray(report.checks) || !report.coverage || !report.host) {
+        throw new Error("incomplete posture report")
+      }
+      root.postureReport = report
+      root.postureError = ""
+    } catch (error) {
+      root.postureReport = null
+      root.postureError = "Host posture is unavailable."
     }
   }
 
@@ -3952,7 +3998,7 @@ Panel {
     }
     onTextKey: function(t) {
       // Digits and letters share the navigationLocked gate (doc 03 §13). Views are
-      // addressed by key: 1 → Overview, 2 → Flow, 3 → Rules, 4 → Source Scan.
+      // addressed by key: 1 → Overview, 2 → Flow, 3 → Rules, 4 → Posture, 5 → Source Scan.
       if (root.navigationLocked) return
       var inFlow = root.activeTabKey === "flow"
       if (t === "1") root.setViewByKey("overview")
@@ -3963,7 +4009,8 @@ Panel {
         else root.setViewByKey("flow")
       }
       else if (t === "3") root.setViewByKey("rules")
-      else if (t === "4") root.setViewByKey("source-scan")
+      else if (t === "4") root.setViewByKey("posture")
+      else if (t === "5") root.setViewByKey("source-scan")
       else if (t === "-") root.popDepth()
       else if (t === "/") root.showFinder()
       else if (t === "b") { root.toggleBackups(); if (inFlow) root.rebuildFlow() }
@@ -3977,6 +4024,7 @@ Panel {
       else if (t === "?") { if (inFlow) root.flowLegendVisible = !root.flowLegendVisible }
       else if (t === "r" || t === "R") {
         if (root.activeTabKey === "source-scan") root.runCandidate()
+        else if (root.activeTabKey === "posture") root.runPostureScan()
         else if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
       }
     }
@@ -4198,10 +4246,11 @@ Panel {
           width: parent.width
           // The finder overlays the body; otherwise render the selected top-level view.
           sourceComponent: root.finderActive ? finderResultsComponent
+            : (root.activeTabKey === "posture" ? postureComponent
             : (root.activeTabKey === "source-scan" ? sourceScanComponent
             : (root.activeTabKey === "flow" ? flowComponent
               : (root.activeTabKey === "rules" ? rulesComponent
-                : (root.overviewDepth >= 1 ? pluginDetailComponent : overviewComponent))))
+                : (root.overviewDepth >= 1 ? pluginDetailComponent : overviewComponent)))))
 
           Behavior on opacity {
             NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
@@ -4278,6 +4327,11 @@ Panel {
     CandidateView { panel: root }
   }
 
+  Component {
+    id: postureComponent
+    PostureView { panel: root }
+  }
+
   // Inline "Updating marketplace snapshot… <n> s" counter. Gated on opened && the refresh running,
   // so it never ticks while closed or idle (doc 02 §2.6 / P11).
   Timer {
@@ -4296,6 +4350,7 @@ Panel {
         if (root.inventoryReport === null) root.loadInventory()
         else Qt.callLater(root.queueAnalysisCacheHydration)
         root.loadScheduleStatus()
+        root.loadPosture()
         root.loadOverrides()
         if (root.activeTabKey === "rules") { root.ensureRulesList(); root.ensureCoverage() }
       } else if (!root.cliVerified) {
@@ -4315,6 +4370,8 @@ Panel {
       root.coverageDetailsExpanded = false
       root.rulesListReport = null
       root.rulesListCliVersion = ""
+      root.postureReport = null
+      root.postureError = ""
       root.ruleExplanationCache = ({})
       root.ruleExplanation = ""
       root.ruleExplanationResult = null
@@ -4958,6 +5015,95 @@ Panel {
     interval: 3000
     repeat: false
     onTriggered: if (scheduleStatusProcess.running) scheduleStatusProcess.signal(9)
+  }
+
+  // Host posture is a bounded read-only collector. Export hydrates the last
+  // report; scan refreshes it and may update OmaSafe-owned state/notifications.
+  Process {
+    id: postureProcess
+    property var killTimer: postureKill
+    property string stdoutBuffer: ""
+    property string stderrBuffer: ""
+    property bool settled: false
+    property string operation: "export"
+    function startRequest(mode) {
+      if (running) return
+      operation = String(mode || "export")
+      stdoutBuffer = ""
+      stderrBuffer = ""
+      settled = false
+      root.postureLoading = true
+      root.postureError = ""
+      postureKill.stop()
+      postureTimeout.restart()
+      command = root.cliCommand(["posture", operation, "--format", "json"])
+      running = true
+    }
+    stdout: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (postureProcess.settled) return
+        postureProcess.stdoutBuffer =
+          (postureProcess.stdoutBuffer + String(chunk)).slice(0, root.v02OutputCharCap + 1)
+        if (postureProcess.stdoutBuffer.length > root.v02OutputCharCap) {
+          postureProcess.settled = true
+          root.postureLoading = false
+          root.postureError = "Host posture output exceeded the configured output cap."
+          postureTimeout.stop()
+          root.terminateBoundedProcess(postureProcess)
+        }
+      }
+    }
+    stderr: SplitParser {
+      splitMarker: ""
+      onRead: function(chunk) {
+        if (postureProcess.settled) return
+        postureProcess.stderrBuffer =
+          (postureProcess.stderrBuffer + String(chunk)).slice(0, root.v02OutputCharCap + 1)
+        if (postureProcess.stderrBuffer.length > root.v02OutputCharCap) {
+          postureProcess.settled = true
+          root.postureLoading = false
+          root.postureError = "Host posture error output exceeded the configured output cap."
+          postureTimeout.stop()
+          root.terminateBoundedProcess(postureProcess)
+        }
+      }
+    }
+    onExited: {
+      root.stopBoundedProcessTimers(postureProcess, postureTimeout)
+      if (!postureProcess.settled) {
+        postureProcess.settled = true
+        if (exitCode === 0) root.applyPosture(postureProcess.stdoutBuffer)
+        else {
+          root.postureReport = null
+          var error = String(postureProcess.stderrBuffer || "").trim()
+          root.postureError = error === "" ? "Host posture is unavailable." : error.split("\n")[0]
+        }
+        root.postureLoading = false
+      }
+      postureProcess.stdoutBuffer = ""
+      postureProcess.stderrBuffer = ""
+    }
+  }
+
+  Timer {
+    id: postureTimeout
+    interval: 15000
+    repeat: false
+    onTriggered: {
+      if (postureProcess.settled) return
+      postureProcess.settled = true
+      root.postureLoading = false
+      root.postureError = "Host posture timed out after 15 seconds."
+      root.terminateBoundedProcess(postureProcess)
+    }
+  }
+
+  Timer {
+    id: postureKill
+    interval: 3000
+    repeat: false
+    onTriggered: if (postureProcess.running) postureProcess.signal(9)
   }
 
   Process {
