@@ -422,4 +422,46 @@ const real = sandbox.build(fixture('posture-v1.json'))
   ok(sandbox.search(real, 'e').length <= 6, 'finder results are capped at six')
 }
 
+// -------------------------------------------------- T8 chip and bar tooltip
+{
+  // The chip vocabulary is 02 §2.4's, verbatim. `–` and `·` are different claims and
+  // `0` is not one of the three.
+  eq(sandbox.chipSuffix(sandbox.build(fixture('posture-not-yet-run.json'))), '–',
+    'not_yet_run yields `–`, never `Posture 0` and never a bare `Posture`')
+  eq(sandbox.chipSuffix(real), '3', 'the captured report (1 regression + 2 incomplete) yields `Posture 3`')
+
+  const clean = fixture('posture-v1.json')
+  clean.checks.forEach(c => { c.state = 'pass' })
+  eq(sandbox.chipSuffix(sandbox.build(clean)), '·', 'a run with an empty attention set yields `·`')
+
+  // The trap: `attention` is a routine-looking word and must still reach the chip.
+  const oneAttention = fixture('posture-v1.json')
+  oneAttention.checks.forEach(c => { c.state = 'pass' })
+  oneAttention.checks[0].state = 'attention'
+  const oneModel = sandbox.build(oneAttention)
+  eq(sandbox.chipSuffix(oneModel), '1',
+    'a report whose only non-routine check is `attention` yields `Posture 1`, not `·`')
+  eq(String(oneModel.attention.length), sandbox.chipSuffix(oneModel),
+    'the chip count and NEEDS ATTENTION show the same number')
+
+  // An error state is the loudest, and it counts too.
+  const errored = fixture('posture-v1.json')
+  errored.checks.forEach(c => { c.state = 'pass' })
+  errored.checks[0].state = 'error'
+  errored.checks[1].state = 'error'
+  eq(sandbox.chipSuffix(sandbox.build(errored)), '2', 'errors reach the chip')
+
+  // The bar tooltip line uses the tab's words and never carries a verdict.
+  const tip = sandbox.barTooltipLine(real)
+  eq(tip, 'Host posture: 1 regression, 2 incomplete (12 hours old)', 'bar tooltip line')
+  ok(tip.indexOf('secure') < 0 && tip.indexOf('safe') < 0 && tip.indexOf('%') < 0,
+    'the bar tooltip carries no verdict, grade or percentage')
+  ok(sandbox.barTooltipLine(sandbox.build(clean)).indexOf('nothing needs attention') >= 0,
+    'a clean run says so in words, with its age')
+  eq(sandbox.barTooltipLine(sandbox.build(fixture('posture-not-yet-run.json'))),
+    'Host posture: no scan has completed yet',
+    'not_yet_run says no scan has completed, never "clean"')
+  eq(sandbox.barTooltipLine(null), '', 'no report contributes no line at all')
+}
+
 console.log('posture model: ok (' + checked + ' assertions)')

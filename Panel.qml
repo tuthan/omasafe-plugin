@@ -44,6 +44,13 @@ Panel {
   // The ONE posture view-model. PostureView, the tab chip and the bar tooltip all
   // read this, so none of them can compute a different attention count (08 §5.7).
   readonly property var postureModel: Posture.build(root.postureReport)
+  // The bar's shield tooltip gains one posture line, in the same words as the tab.
+  // `alertCount` is unchanged (08 D3). The line exists only once the panel has been
+  // opened at least once and a report has arrived — before that the bar says nothing
+  // about posture rather than guessing.
+  onPostureModelChanged: {
+    if (root.hostWidget) root.hostWidget.postureTooltipLine = Posture.barTooltipLine(root.postureModel)
+  }
   // Posture disclosure state. It lives here rather than in the view because the
   // cursor's index space depends on it: `sectionCount("posture-checks")` counts the
   // rows a collapsed domain removed. Same idiom as expandedFindingKey / expandedClass,
@@ -243,9 +250,36 @@ Panel {
     { key: "source-scan", label: "Source Scan" }
   ]
   // The view chips' options (value = tab key). One chip per view.
-  readonly property var viewOptions: root.tabs.map(function(t) {
-    return { value: t.key, label: t.label }
-  })
+  //
+  // A chip carries a count so the reader can see which tab has something in it
+  // without visiting all five (doc 08 §5.7, C1). The vocabulary is 02 §2.4's,
+  // verbatim: a digit when the collector ran and found items, `·` when it ran and
+  // found none, `–` when it has not run or is unavailable. **A chip with no count is
+  // a tab with no collector, never a clean tab** — which is why Analysis, Rules and
+  // Source Scan carry no suffix in 0.3.1 rather than a `·` they have not earned.
+  //
+  // Posture's number is `Posture.chipSuffix(postureModel)`, read from the SAME
+  // attention array NEEDS ATTENTION renders, so the chip and the section cannot
+  // disagree in any report. It is a count of items to look at, not a health score.
+  function tabSuffix(key) {
+    if (key === "posture") {
+      if (!root.cliVerified) return " –"
+      return " " + Posture.chipSuffix(root.postureModel)
+    }
+    if (key === "overview") {
+      // `vm.outstanding` is 0 before the first scan as surely as it is after a clean
+      // one, so the chip is gated on a scan result existing rather than on the number.
+      if (!root.cliVerified || !root.vm || !root.hasScanResult) return " –"
+      return " " + (root.vm.outstanding > 0 ? String(root.vm.outstanding) : "·")
+    }
+    return ""
+  }
+  readonly property var viewOptions: {
+    var out = []
+    for (var i = 0; i < root.tabs.length; i++)
+      out.push({ value: root.tabs[i].key, label: root.tabs[i].label + root.tabSuffix(root.tabs[i].key) })
+    return out
+  }
   property int activeIndex: 0
   // Phase 5: the panel can grow in place; Flow Graph uses the room for all four
   // columns and Matrix uses it for a wider table. Compact is the normal popup size;

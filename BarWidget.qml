@@ -10,6 +10,11 @@ BarWidget {
   moduleName: "io.github.tuthan.omasafe"
 
   property int alertCount: 0
+  // One line of host posture for the shield tooltip, in the same words the Posture tab
+  // uses (doc 08 §5.8). The panel sets it when a report arrives; it is empty until
+  // then, and `alertCount` never changes — whether posture enters the bar COUNT is
+  // decision D3 and is deferred out of 0.3.1.
+  property string postureTooltipLine: ""
   property int outstandingCount: 0
   property int newCount: 0
   property var alerts: []
@@ -192,6 +197,12 @@ BarWidget {
       root.blockedDecisions > 0)
 
   function iconTooltip() {
+    return root.postureTooltipLine === ""
+      ? root.pluginTooltip()
+      : root.pluginTooltip() + "\n" + root.postureTooltipLine
+  }
+
+  function pluginTooltip() {
     if (root.checking) return "OmaSafe: scanning"
     if (root.scanState === "missing-cli") return "OmaSafe: omasafe-cli not found"
     if (root.scanState === "incompatible-cli")
