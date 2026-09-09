@@ -605,4 +605,109 @@ function loadFixture(name) {
   }
 }
 
+// -------------------------------------- C5 consumer: by_class drives the strip
+//
+// The producer test above checks the report's arithmetic. These check that the panel
+// USES it — the aggregate exists precisely so a strip cell can distinguish "this class
+// was not observed" from "this class's instances were selected away", and normalization
+// discarding it made that distinction unavailable.
+function partialReport(byClass) {
+  const raw = loadFixture('candidate-git-review.json')
+  const res = raw.result
+  // A valid report declaring 63 uses across four classes with EVERY occurrence
+  // selected away by the scanner.
+  res.analysis.capabilities = []
+  res.report_profile.omissions.capabilities = { total: 63, emitted: 0, omitted: 63 }
+  res.review_summary.capabilities = { total: 63, emitted: 0, omitted: 63 }
+  if (byClass) res.review_summary.capabilities.by_class = byClass
+  res.review_summary.presentation_complete = false
+  return raw
+}
+const exactByClass = {
+  'persistence-scheduling': { total: 39, emitted: 0, omitted: 39 },
+  'process-execution': { total: 20, emitted: 0, omitted: 20 },
+  'clipboard-access': { total: 3, emitted: 0, omitted: 3 },
+  'filesystem-access': { total: 1, emitted: 0, omitted: 1 },
+}
+
+{
+  const s = sandbox.build(partialReport(exactByClass)).summary
+  // Before the aggregate was consumed this read "63 uses · at least 0 classes" with all
+  // seventeen cells `–`, despite the report carrying exact class totals.
+  if (s.capabilityCountsText !== '63 uses · 4 classes · at least 0 files')
+    throw new Error('by_class must make the class axis exact: ' + s.capabilityCountsText)
+  if (!s.capabilityClassesExact || !s.capabilitiesComplete)
+    throw new Error('a validated aggregate settles the strip on its own')
+  const observed = s.capabilityCells.filter(c => c.level === 'observed').map(c => c.key).sort()
+  if (observed.join(',') !==
+      'clipboard-access,filesystem-access,persistence-scheduling,process-execution')
+    throw new Error('cells come from the aggregate, not from emitted occurrences: ' + observed)
+  if (s.capabilityCells.filter(c => c.level === 'none').length !== 13)
+    throw new Error('a class the aggregate reports as absent has EARNED its `·`')
+  if (s.capabilityCells.some(c => c.level === 'absent'))
+    throw new Error('no cell may be `–` when the aggregate is exact')
+  if (s.capabilityObserved[0].cls !== 'persistence-scheduling' ||
+      s.capabilityObserved[0].count !== 39)
+    throw new Error('observed counts come from the aggregate totals')
+  // `files` is still emitted-derived and must NOT borrow the aggregate's exactness.
+  if (s.capabilityFiles !== 0 || s.capabilityCountsText.indexOf('at least 0 files') < 0)
+    throw new Error('the file axis stays a lower bound: it has no aggregate')
+}
+
+// An aggregate that does not reconcile is DISCARDED, not half-believed. Each of these
+// must fall back to the pessimistic presentation the panel had before C5.
+for (const [label, byClass] of [
+  ['a row whose counters contradict',
+    Object.assign({}, exactByClass, { 'process-execution': { total: 20, emitted: 5, omitted: 2 } })],
+  ['a row missing its omitted counter',
+    Object.assign({}, exactByClass, { 'process-execution': { total: 20, emitted: 20 } })],
+  ['rows that do not sum to the collection total',
+    { 'process-execution': { total: 20, emitted: 0, omitted: 20 } }],
+  ['a row that is not an object', Object.assign({}, exactByClass, { 'process-execution': 20 })],
+  ['an empty aggregate', {}],
+  ['no aggregate at all (a 0.3.0 report)', null],
+]) {
+  const s = sandbox.build(partialReport(byClass)).summary
+  if (s.capabilityClassesExact)
+    throw new Error(label + ': must not be trusted')
+  if (s.capabilitiesComplete)
+    throw new Error(label + ': must fall back to PARTIAL')
+  if (s.capabilityCells.filter(c => c.level === 'absent').length !== 17)
+    throw new Error(label + ': every unobserved position falls back to `–`')
+  if (s.capabilityCountsText !== '63 uses · at least 0 classes · at least 0 files')
+    throw new Error(label + ': counts hedge again — ' + s.capabilityCountsText)
+}
+
+{
+  // A class the aggregate reports as present-but-zero is not observed, and its cell is
+  // `·` rather than a zero-count "observed" mark.
+  const zeroed = Object.assign({}, exactByClass, {
+    'network-access': { total: 0, emitted: 0, omitted: 0 },
+  })
+  const s = sandbox.build(partialReport(zeroed)).summary
+  const cell = s.capabilityCells.find(c => c.key === 'network-access')
+  if (!cell || cell.level !== 'none')
+    throw new Error('a zero-total class is `·`, not observed')
+  if (s.capabilityObserved.some(o => o.cls === 'network-access'))
+    throw new Error('and it is absent from the observed list')
+}
+
+{
+  // The captured 0.3.1 report omits nothing, so the aggregate and the emitted
+  // occurrences agree — and the presentation is unchanged from before C5.
+  const git = sandbox.build(loadFixture('candidate-git-review.json'))
+  const s = git.summary
+  if (!git.reviewSummary.capabilities.byClass)
+    throw new Error('the 0.3.1 capture carries by_class through normalization')
+  if (!s.capabilitiesComplete || !s.capabilityClassesExact)
+    throw new Error('a complete report is exact on both counts')
+  if (s.capabilityCountsText.indexOf('at least') >= 0)
+    throw new Error('and hedges nothing: ' + s.capabilityCountsText)
+  const fromAggregate = Object.entries(git.reviewSummary.capabilities.byClass)
+    .filter(([, row]) => row.total > 0).map(([cls]) => cls).sort()
+  const fromCells = s.capabilityCells.filter(c => c.level === 'observed').map(c => c.key).sort()
+  if (fromAggregate.join(',') !== fromCells.join(','))
+    throw new Error('the aggregate and the emitted occurrences must agree here')
+}
+
 console.log('candidate model: ok')

@@ -123,8 +123,14 @@ or approve, and the Source Scan install-command visibility rule is untouched.
   is present, instead of sorting by id. That order is deliberate and not
   alphabetical. A report without the field, or with it on only some checks, falls
   back to sorted id wholesale rather than interleaving two orderings.
-- **The candidate capability strip can be exact under omission** when
-  `review_summary.capabilities.by_class` is present.
+- **The candidate capability strip is exact under omission** when
+  `review_summary.capabilities.by_class` is present. The aggregate's per-class
+  `total` is the pre-selection count, so a class it reports as absent has earned
+  its `·` even when every occurrence was selected away. It is validated before it
+  is trusted — each row must reconcile and the rows must sum to the collection
+  total — and a block that fails either check is discarded rather than
+  half-believed, falling back to counting emitted occurrences and marking the
+  section `PARTIAL`. The file axis has no aggregate and stays a lower bound.
 - Pending package and Omarchy updates now arrive as `attention` rather than
   `regression` (CLI v0.3.1 D1). The panel renders the CLI's state word and did not
   change to accommodate this; the attention count is unaffected, the mark moves

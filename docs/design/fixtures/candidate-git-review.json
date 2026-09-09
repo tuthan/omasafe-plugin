@@ -1,11 +1,11 @@
 {
   "schema": "omasafe.report.v1",
-  "tool_version": "0.3.0",
-  "generated_at": "2026-09-09T02:49:33Z",
+  "tool_version": "0.3.1",
+  "generated_at": "2026-09-09T06:18:50Z",
   "result": {
     "acquisition": {
       "cache": {
-        "result": "miss",
+        "result": "hit",
         "used": true
       },
       "discarded_install_flags": [],
@@ -22,7 +22,7 @@
       "limitations": [],
       "listed_repository": null,
       "marketplace_claim": null,
-      "network_used": true,
+      "network_used": false,
       "operation": "scan-only",
       "requested_reference": "exact-commit",
       "resolved_identity": {
@@ -2315,7 +2315,7 @@
         }
       },
       "policy_identity": {
-        "analyzer_version": "0.3.0",
+        "analyzer_version": "0.3.1",
         "detector_logic_fingerprint": "02a940dae80b4921736b08490045384b7186a039f75bcff6a7045308a4442b90",
         "equivalence_map_version": "omarchy-marketplace-baseline-v3/2",
         "limits_fingerprint": "d6b84a213c39442c144a09e276f1a88762ed997a3b7ef31bfba0f5dcc44abd40",
@@ -2902,8 +2902,30 @@
       }
     },
     "review_summary": {
-      "analysis_produced_at": "2026-09-09T02:49:33Z",
+      "analysis_produced_at": "2026-09-09T06:18:50Z",
       "capabilities": {
+        "by_class": {
+          "clipboard-access": {
+            "emitted": 3,
+            "omitted": 0,
+            "total": 3
+          },
+          "filesystem-access": {
+            "emitted": 1,
+            "omitted": 0,
+            "total": 1
+          },
+          "persistence-scheduling": {
+            "emitted": 39,
+            "omitted": 0,
+            "total": 39
+          },
+          "process-execution": {
+            "emitted": 20,
+            "omitted": 0,
+            "total": 20
+          }
+        },
         "emitted": 63,
         "omitted": 0,
         "total": 63
@@ -3004,7 +3026,7 @@
         "outcome": null
       },
       "max_severity": "medium",
-      "policy_identity_digest": "ed96862890a601773ec7308c6e59d6fd3976a18e9167b1c72275d42e1883ef5f",
+      "policy_identity_digest": "841a5fe0d27850297482aee0895d37ca05706d007a14666649893e5d0cb16307",
       "presentation_collections": {
         "capabilities": {
           "emitted": 63,

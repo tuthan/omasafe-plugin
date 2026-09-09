@@ -223,6 +223,36 @@ function _summaryCounts(value, includeActive) {
   return out
 }
 
+// `review_summary.capabilities` plus the per-class aggregate `omasafe-cli 0.3.1` adds
+// (C5). The aggregate is the only EXACT per-class figure in the report — its `total` is
+// the pre-selection count — so it is what lets a strip cell distinguish "this class was
+// not observed" from "this class's instances were selected away".
+//
+// It is validated before it is trusted, on the same terms as every other count in this
+// module: each row must reconcile (`emitted + omitted === total`) and the rows must sum
+// to the collection total. A block that fails either check is DISCARDED rather than
+// half-believed, and the view falls back to counting emitted occurrences and marking
+// itself PARTIAL — which is the pessimistic-but-correct behaviour it had before.
+function _capabilitySummaryCounts(value) {
+  var counts = _summaryCounts(value, false)
+  var source = _obj(value) ? _obj(value.by_class) : null
+  if (!source) return counts
+  var rows = {}, summed = 0, any = false
+  for (var key in source) {
+    var row = _obj(source[key])
+    if (!row) return counts
+    var total = _count(row.total), emitted = _count(row.emitted), omitted = _count(row.omitted)
+    if (total === null || emitted === null || omitted === null) return counts
+    if (emitted + omitted !== total) return counts
+    rows[_display(key, 128)] = { total: total, emitted: emitted, omitted: omitted }
+    summed += total
+    any = true
+  }
+  if (!any || summed !== counts.total) return counts
+  counts.byClass = rows
+  return counts
+}
+
 function _coverageSummary(value) {
   var coverage = _obj(value)
   if (!coverage) return null
@@ -262,7 +292,7 @@ function _reviewSummary(value) {
     sourceIdentityRef: _display(summary.source_identity_ref, 32),
     sourceIdentityState: _display(summary.source_identity_state, 32),
     findings: _summaryCounts(summary.findings, true),
-    capabilities: _summaryCounts(summary.capabilities, false),
+    capabilities: _capabilitySummaryCounts(summary.capabilities),
     findingsBeforeSuppression: _countOr(summary.findings_before_suppression, 0),
     severityCounts: _mapCounts(summary.severity_counts),
     ruleCounts: _mapCounts(summary.rule_counts),
@@ -473,14 +503,31 @@ function _ruleRows(reviewSummary, findings, complete) {
 // that absence as `·` — "analyzed, none observed" — would be a false negative in the
 // one direction GR3 forbids, and 17 cells of `·` say "clean" louder than a notice says
 // "incomplete". So under any omission the unobserved positions are `–` (08 D7).
-function _capabilitySummary(capabilities, capabilityOmission, displayOmitted) {
-  var complete = capabilityOmission.omitted === 0 && displayOmitted === 0
+function _capabilitySummary(capabilities, capabilityOmission, displayOmitted, byClass) {
+  var emittedComplete = capabilityOmission.omitted === 0 && displayOmitted === 0
   var counts = {}, files = {}, order = Glyphs.capabilityOrder
   for (var i = 0; i < capabilities.length; i++) {
     var cls = capabilities[i].capability
     if (cls === "") continue
     counts[cls] = (counts[cls] || 0) + 1
     if (capabilities[i].relativePath !== "") files[capabilities[i].relativePath] = true
+  }
+
+  // With a validated per-class aggregate the class axis is EXACT even when every
+  // occurrence was selected away: a class with `total: 0` really was not observed, so
+  // its cell has earned `·`. Without it the only evidence is the emitted occurrences,
+  // and an absent class could be one whose instances were dropped — `–`.
+  //
+  // The two axes are separately exact, and conflating them is what made a report
+  // carrying "63 uses across four classes" render "at least 0 classes": `files` is
+  // still derived from emitted occurrences only and stays a lower bound whenever
+  // anything was omitted.
+  var classesExact = !!byClass
+  if (byClass) {
+    counts = {}
+    for (var key in byClass) {
+      if (byClass[key].total > 0) counts[key] = byClass[key].total
+    }
   }
 
   var cells = [], observed = [], seen = {}, j
@@ -492,7 +539,7 @@ function _capabilitySummary(capabilities, capabilityOmission, displayOmitted) {
       count: n,
       // "observed" carries no tier of its own: presence is the fact, and the class name
       // is on the tooltip and in the observed list beneath.
-      level: n > 0 ? "observed" : (complete ? "none" : "absent")
+      level: n > 0 ? "observed" : (classesExact || emittedComplete ? "none" : "absent")
     })
     if (n > 0) observed.push({ cls: order[j], count: n })
   }
@@ -508,19 +555,25 @@ function _capabilitySummary(capabilities, capabilityOmission, displayOmitted) {
 
   var fileCount = 0
   for (var path in files) fileCount++
+  var classesHedge = (classesExact || emittedComplete) ? "" : "at least "
+  var filesHedge = emittedComplete ? "" : "at least "
   return {
     cells: cells,
     observed: observed,
-    complete: complete,
+    // "Complete" means every cell on the strip has earned its mark. That is the class
+    // axis, which the aggregate settles on its own.
+    complete: classesExact || emittedComplete,
+    classesExact: classesExact,
+    emittedComplete: emittedComplete,
     // `uses` is exact even under omission: it is the collection total, not a count of
-    // what survived selection. `classes` and `files` are derived from the EMITTED
-    // items only, so under omission they are lower bounds and say so.
+    // what survived selection. `classes` is exact when the aggregate is present.
+    // `files` is derived from the EMITTED items only and stays a lower bound.
     uses: capabilityOmission.total,
     classes: observed.length,
     files: fileCount,
     countsText: capabilityOmission.total + " uses · " +
-      (complete ? "" : "at least ") + observed.length + " classes · " +
-      (complete ? "" : "at least ") + fileCount + " files"
+      classesHedge + observed.length + " classes · " +
+      filesHedge + fileCount + " files"
   }
 }
 
@@ -772,7 +825,8 @@ function build(report) {
   var findingsDisplayOmitted = Math.max(0, findingOmission.emitted - findings.length)
   var capabilitiesDisplayOmitted = Math.max(0, capabilityOmission.emitted - capabilities.length)
   var severity = _severityRows(reviewSummary, findingOmission)
-  var capabilitySummary = _capabilitySummary(capabilities, capabilityOmission, capabilitiesDisplayOmitted)
+  var capabilitySummary = _capabilitySummary(capabilities, capabilityOmission,
+    capabilitiesDisplayOmitted, reviewSummary ? reviewSummary.capabilities.byClass : null)
   var coverage = _coverageRows(reviewSummary, payloadOmission)
   var ruleRows = _ruleRows(reviewSummary, findings,
     findingOmission.omitted === 0 && findingsDisplayOmitted === 0)
@@ -888,6 +942,7 @@ function build(report) {
       capabilityCells: capabilitySummary.cells,
       capabilityObserved: capabilitySummary.observed,
       capabilitiesComplete: capabilitySummary.complete,
+      capabilityClassesExact: capabilitySummary.classesExact,
       capabilityUses: capabilitySummary.uses,
       capabilityClasses: capabilitySummary.classes,
       capabilityFiles: capabilitySummary.files,
