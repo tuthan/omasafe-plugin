@@ -20,6 +20,10 @@ ShellRoot {
   readonly property int base: Number(Quickshell.env("HARNESS_BASE") || "12")
   readonly property string out: Quickshell.env("HARNESS_OUT") || "/tmp/candidate.png"
   readonly property string fixture: Quickshell.env("HARNESS_FIXTURE") || ""
+  // A full result view with 32 finding blocks is ~9,000 units tall, which at 2x DPI
+  // exceeds the 16,384 px maximum texture size and produces a silently clipped grab.
+  // The band is what this harness is for, so the sheet is clipped to it by default.
+  readonly property int clipUnits: Number(Quickshell.env("HARNESS_CLIP") || "900")
 
   property var report: null
 
@@ -72,8 +76,9 @@ ShellRoot {
     Rectangle {
       id: sheet
       color: Color.background
+      clip: true
       width: Style.space(420) + Style.space(16)
-      height: view.implicitHeight + Style.space(16)
+      height: Math.min(view.implicitHeight + Style.space(16), Style.space(harness.clipUnits))
 
       CandidateView {
         id: view

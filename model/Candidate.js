@@ -558,6 +558,57 @@ function _coverageRows(reviewSummary, payloadOmission) {
   }
 }
 
+// ------------------------------------------------------------- T6 reconciliation
+//
+// Grype #1312 is the canonical write-up of this failure: users ask "what is this
+// hiding?" about a severity summary at least weekly, and the fix the maintainers
+// converge on is that the parts must VISIBLY equal the total in the final output.
+// Five separate omission notices are each individually correct and together read as
+// boilerplate, so they get skipped — which is worse than one line that always adds up.
+//
+// So: one arithmetic line per collection, printed ALWAYS (CH5), and a notice only when
+// a term is non-zero — one notice, covering every collection, not four.
+function _reconciliation(omission, displayOmitted, suppressed, noun) {
+  var hidden = Math.max(0, displayOmitted || 0)
+  var shown = Math.max(0, omission.emitted - hidden)
+  var suppressedCount = suppressed === null || suppressed === undefined ? null : Math.max(0, suppressed)
+  var parts = [
+    shown + " shown",
+    omission.omitted + " omitted by the scanner",
+    hidden + " hidden by the display cap"
+  ]
+  if (suppressedCount !== null) parts.push(suppressedCount + " suppressed")
+  return {
+    noun: noun,
+    total: omission.total,
+    shown: shown,
+    omitted: omission.omitted,
+    hidden: hidden,
+    suppressed: suppressedCount === null ? 0 : suppressedCount,
+    complete: omission.omitted === 0 && hidden === 0 && (suppressedCount || 0) === 0,
+    // `shown + omitted + hidden` is the whole of `total` by construction; suppression
+    // sits outside it, which is why it is a named term and not part of the sum.
+    reconciles: shown + omission.omitted + hidden === omission.total,
+    text: parts.join(" · ")
+  }
+}
+
+function _reconciliationNotice(collections) {
+  var parts = []
+  for (var i = 0; i < collections.length; i++) {
+    var c = collections[i]
+    if (!c) continue
+    if (c.omitted > 0) parts.push(c.omitted + " " + c.noun + " omitted by the scanner")
+    if (c.hidden > 0) parts.push(c.hidden + " " + c.noun + " hidden by the display limit")
+    if (c.suppressed > 0) parts.push(c.suppressed + " " + c.noun + " suppressed")
+  }
+  if (parts.length === 0) return ""
+  var list = parts.length === 1
+    ? parts[0]
+    : parts.slice(0, parts.length - 1).join(", ") + " and " + parts[parts.length - 1]
+  return "This report omits evidence: " + list + ". An empty list is not a safety conclusion."
+}
+
 function build(report) {
   var top = _obj(report)
   if (!top || top.schema !== "omasafe.report.v1" || !_atLeast(top.tool_version, [0, 2, 2]))
@@ -711,6 +762,22 @@ function build(report) {
   var coverage = _coverageRows(reviewSummary, payloadOmission)
   var ruleRows = _ruleRows(reviewSummary, findings,
     findingOmission.omitted === 0 && findingsDisplayOmitted === 0)
+  var edgesDisplayOmitted = Math.max(0, edgeOmission.emitted - edges.length)
+  var gapsDisplayOmitted = Math.max(0, coverageGapOmission.emitted - coverageGaps.length)
+  var exposureDisplayOmitted = Math.max(0, codeExposureOmission.emitted - codeExposure.length)
+  var reconciliation = {
+    findings: _reconciliation(findingOmission, findingsDisplayOmitted,
+      reviewSummary ? reviewSummary.findings.suppressed : 0, "findings"),
+    capabilities: _reconciliation(capabilityOmission, capabilitiesDisplayOmitted, null, "capabilities"),
+    edges: _reconciliation(edgeOmission, edgesDisplayOmitted, null, "invocation edges"),
+    coverageGaps: _reconciliation(coverageGapOmission, gapsDisplayOmitted, null, "coverage gaps"),
+    codeExposure: _reconciliation(codeExposureOmission, exposureDisplayOmitted, null, "opaque executables"),
+    evidenceObservations: _reconciliation(evidenceObservationOmission, 0, null, "evidence observations")
+  }
+  var reconciliationNotice = _reconciliationNotice([
+    reconciliation.findings, reconciliation.capabilities, reconciliation.edges,
+    reconciliation.coverageGaps, reconciliation.codeExposure, reconciliation.evidenceObservations
+  ])
   var presentationComplete = reviewSummary
     ? reviewSummary.presentationComplete
     : (findingOmission.omitted === 0 && capabilityOmission.omitted === 0 &&
@@ -758,15 +825,15 @@ function build(report) {
       edges: edges,
       edgesTotal: edgeOmission.total,
       edgesOmitted: edgeOmission.omitted,
-      edgesDisplayOmitted: Math.max(0, edgeOmission.emitted - edges.length),
+      edgesDisplayOmitted: edgesDisplayOmitted,
       coverageGaps: coverageGaps,
       coverageGapsTotal: coverageGapOmission.total,
       coverageGapsOmitted: coverageGapOmission.omitted,
-      coverageGapsDisplayOmitted: Math.max(0, coverageGapOmission.emitted - coverageGaps.length),
+      coverageGapsDisplayOmitted: gapsDisplayOmitted,
       codeExposure: codeExposure,
       codeExposureTotal: codeExposureOmission.total,
       codeExposureOmitted: codeExposureOmission.omitted,
-      codeExposureDisplayOmitted: Math.max(0, codeExposureOmission.emitted - codeExposure.length),
+      codeExposureDisplayOmitted: exposureDisplayOmitted,
       evidenceObservationsTotal: evidenceObservationOmission.total,
       evidenceObservationsOmitted: evidenceObservationOmission.omitted,
       parsers: _parsers(analysis.parsers),
@@ -816,7 +883,9 @@ function build(report) {
       coverageTotal: coverage ? coverage.total : 0,
       coverageCountsText: coverage ? coverage.countsText : "",
       coverageReconciles: coverage ? coverage.reconciles : false,
-      coverageAssessment: coverage ? coverage.assessment : ""
+      coverageAssessment: coverage ? coverage.assessment : "",
+      reconciliation: reconciliation,
+      reconciliationNotice: reconciliationNotice
     },
     freshness: reviewSummary ? reviewSummary.freshness : "unknown",
     presentationComplete: presentationComplete,

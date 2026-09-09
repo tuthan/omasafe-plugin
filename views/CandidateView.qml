@@ -256,6 +256,17 @@ Column {
       wrapMode: Text.WordWrap
     }
 
+    // The parts reconcile, visibly, and the line prints whether or not a term is
+    // non-zero (CH5) — a summary whose parts only sometimes add up stops being read.
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate ? root.candidate.summary.reconciliation.findings.text : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
     // The severity rows account for every finding only when each one carried a
     // severity the panel recognises. Where they do not, say so rather than let the
     // bar quietly come up short of its own header.
@@ -340,6 +351,17 @@ Column {
       wrapMode: Text.WordWrap
     }
 
+    // The parts reconcile, visibly, and the line prints whether or not a term is
+    // non-zero (CH5) — a summary whose parts only sometimes add up stops being read.
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate ? root.candidate.summary.reconciliation.capabilities.text : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
     NoticeRow {
       width: parent.width
       visible: root.candidate && root.candidate.summary.capabilityObserved.length === 0 &&
@@ -407,6 +429,19 @@ Column {
       wrapMode: Text.WordWrap
     }
 
+    // ONE notice for every collection, raised only when a term is non-zero. The
+    // per-collection arithmetic above is printed always; this says what it means.
+    NoticeRow {
+      width: parent.width
+      visible: root.candidate && root.candidate.summary.reconciliationNotice !== ""
+      reason: "unsupported"
+      text: root.candidate ? root.candidate.summary.reconciliationNotice : ""
+      foreground: root.col("fg")
+      dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+      resolvedFamily: root.rf
+    }
+
     NoticeRow {
       width: parent.width
       visible: root.candidate && root.candidate.reviewSummary && !root.candidate.presentationComplete
@@ -418,18 +453,6 @@ Column {
       resolvedFamily: root.rf
     }
 
-    Text {
-      width: parent.width - Style.space(18)
-      x: Style.space(10)
-      visible: root.candidate && root.candidate.analysis.evidenceObservationsOmitted > 0
-      textFormat: Text.PlainText
-      text: root.candidate
-        ? ("Evidence observations omitted: " + root.candidate.analysis.evidenceObservationsOmitted) : ""
-      color: root.col("dim")
-      font.family: root.col("fontFamily")
-      font.pixelSize: Style.font.caption
-      wrapMode: Text.WordWrap
-    }
 
     NoticeRow {
       width: parent.width
@@ -549,9 +572,7 @@ Column {
 
     SectionHeaderRow {
       text: "FINDING DETAIL"
-      value: root.candidate ? (root.candidate.analysis.findingsTotal +
-        (root.candidate.analysis.findingsOmitted > 0 ? " · " + root.candidate.analysis.findingsOmitted + " omitted" : "") +
-        (root.candidate.analysis.findingsDisplayOmitted > 0 ? " · " + root.candidate.analysis.findingsDisplayOmitted + " hidden in UI" : "")) : ""
+      value: root.candidate ? String(root.candidate.analysis.findings.length) : ""
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
@@ -569,27 +590,7 @@ Column {
       resolvedFamily: root.rf
     }
 
-    NoticeRow {
-      width: parent.width
-      visible: root.candidate && root.candidate.analysis.findingsOmitted > 0
-      reason: "unsupported"
-      text: "Some findings were omitted from the compact report; no empty-finding conclusion is available."
-      foreground: root.col("fg")
-      dim: root.col("dim")
-      fontFamily: root.col("fontFamily")
-      resolvedFamily: root.rf
-    }
 
-    NoticeRow {
-      width: parent.width
-      visible: root.candidate && root.candidate.analysis.findingsDisplayOmitted > 0
-      reason: "unsupported"
-      text: "Some findings are hidden by the UI display limit; the emitted report still contains the complete selected set."
-      foreground: root.col("fg")
-      dim: root.col("dim")
-      fontFamily: root.col("fontFamily")
-      resolvedFamily: root.rf
-    }
 
     Repeater {
       model: root.candidate ? root.candidate.analysis.findings : []
@@ -675,24 +676,12 @@ Column {
 
     SectionHeaderRow {
       text: "CAPABILITY USES"
-      value: root.candidate ? (root.candidate.analysis.capabilitiesTotal +
-        (root.candidate.analysis.capabilitiesOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesOmitted + " omitted" : "") +
-        (root.candidate.analysis.capabilitiesDisplayOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesDisplayOmitted + " hidden in UI" : "")) : ""
+      value: root.candidate ? String(root.candidate.analysis.capabilities.length) : ""
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
     }
 
-    NoticeRow {
-      width: parent.width
-      visible: root.candidate && root.candidate.analysis.capabilitiesDisplayOmitted > 0
-      reason: "unsupported"
-      text: "Some capabilities are hidden by the UI display limit; review the emitted count in the report."
-      foreground: root.col("fg")
-      dim: root.col("dim")
-      fontFamily: root.col("fontFamily")
-      resolvedFamily: root.rf
-    }
 
     Repeater {
       model: root.candidate ? root.candidate.analysis.capabilities : []
@@ -712,44 +701,40 @@ Column {
 
     SectionHeaderRow {
       text: "COVERAGE AND LIMITATIONS"
-      value: root.candidate ? (root.candidate.analysis.edgesTotal + " invocation edges" +
-        (root.candidate.analysis.edgesDisplayOmitted > 0
-          ? " · " + root.candidate.analysis.edgesDisplayOmitted + " hidden in UI" : "") +
-        (root.candidate.analysis.coverageGapsTotal > 0
-          ? " · " + root.candidate.analysis.coverageGapsTotal + " gaps" : "") +
-        (root.candidate.analysis.coverageGapsOmitted > 0
-          ? " · " + root.candidate.analysis.coverageGapsOmitted + " gaps omitted" : "") +
-        (root.candidate.analysis.coverageGapsDisplayOmitted > 0
-          ? " · " + root.candidate.analysis.coverageGapsDisplayOmitted + " gaps hidden in UI" : "")) : ""
+      value: root.candidate
+        ? (root.candidate.analysis.edgesTotal + " EDGES · " +
+           root.candidate.analysis.coverageGapsTotal + " GAPS") : ""
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")
       fontFamily: root.col("fontFamily")
     }
 
-    NoticeRow {
-      width: parent.width
-      visible: root.candidate && (root.candidate.analysis.edgesDisplayOmitted > 0 ||
-        root.candidate.analysis.coverageGapsDisplayOmitted > 0)
-      reason: "unsupported"
-      text: root.candidate ? (root.candidate.analysis.edgesDisplayOmitted > 0 &&
-        root.candidate.analysis.coverageGapsDisplayOmitted > 0
-        ? "Some invocation edges and coverage gaps are hidden by the UI display limit."
-        : (root.candidate.analysis.edgesDisplayOmitted > 0
-          ? "Some invocation edges are hidden by the UI display limit."
-          : "Some coverage gaps are hidden by the UI display limit.")) : ""
-      foreground: root.col("fg")
-      dim: root.col("dim")
-      fontFamily: root.col("fontFamily")
-      resolvedFamily: root.rf
+
+    // The parts reconcile, visibly, and the line prints whether or not a term is
+    // non-zero (CH5) — a summary whose parts only sometimes add up stops being read.
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate ? "Invocation edges — " + root.candidate.summary.reconciliation.edges.text : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
+    // The parts reconcile, visibly, and the line prints whether or not a term is
+    // non-zero (CH5) — a summary whose parts only sometimes add up stops being read.
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate ? "Coverage gaps — " + root.candidate.summary.reconciliation.coverageGaps.text : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
     }
 
     SectionHeaderRow {
       text: "OPAQUE EXECUTABLES"
-      value: root.candidate ? (root.candidate.analysis.codeExposureTotal +
-        (root.candidate.analysis.codeExposureOmitted > 0
-          ? " · " + root.candidate.analysis.codeExposureOmitted + " omitted" : "") +
-        (root.candidate.analysis.codeExposureDisplayOmitted > 0
-          ? " · " + root.candidate.analysis.codeExposureDisplayOmitted + " hidden in UI" : "")) : ""
+      value: root.candidate ? String(root.candidate.analysis.codeExposureTotal) : ""
       visible: root.candidate && root.candidate.analysis.codeExposureTotal > 0
       foreground: root.col("dimHeader")
       valueColor: root.col("dimHeader")

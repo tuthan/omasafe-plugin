@@ -383,4 +383,100 @@ function loadFixture(name) {
     throw new Error('coverage without a review summary must be unavailable, not empty')
 }
 
+// ------------------------------------------------------------- T6 reconciliation
+{
+  const git = sandbox.build(loadFixture('candidate-git-review.json'))
+  const r = git.summary.reconciliation
+
+  // The complete case: zero omission notices, and four lines that each sum to their
+  // own total.
+  if (git.summary.reconciliationNotice !== '')
+    throw new Error('a complete report must raise no omission notice: ' + git.summary.reconciliationNotice)
+  for (const name of ['findings', 'capabilities', 'edges', 'coverageGaps']) {
+    const c = r[name]
+    if (!c.reconciles)
+      throw new Error(name + ' must reconcile: ' + JSON.stringify(c))
+    if (c.shown + c.omitted + c.hidden !== c.total)
+      throw new Error(name + ' parts do not sum to the total')
+    if (!c.complete)
+      throw new Error(name + ' should be complete in the captured report')
+  }
+  if (r.findings.text !== '32 shown · 0 omitted by the scanner · 0 hidden by the display cap · 0 suppressed')
+    throw new Error('findings reconciliation line: ' + r.findings.text)
+  if (r.capabilities.text !== '63 shown · 0 omitted by the scanner · 0 hidden by the display cap')
+    throw new Error('capabilities reconciliation line: ' + r.capabilities.text)
+  // Suppression is a named term on findings only, and it sits OUTSIDE the sum.
+  if (r.capabilities.text.indexOf('suppressed') >= 0)
+    throw new Error('only findings carry a suppression term')
+}
+
+// A non-zero term in two different collections raises exactly ONE notice, naming both.
+{
+  const mixed = report()
+  mixed.tool_version = '0.3.0'
+  mixed.result.analysis.findings = Array.from({ length: 6 }, (_, i) => ({
+    rule_id: 'oma.x', title: 't' + i, severity: 'low',
+  }))
+  mixed.result.report_profile.omissions.findings = { total: 10, emitted: 6, omitted: 4 }
+  mixed.result.analysis.capabilities = [
+    { capability: 'network-access', relative_path: 'a.qml', detail: '', confidence: 'ast-backed' },
+  ]
+  mixed.result.report_profile.omissions.capabilities = { total: 1, emitted: 1, omitted: 0 }
+  mixed.result.review_summary = {
+    findings: { total: 10, active: 10, suppressed: 0, emitted: 6, omitted: 4 },
+    capabilities: { total: 1, emitted: 1, omitted: 0 },
+  }
+  const s = sandbox.build(mixed).summary
+  if (s.reconciliation.findings.omitted !== 4 || s.reconciliation.findings.shown !== 6)
+    throw new Error('findings reconciliation under omission: ' + s.reconciliation.findings.text)
+  if (s.reconciliationNotice.indexOf('4 findings omitted by the scanner') < 0)
+    throw new Error('the notice must name the omitted findings: ' + s.reconciliationNotice)
+  if (s.reconciliationNotice.indexOf('An empty list is not a safety conclusion.') < 0)
+    throw new Error('the notice must keep its conclusion sentence')
+  if ((s.reconciliationNotice.match(/This report omits evidence/g) || []).length !== 1)
+    throw new Error('exactly one notice covers every collection')
+}
+
+// A display cap and a scanner omission in two different collections, named together
+// in one sentence — the §5.5 example.
+{
+  const both = report()
+  both.tool_version = '0.3.0'
+  both.result.analysis.findings = Array.from({ length: 6 }, (_, i) => ({
+    rule_id: 'oma.x', title: 't' + i, severity: 'low',
+  }))
+  both.result.report_profile.omissions.findings = { total: 10, emitted: 6, omitted: 4 }
+  both.result.analysis.capabilities = Array.from({ length: 202 }, () => ({
+    capability: 'network-access', relative_path: 'a.qml', detail: '', confidence: 'ast-backed',
+  }))
+  both.result.report_profile.omissions.capabilities = { total: 202, emitted: 202, omitted: 0 }
+  both.result.review_summary = {
+    findings: { total: 10, active: 10, suppressed: 0, emitted: 6, omitted: 4 },
+    capabilities: { total: 202, emitted: 202, omitted: 0 },
+  }
+  const s = sandbox.build(both).summary
+  if (s.reconciliation.capabilities.hidden !== 2)
+    throw new Error('the model capped 2 capabilities and must say so')
+  if (s.reconciliationNotice.indexOf('4 findings omitted by the scanner') < 0 ||
+      s.reconciliationNotice.indexOf('2 capabilities hidden by the display limit') < 0)
+    throw new Error('one notice must name both terms: ' + s.reconciliationNotice)
+  if (s.reconciliationNotice.indexOf(' and ') < 0)
+    throw new Error('two terms are joined with "and", not a bare list')
+  // Even under omission, every line still adds up to its own total.
+  for (const name of ['findings', 'capabilities']) {
+    if (!s.reconciliation[name].reconciles)
+      throw new Error(name + ' must still reconcile under omission')
+  }
+}
+
+// Evidence observations were a bare dangling line; they are a named term now.
+{
+  const evidence = report()
+  evidence.tool_version = '0.3.0'
+  evidence.result.report_profile.omissions.evidence_observations = { total: 9, emitted: 6, omitted: 3 }
+  const s = sandbox.build(evidence).summary
+  if (s.reconciliationNotice.indexOf('3 evidence observations omitted by the scanner') < 0)
+    throw new Error('omitted evidence observations must be a term of the notice')
+}
+
 console.log('candidate model: ok')
