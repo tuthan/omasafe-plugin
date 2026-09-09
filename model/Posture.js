@@ -370,7 +370,7 @@ function build(report) {
     toolSentence = "Tools " + observedTools + " of " + toolNames.length + " observed"
     if (missingTools.length > 0) {
       toolSentence += " · " + missingTools.join(", ") + " unavailable"
-      if (impacted > 0) toolSentence += ", " + _plural(impacted, "check") + " left incomplete"
+      if (impacted > 0) toolSentence += ", " + _plural(impacted, "check") + " incomplete"
     }
   }
 

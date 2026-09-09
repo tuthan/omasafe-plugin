@@ -8,6 +8,7 @@ import "model/Glyphs.js" as Glyphs
 import "model/Time.js" as Time
 import "model/ViewModel.js" as ViewModel
 import "model/Candidate.js" as Candidate
+import "model/Posture.js" as Posture
 import "graph/FlowLayout.js" as FlowLayout
 import "components"
 import "views"
@@ -40,6 +41,16 @@ Panel {
   property var postureReport: null
   property bool postureLoading: false
   property string postureError: ""
+  // The ONE posture view-model. PostureView, the tab chip and the bar tooltip all
+  // read this, so none of them can compute a different attention count (08 §5.7).
+  readonly property var postureModel: Posture.build(root.postureReport)
+  // Posture disclosure state. It lives here rather than in the view because the
+  // cursor's index space depends on it: `sectionCount("posture-checks")` counts the
+  // rows a collapsed domain removed. Same idiom as expandedFindingKey / expandedClass,
+  // and it is reset on close with them.
+  property var postureExpandedChecks: ({})
+  property var postureCollapsedGroups: ({})
+  property bool postureHostExpanded: false
   property string schedulePolicyChoice: "advisory"
   property string scheduleInstallError: ""
   property string scheduleInstallMessage: ""
@@ -301,6 +312,9 @@ Panel {
       root.analysisSweepGeneration++
       root.analysisQueue = []
       root.analysisHydrationQueue = []
+      root.postureExpandedChecks = ({})
+      root.postureCollapsedGroups = ({})
+      root.postureHostExpanded = false
     } else { root.cursorActive = false; root.focusSection = "hero"; root.selectedIndex = 0 }
   }
 
@@ -1322,6 +1336,98 @@ Panel {
   }
   function toggleCoverageFileRefs() { root.coverageFileRefsExpanded = !root.coverageFileRefsExpanded }
   function toggleProvenance() { root.provenanceExpanded = !root.provenanceExpanded }
+
+  // ---- posture disclosure, rows and copy actions (doc 08 §5.2, §5.6) ------------
+  //
+  // These are the ONE definition of what is on the Posture tab and in what order.
+  // `sectionCount()` and `PostureView` both call them, so the cursor's index space
+  // and the rows on screen are the same list by construction, not by agreement — the
+  // defect T7 exists to prevent, one layer down.
+
+  function postureCheckExpanded(id) { return root.postureExpandedChecks[String(id)] === true }
+  function postureToggleCheck(id) {
+    var next = {}, key
+    for (key in root.postureExpandedChecks) next[key] = root.postureExpandedChecks[key]
+    next[String(id)] = !(next[String(id)] === true)
+    root.postureExpandedChecks = next
+  }
+  function postureGroupCollapsed(domain) { return root.postureCollapsedGroups[String(domain)] === true }
+  function postureToggleGroup(domain) {
+    var next = {}, key
+    for (key in root.postureCollapsedGroups) next[key] = root.postureCollapsedGroups[key]
+    next[String(domain)] = !(next[String(domain)] === true)
+    root.postureCollapsedGroups = next
+  }
+
+  // The OBSERVED check rows currently on screen, flattened in render order. A
+  // collapsed domain contributes none.
+  function postureObservedRows() {
+    var model = root.postureModel
+    if (!model || !model.available) return []
+    var out = []
+    for (var g = 0; g < model.groups.length; g++) {
+      var group = model.groups[g]
+      if (root.postureGroupCollapsed(group.domain)) continue
+      for (var c = 0; c < group.checks.length; c++) out.push(group.checks[c])
+    }
+    return out
+  }
+
+  // A next step often names the exact command to run, in backticks. The panel offers
+  // to copy that span VERBATIM and never runs it; it never synthesises a command the
+  // report did not print, so "install arch-audit" does not silently become a
+  // `pacman -S` line the CLI never suggested.
+  function postureCommandInStep(text) {
+    var match = /`([^`]{1,256})`/.exec(String(text || ""))
+    return match ? match[1] : ""
+  }
+
+  function postureCopyActions() {
+    var model = root.postureModel
+    if (!model || !model.available) return []
+    var out = []
+    for (var i = 0; i < model.attention.length; i++) {
+      var check = model.attention[i]
+      var command = root.postureCommandInStep(check.nextStep)
+      if (command === "") continue
+      out.push({
+        checkId: check.id,
+        value: command,
+        // A span with an argument is a command line; a bare identifier is the name of
+        // a package or a tool. Both are worth copying and they are not the same thing,
+        // so the button says which one it is.
+        label: command.indexOf(" ") >= 0 ? "Copy command" : "Copy tool name",
+        tooltip: check.title + " — copies `" + command + "`. OmaSafe never runs it."
+      })
+    }
+    return out
+  }
+
+  function posturePerformCopy(index) {
+    var actions = root.postureCopyActions()
+    if (index >= 0 && index < actions.length) root.copyValue(actions[index].value)
+  }
+
+  // Enter (or a click) on a strip cell jumps to that check: expand it, uncollapse its
+  // domain if needed, and land the cursor on it. The strip is an index into the tab,
+  // not a decoration.
+  function postureRevealCheck(stripIndex) {
+    var model = root.postureModel
+    if (!model || !model.available) return
+    if (stripIndex < 0 || stripIndex >= model.checks.length) return
+    var check = model.checks[stripIndex]
+    if (root.postureGroupCollapsed(check.domain)) root.postureToggleGroup(check.domain)
+    if (!root.postureCheckExpanded(check.id)) root.postureToggleCheck(check.id)
+    var i
+    for (i = 0; i < model.attention.length; i++) {
+      if (model.attention[i].id === check.id) { root.hoverCursor("posture-attention", i); return }
+    }
+    var rows = root.postureObservedRows()
+    for (i = 0; i < rows.length; i++) {
+      if (rows[i].id === check.id) { root.hoverCursor("posture-checks", i); return }
+    }
+  }
+
 
   function candidateAvailabilityText() {
     if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.3.0 or newer."

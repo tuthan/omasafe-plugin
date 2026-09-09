@@ -92,7 +92,7 @@ const real = sandbox.build(fixture('posture-v1.json'))
   eq(real.tools.missing.join(','), 'arch-audit', 'the missing tool is named')
   eq(real.tools.impactedChecks, 1, 'one check is attributed to the missing tool')
   eq(real.tools.sentence,
-    'Tools 11 of 12 observed · arch-audit unavailable, 1 check left incomplete',
+    'Tools 11 of 12 observed · arch-audit unavailable, 1 check incomplete',
     'tools sentence')
   const audit = real.checks.find(c => c.id === 'vulnerabilities.arch_audit')
   eq(audit.missingDependencies.join(','), 'arch-audit', 'arch_audit is attributed to arch-audit')

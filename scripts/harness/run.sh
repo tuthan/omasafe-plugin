@@ -13,8 +13,12 @@
 #
 #   scripts/harness/run.sh                       # five themes x four base sizes
 #   scripts/harness/run.sh white oxocarbon       # named themes only
+#   HARNESS=posture scripts/harness/run.sh       # the Posture tab instead of the charts
+#   HARNESS=candidate scripts/harness/run.sh     # the Source Scan result band
 #
-# Output: $TMPDIR/omasafe-harness/out/<theme>-base<n>.png
+# `HARNESS_FIXTURE` overrides the report the posture/candidate sheets render.
+#
+# Output: $TMPDIR/omasafe-harness/out/<sheet>-<theme>-base<n>.png
 set -u
 
 repo=$(cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -28,11 +32,17 @@ themes=("$@")
 command -v quickshell >/dev/null || { echo "quickshell not on PATH" >&2; exit 1; }
 
 mkdir -p "$out"
-cp "$repo/scripts/harness/charts.qml" "$work/shell.qml"
+# HARNESS selects which sheet to render: charts (T2) or posture (T4).
+sheet=${HARNESS:-charts}
+[ -f "$repo/scripts/harness/$sheet.qml" ] || { echo "no such harness: $sheet" >&2; exit 1; }
+cp "$repo/scripts/harness/$sheet.qml" "$work/shell.qml"
 ln -sfn "$repo/components" "$work/components"
+ln -sfn "$repo/views"      "$work/views"
+ln -sfn "$repo/graph"      "$work/graph"
 ln -sfn "$repo/model"      "$work/model"
 ln -sfn "$kit/Commons"     "$work/Commons"
 ln -sfn "$kit/Ui"          "$work/Ui"
+export HARNESS_FIXTURE=${HARNESS_FIXTURE:-$repo/docs/design/fixtures/posture-v1.json}
 
 find_theme() {
   for d in "$HOME/.config/omarchy/themes/$1" "/usr/share/omarchy/themes/$1"; do
@@ -49,8 +59,8 @@ for theme in "${themes[@]}"; do
   ln -sfn "$tp" "$fake/.local/state/omarchy/current/theme"
   printf '%s\n' "$theme" > "$fake/.local/state/omarchy/current/theme.name"
   for base in 9 12 16 20; do
-    png=$out/${theme}-base${base}.png
-    log=$out/${theme}-base${base}.log
+    png=$out/${sheet}-${theme}-base${base}.png
+    log=$out/${sheet}-${theme}-base${base}.log
     rm -f "$png"
     HOME=$fake HARNESS_BASE=$base HARNESS_OUT=$png \
       timeout 30 quickshell -p "$work/shell.qml" >"$log" 2>&1
