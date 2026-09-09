@@ -44,6 +44,18 @@ Column {
     return out
   }
 
+  // The three counts as bar segments, in the same order the counts line prints them.
+  // The relation words carry the meaning; the tiers only reinforce them, and none is
+  // the healthy tier — "same check" is a mapping fact, not a clean result.
+  function baselineSegments(b) {
+    if (!b || !b.available) return []
+    return [
+      { key: "same", count: Number(b.equivalentCount || 0), level: "foreground", label: "same check" },
+      { key: "partial", count: Number(b.partialCount || 0), level: "incomplete", label: "partial" },
+      { key: "none", count: Number(b.notCoveredCount || 0), level: "", label: "no check" }
+    ]
+  }
+
   function baselineSummary(b) {
     if (!b || !b.available) return ""
     var parts = []
@@ -163,6 +175,23 @@ Column {
       text: "MARKETPLACE BASELINE V3"
       value: root.baselineSummary(baselineSection.b)
       foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    // A part-to-whole over the ~45-rule catalog was prose (08 E6). n > 24, so CH2 says
+    // length bar — with the existing counts line above kept verbatim as its legend, so
+    // deleting the bar loses speed and never information.
+    MeterBar {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: baselineSection.b && baselineSection.b.available
+      available: baselineSection.b && baselineSection.b.available
+      segments: root.baselineSegments(baselineSection.b)
+      // The denominator is the sum of the three printed terms, not the catalog row
+      // count: the bar shows exactly the numbers its legend prints and introduces no
+      // count that is not already in the report. MeterBar takes 0 to mean "use the
+      // segments' own sum".
+      total: 0
+      foreground: root.col("fg"); dim: root.col("dim")
       fontFamily: root.col("fontFamily")
     }
 

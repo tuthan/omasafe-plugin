@@ -524,9 +524,12 @@ function _capabilitySummary(capabilities, capabilityOmission, displayOmitted) {
   }
 }
 
-function _coverageRows(reviewSummary, payloadOmission) {
-  var states = reviewSummary && reviewSummary.coverage ? reviewSummary.coverage.payloadStates : null
-  if (!states) return null
+// Shared with the installed plugin detail sheet (08 §2.4 E4). The candidate and the
+// installed plugin now read the same six payload states, in the same order, with the
+// same words and the same component — this function is what makes "same" literal
+// rather than a convention two files agree on.
+function coverageRows(states, total) {
+  if (!states || typeof states !== "object") return null
   var rows = [], text = [], sum = 0
   for (var i = 0; i < COVERAGE_ORDER.length; i++) {
     var key = COVERAGE_ORDER[i].key
@@ -548,14 +551,25 @@ function _coverageRows(reviewSummary, payloadOmission) {
     text.push(other + " other")
     sum += other
   }
+  // A total of 0 (or an absent one) means "use the segments' own sum" — the Baseline
+  // bar's contract, where the legend is three counts and not a catalog total. A real
+  // payload total is always positive when there are states to draw.
+  var declared = _count(total)
+  var denominator = (declared === null || declared === 0) ? sum : declared
   return {
     rows: rows,
-    total: payloadOmission.total,
+    total: denominator,
     countsText: text.join(" · "),
-    reconciles: sum === payloadOmission.total,
-    assessment: reviewSummary && reviewSummary.coverage
-      ? reviewSummary.coverage.assessment : ""
+    reconciles: sum === denominator
   }
+}
+
+function _coverageRows(reviewSummary, payloadOmission) {
+  var states = reviewSummary && reviewSummary.coverage ? reviewSummary.coverage.payloadStates : null
+  var built = coverageRows(states, payloadOmission.total)
+  if (!built) return null
+  built.assessment = reviewSummary && reviewSummary.coverage ? reviewSummary.coverage.assessment : ""
+  return built
 }
 
 // ------------------------------------------------------------- T6 reconciliation

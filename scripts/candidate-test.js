@@ -532,4 +532,41 @@ function loadFixture(name) {
     throw new Error('a non-matching query finds nothing')
 }
 
+// ------------------------------------------------- T13 E4: shared coverage rows
+//
+// The installed detail sheet renders the same six payload states through the same
+// derivation, so "an installed plugin and a candidate read identically" is literal
+// rather than a convention two files agree on.
+{
+  const installed = JSON.parse(fs.readFileSync(
+    path.join(fixtures, 'installed-analyze.json'), 'utf8')).result
+  const states = installed.payload_inventory.coverage_states
+  const rows = sandbox.coverageRows(states, installed.payload_inventory.totals.entries)
+  if (rows.rows.map(r => r.key).join(',') !==
+      'analyzed,partial,truncated,skipped,unsupported,unreferenced')
+    throw new Error('the installed path uses the candidate\'s fixed order')
+  if (rows.total !== 66 || !rows.reconciles)
+    throw new Error('the installed coverage rows must sum to the payload entry total')
+  if (rows.countsText !== '23 analyzed · 1 partial · 0 truncated · 0 skipped · 24 unsupported · 18 unreferenced')
+    throw new Error('installed counts line: ' + rows.countsText)
+  if (rows.rows.some(r => r.level === 'healthy'))
+    throw new Error('no installed coverage segment may be green either')
+
+  // Passing 0 as the total means "use the segments' own sum" — the Baseline bar's
+  // contract, where the legend is three counts and not a catalog total.
+  const selfTotal = sandbox.coverageRows({ analyzed: 3, unsupported: 1 }, 0)
+  if (selfTotal.total !== 4 || !selfTotal.reconciles)
+    throw new Error('a zero total falls back to the segments\' own sum')
+
+  if (sandbox.coverageRows(null, 10) !== null)
+    throw new Error('absent states yield null, so the caller says `unavailable` rather than drawing an empty bar')
+
+  // An unknown state is counted at the end rather than dropped, so the bar still
+  // reconciles with a total that includes it.
+  const odd = sandbox.coverageRows({ analyzed: 2, quantum: 3 }, 5)
+  if (!odd.reconciles || odd.rows[odd.rows.length - 1].key !== 'other' ||
+      odd.rows[odd.rows.length - 1].count !== 3)
+    throw new Error('an unknown coverage state is counted as `other`, never dropped')
+}
+
 console.log('candidate model: ok')

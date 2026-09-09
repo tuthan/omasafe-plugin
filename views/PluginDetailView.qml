@@ -4,6 +4,7 @@ import qs.Ui
 import "../components"
 import "../model/Glyphs.js" as Glyphs
 import "../model/Labels.js" as Labels
+import "../model/Candidate.js" as Candidate
 
 // Plugin detail sheet (doc 03 §5): TRUST BASELINE · WHAT CHANGED · REVIEW ITEMS ·
 // CAPABILITIES OBSERVED · COVERAGE (file references folded in) · MARKETPLACE CLAIM ·
@@ -23,6 +24,29 @@ Column {
   readonly property var plugin: (panel && vm && vm.pluginsById) ? vm.pluginsById[panel.selectedPluginId] : null
   readonly property var analysis: panel ? panel.analysisReport : null
   readonly property var reviewSummary: panel ? panel.analysisReviewSummary : null
+
+  readonly property int _hiddenChangedFiles: {
+    var files = (panel && panel.diffReport && panel.diffReport.changed_files)
+      ? panel.diffReport.changed_files : []
+    return Math.max(0, files.length - 5)
+  }
+
+  // The candidate's own derivation, over the installed report's payload states.
+  readonly property var _coverage: panel && panel.analysisCoverageStates
+    ? Candidate.coverageRows(panel.analysisCoverageStates, 0) : null
+
+  // `review_summary.rule_counts` is present in every `plugins analyze` report. No new
+  // string, count or mark is introduced here that is not already in the report.
+  readonly property var _ruleRows: {
+    var counts = root.reviewSummary ? root.reviewSummary.rule_counts : null
+    if (!counts || typeof counts !== "object") return []
+    var out = []
+    for (var key in counts) {
+      var n = Number(counts[key])
+      if (isFinite(n) && n > 0) out.push({ label: String(key), count: n, level: "" })
+    }
+    return out
+  }
   readonly property var codeExposure: panel && Array.isArray(panel.analysisCodeExposure)
     ? panel.analysisCodeExposure : []
   readonly property var status: panel ? panel.statusReport : null
@@ -236,6 +260,17 @@ Column {
         elide: Text.ElideMiddle
       }
     }
+
+    // The header printed the true total and nothing marked entries 6+ as hidden. The
+    // candidate view discloses every display cap; so does this one now (08 E3).
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root._hiddenChangedFiles > 0
+      textFormat: Text.PlainText
+      text: "+" + root._hiddenChangedFiles + " more changed files"
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+    }
   }
 
   // ---- REVIEW ITEMS ------------------------------------------------------------
@@ -250,6 +285,25 @@ Column {
       text: "REVIEW ITEMS"
       value: (root.analysis && root.analysis.findings) ? String(root.analysis.findings.length) : ""
       foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    // "33 review items" and "one rule, 33 times" are different reviews. The rollup was
+    // already in the report and only the candidate view rendered it (08 E5).
+    SectionHeaderRow {
+      text: "BY RULE"
+      value: String(root._ruleRows.length)
+      visible: root._ruleRows.length > 0
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    RankedBars {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root._ruleRows.length > 0
+      rows: root._ruleRows
+      total: (root.analysis && root.analysis.findings) ? root.analysis.findings.length : 0
+      foreground: root.col("fg"); dim: root.col("dim")
       fontFamily: root.col("fontFamily")
     }
 
@@ -411,6 +465,40 @@ Column {
       text: "Coverage shows what OmaSafe could inspect. A limit or gap means some parts may not have been checked."
       color: root.col("dim")
       font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    // The same six payload states a candidate gets, through the same derivation and
+    // the same component (08 E4). Placing the two side by side, the coverage bar now
+    // carries the same words in the same order — an installed plugin and a candidate
+    // are read the same way. No segment is ever "done" green.
+    MeterBar {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root._coverage !== null
+      available: root._coverage !== null
+      segments: root._coverage ? root._coverage.rows : []
+      total: root._coverage ? root._coverage.total : 0
+      foreground: root.col("fg"); dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root._coverage !== null
+      textFormat: Text.PlainText
+      text: root._coverage ? root._coverage.countsText : ""
+      color: root.col("fg")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root._coverage !== null && !root._coverage.reconciles
+      textFormat: Text.PlainText
+      text: "The coverage states do not sum to the payload entry total; the bar is incomplete."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
       wrapMode: Text.WordWrap
     }
 
