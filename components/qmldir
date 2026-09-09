@@ -21,3 +21,4 @@ UnitStrip 1.0 UnitStrip.qml
 MeterBar 1.0 MeterBar.qml
 RankedBars 1.0 RankedBars.qml
 PostureCheckBlock 1.0 PostureCheckBlock.qml
+ViewChips 1.0 ViewChips.qml

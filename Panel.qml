@@ -247,7 +247,10 @@ Panel {
     { key: "flow", label: "Analysis" },
     { key: "rules", label: "Rules" },
     { key: "posture", label: "Posture" },
-    { key: "source-scan", label: "Source Scan" }
+    // "Source", not "Source Scan": five labelled chips plus their counts do not fit a
+    // 420-unit compact panel on a default-padding theme, and the label is the cheapest
+    // 33 units on the row. The tab's own header still reads PLUGIN SOURCE SCAN.
+    { key: "source-scan", label: "Source" }
   ]
   // The view chips' options (value = tab key). One chip per view.
   //
@@ -263,22 +266,50 @@ Panel {
   // disagree in any report. It is a count of items to look at, not a health score.
   function tabSuffix(key) {
     if (key === "posture") {
-      if (!root.cliVerified) return " –"
-      return " " + Posture.chipSuffix(root.postureModel)
+      if (!root.cliVerified) return "–"
+      return Posture.chipSuffix(root.postureModel)
     }
     if (key === "overview") {
       // `vm.outstanding` is 0 before the first scan as surely as it is after a clean
       // one, so the chip is gated on a scan result existing rather than on the number.
-      if (!root.cliVerified || !root.vm || !root.hasScanResult) return " –"
-      return " " + (root.vm.outstanding > 0 ? String(root.vm.outstanding) : "·")
+      if (!root.cliVerified || !root.vm || !root.hasScanResult) return "–"
+      return root.vm.outstanding > 0 ? String(root.vm.outstanding) : "·"
     }
     return ""
   }
+  // The chip row formats the count; this only decides what it is. Keeping the label
+  // and the count as separate fields is what lets the row's width be measured per
+  // labelling scheme instead of guessed at.
   readonly property var viewOptions: {
     var out = []
-    for (var i = 0; i < root.tabs.length; i++)
-      out.push({ value: root.tabs[i].key, label: root.tabs[i].label + root.tabSuffix(root.tabs[i].key) })
+    for (var i = 0; i < root.tabs.length; i++) {
+      out.push({
+        value: root.tabs[i].key,
+        label: root.tabs[i].label,
+        count: root.tabSuffix(root.tabs[i].key),
+        tooltip: root.tabTooltip(root.tabs[i].key)
+      })
+    }
     return out
+  }
+
+  // The count is two characters wide and carries no words, so the chip's tooltip says
+  // what it counts. `–` and `·` in particular are claims, and a reader should not have
+  // to infer which.
+  function tabTooltip(key) {
+    var suffix = root.tabSuffix(key)
+    if (suffix === "") return ""
+    if (key === "posture") {
+      if (suffix === "–") return "Host posture: no scan has completed, or the CLI is unavailable"
+      if (suffix === "·") return "Host posture: a scan completed and nothing needs attention"
+      return "Host posture: " + suffix + " checks need attention"
+    }
+    if (key === "overview") {
+      if (suffix === "–") return "Plugins: no scan result yet"
+      if (suffix === "·") return "Plugins: a scan completed with no outstanding alerts"
+      return "Plugins: " + suffix + " outstanding alerts"
+    }
+    return ""
   }
   property int activeIndex: 0
   // Phase 5: the panel can grow in place; Flow Graph uses the room for all four
@@ -4431,12 +4462,13 @@ Panel {
           resolvedFamily: Style.font.resolvedFamily
         }
 
-        ButtonGroup {
+        // A Flow, not the kit ButtonGroup's Row: the chips must not be able to run off
+        // the panel. See components/ViewChips.qml for the measurements.
+        ViewChips {
           id: viewChips
           width: parent.width
           options: root.viewOptions
           value: root.activeTabKey
-          focusable: false
           cursorIndex: (root.cursorActive && root.focusSection === "views") ? root.selectedIndex : -1
           fontSize: Style.font.bodySmall
           foreground: root.fg

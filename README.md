@@ -47,10 +47,11 @@ The panel has five views:
 | **Posture** | Host posture report, coverage state, update awareness, and post-update hook observation. |
 | **Source Scan** | Manual pre-install scan of a public GitHub URL or copied install command. |
 
-The **Overview** and **Posture** chips carry a count so you can see which tab has
-something in it without visiting all five: a digit when the collector ran and
-found items, `·` when it ran and found none, `–` when it has not run or is
-unavailable. A chip with no count is a tab with no collector, never a clean tab.
+The **Overview** and **Posture** chips carry a count in parentheses so you can see
+which tab has something in it without visiting all five: a digit when the
+collector ran and found items, `·` when it ran and found none, `–` when it has
+not run or is unavailable. A chip with no count is a tab with no collector, never
+a clean tab, and each chip's tooltip says in words what its count means.
 
 Analysis counts are evidence, not permissions or scores. A capability “use” is
 one source-level reference emitted by the analyzer; the file count is the number

@@ -38,8 +38,12 @@ or approve, and the Source Scan install-command visibility rule is untouched.
   sections: the check strip, the attention set, the copy actions, the observed
   list, the scan findings and the scan copy actions. `/` finds posture checks and
   scan findings. No new keys.
-- **Tab chips carry counts** — Overview and Posture. A digit when the collector
+- **Tab chips carry counts** — Overview and Posture, in parentheses:
+  `Overview (2)  Analysis  Rules  Posture (3)  Source`. A digit when the collector
   ran and found items, `·` when it ran and found none, `–` when it has not run.
+  Each counted chip's tooltip says in words what its count means, since `–` and `·`
+  are claims a reader should not have to infer.
+- `components/ViewChips.qml` replaces the kit `ButtonGroup` for the view chips.
 - **Bar shield tooltip** gains one host-posture line, in the same words as the tab.
   `alertCount` is unchanged.
 - `components/UnitStrip.qml`, `components/MeterBar.qml`,
@@ -68,6 +72,17 @@ or approve, and the Source Scan install-command visibility rule is untouched.
 
 ### Fixed
 
+- **The view-chip row could run off the compact panel.** The kit `ButtonGroup` is a
+  plain `Row` — it does not wrap, elide or shrink — and the panel's usable width is
+  not the number the panel is configured with: `popupPadding` sits inside
+  `contentWidth`, so a 420-unit compact panel has ~390 usable units on a
+  default-padding theme. Measured across five themes, the five chip labels were
+  already 383–391 units wide *before* any count was added, and the counts pushed
+  them 20–28 units past the edge with nothing on screen saying so. The row is now a
+  `Flow`, so it can never clip; tighter chip padding and gap plus a shorter
+  `Source` label keep it on one line, verified at 266–598 units against 291–678
+  usable across five themes x four base sizes, including the widest real case of
+  two-digit counts on both counted chips.
 - **The installed path could draw omission as absence.** `ViewModel` grouped
   `analysis.capabilities[]` and `analysis.findings[]` without consulting
   `report_profile.omissions`, so the Overview capability strip, the Matrix cells
