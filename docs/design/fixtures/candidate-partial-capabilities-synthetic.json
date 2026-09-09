@@ -1,0 +1,3087 @@
+{
+ "schema": "omasafe.report.v1",
+ "tool_version": "0.3.0",
+ "generated_at": "2026-09-09T02:49:33Z",
+ "result": {
+  "acquisition": {
+   "cache": {
+    "result": "miss",
+    "used": true
+   },
+   "discarded_install_flags": [],
+   "effective_repository_url": "https://github.com/tuthan/omasafe-plugin.git",
+   "input_kind": "exact-git",
+   "install_verb": "none",
+   "installation_performed": false,
+   "integrity": {
+    "algorithm": "git-sha1",
+    "expected": null,
+    "observed": "1316286681f0536288331f4e2dedd91fd5e8b1cd",
+    "state": "resolved-exact"
+   },
+   "limitations": [],
+   "listed_repository": null,
+   "marketplace_claim": null,
+   "network_used": true,
+   "operation": "scan-only",
+   "requested_reference": "exact-commit",
+   "resolved_identity": {
+    "kind": "git-commit",
+    "value": "1316286681f0536288331f4e2dedd91fd5e8b1cd"
+   },
+   "schema": "omasafe.acquisition.v1"
+  },
+  "analysis": {
+   "analysis_fingerprint": "d6dd1d39f00ffdf5bcaf310b9d9dc1cc419bbb706ad9d272906972e9a965e986",
+   "capabilities": [
+    {
+     "capability": "clipboard-access",
+     "confidence": "ast-backed",
+     "detail": "clipboard-write",
+     "display_relative_path": "Panel.qml",
+     "explanation": "May observe or replace clipboard contents.",
+     "language": "qml",
+     "line": 1206,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
+     "source_rule_id": "oma.qml.clipboard-access"
+    },
+    {
+     "capability": "clipboard-access",
+     "confidence": "lexical-fallback",
+     "detail": "clipboard-token",
+     "display_relative_path": "model/Glyphs.js",
+     "explanation": "May observe or replace clipboard contents.",
+     "language": "javascript",
+     "line": 59,
+     "relative_path": "model/Glyphs.js",
+     "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
+     "source_rule_id": "oma.qml.clipboard-access"
+    },
+    {
+     "capability": "clipboard-access",
+     "confidence": "lexical-fallback",
+     "detail": "clipboard-token",
+     "display_relative_path": "model/Glyphs.js",
+     "explanation": "May observe or replace clipboard contents.",
+     "language": "javascript",
+     "line": 75,
+     "relative_path": "model/Glyphs.js",
+     "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
+     "source_rule_id": "oma.qml.clipboard-access"
+    },
+    {
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "detail": "FileView",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "QML reads or watches files and may participate in writes.",
+     "language": "qml",
+     "line": 640,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Raise priority for sensitive paths, persistence locations, or write participation.",
+     "source_rule_id": "oma.qml.filesystem-access"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 569,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 584,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 592,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 614,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 622,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 3905,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4055,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4067,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4122,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4135,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4276,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4289,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4302,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4309,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4377,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4467,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4482,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4489,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4559,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4572,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4640,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4653,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4723,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4736,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4809,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4822,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4892,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4905,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 4916,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5060,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5074,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5177,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5190,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5275,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5287,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5366,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5383,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5462,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "persistence-scheduling",
+     "confidence": "ast-backed",
+     "detail": "Timer",
+     "display_relative_path": "Panel.qml",
+     "explanation": "Enables periodic or headless long-running behavior.",
+     "language": "qml",
+     "line": 5476,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+     "source_rule_id": "oma.qml.persistence-scheduling"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 425,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 479,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 521,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "BarWidget.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 629,
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 3965,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4074,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4142,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4209,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4316,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4390,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4496,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4579,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4660,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4746,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4829,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 4927,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 5081,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 5197,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 5294,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    },
+    {
+     "capability": "process-execution",
+     "confidence": "ast-backed",
+     "detail": "Process",
+     "display_relative_path": "Panel.qml",
+     "explanation": "QML starts an arbitrary argv child process.",
+     "language": "qml",
+     "line": 5390,
+     "relative_path": "Panel.qml",
+     "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+     "source_rule_id": "oma.qml.process-execution"
+    }
+   ],
+   "coverage_gaps": [
+    {
+     "detail": "analysis coverage is bounded or parser-gated; no clean verdict is implied",
+     "impact": "language-model",
+     "language": "qml",
+     "line": null,
+     "reason": "dataflow-statement-limit",
+     "relative_path": "Panel.qml",
+     "rule_ids": []
+    }
+   ],
+   "coverage_limitations": [
+    "dataflow-statement-limit:Panel.qml",
+    "sink-reference-rejected:absolute:BarWidget.qml:631:/usr/bin/mkdir",
+    "review-profile-coverage-omitted:49",
+    "review-profile-payload_entries-omitted:49"
+   ],
+   "equivalence": {
+    "external_ruleset_name": "automated-security-baseline",
+    "external_ruleset_version": "3",
+    "external_system": "omarchy-plugin-marketplace",
+    "map_version": "2"
+   },
+   "findings": [
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/AlertRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/AlertRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/AlertRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "9014e9b6006ab12b1bd0dee0ea6e1bd6e3a805dc4d5b7f57495bc414312303f1",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/AlertRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/Breadcrumb.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/Breadcrumb.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/Breadcrumb.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "8fbd7240ac3b672bf9dbd6e3379efa879b0a544551243dd812c4d8653cef2d8c",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/Breadcrumb.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/CapabilityStrip.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/CapabilityStrip.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/CapabilityStrip.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "7e8a49d6a2d9b85e381c90d9574c6acaa0841b553d90ba1b673c247b4888a084",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/CapabilityStrip.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/CapabilityStrip.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Labels.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Labels.js",
+       "display_relative_path": "components/CapabilityStrip.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/CapabilityStrip.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "b3e3dcc5d7067a056b4d3ee5b62afb50de8ab824f01a6a76b35eaac93afc0191",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/CapabilityStrip.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/ClassRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/ClassRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/ClassRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "910f1e48c0af532d485cb249af5e526c21c54ab5db9b85a3723f0f9070f02ef9",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/ClassRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/EvidenceRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/EvidenceRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/EvidenceRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "88107d405ab199c5841121c3a90e2c416d0746e38d2edf638a849ec7b8d10da6",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/EvidenceRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/InfoGrid.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/InfoGrid.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/InfoGrid.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "31edbdee59db8b73980a57442232c52220922a4c3c1f62550ddd35ba308521f4",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/InfoGrid.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/NoticeRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/NoticeRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/NoticeRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "e39e09e5f2b8b7ea35e94856dc1314507ad4efb25a3ef2eb1d2922741ef8fe4a",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/NoticeRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/RelationRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/RelationRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/RelationRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "9651672ef2752e5c56d213b8aa42291e452691e73b5fc435e0d673128bb12565",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/RelationRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/RuleRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/RuleRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/RuleRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "d675a808a5562e276f89c52d087c8c426f97aa8afa1a30fa7dc859685ac1885e",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/RuleRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/SemanticMark.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/SemanticMark.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/SemanticMark.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "89c6105b9eaa937e607691a7815fb09558b9336d3f555df665151904cac6453d",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/SemanticMark.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "components/SourceRow.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "components/SourceRow.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "components/SourceRow.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "881d681dd9210470c52fd2f5ffc49d2a52a4f0a9542942b580680b788be67f58",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "components/SourceRow.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "graph/FlowNode.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "graph/FlowNode.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "graph/FlowNode.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "45fb04445da3638ec7deb97ec37c5e511cfc5bf3d2ff992a9fb84d4051d0e93f",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "graph/FlowNode.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "graph/FlowNode.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "graph/FlowNode.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "graph/FlowNode.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "1265cc1a1a6677594361bf232255dd496a27f1ac55d98e681cd558e5c192a894",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "graph/FlowNode.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "graph/MatrixGrid.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "graph/MatrixGrid.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "graph/MatrixGrid.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "edea8b3377e2c2f404f6c65d7fcb215cd94417a21d0de097d10a5a93967b4186",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "graph/MatrixGrid.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "graph/MatrixGrid.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Labels.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Labels.js",
+       "display_relative_path": "graph/MatrixGrid.qml",
+       "id": "observation",
+       "line": 6,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "graph/MatrixGrid.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 6,
+     "occurrence_id": "dd70f7beb4c867c96c3642dece6efd83241d8eec482dc33bba9492ed81d76218",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "graph/MatrixGrid.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "graph/TraceChain.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "graph/TraceChain.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "graph/TraceChain.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "36b3910498e7b202a9d207af4ebea6e4d847d1997c34d58f765d0e7fb36249e3",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "graph/TraceChain.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "graph/TraceChain.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Labels.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Labels.js",
+       "display_relative_path": "graph/TraceChain.qml",
+       "id": "observation",
+       "line": 6,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "graph/TraceChain.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 6,
+     "occurrence_id": "74ed565f19755cafa76a0f6671b03ab3eda3683952e820492cb8757055848e68",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "graph/TraceChain.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/FinderResultsView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "views/FinderResultsView.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/FinderResultsView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "4f384ed749dc9e22e0695f7457214d25842cf01ba541ff5a8d2c415fc48fc30f",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/FinderResultsView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/FinderResultsView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "views/FinderResultsView.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/FinderResultsView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "e0e96d0f89f43da85c8c356163a061e94c03395faf77b5aa4ba5037c1e628528",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/FinderResultsView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/FinderResultsView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/ViewModel.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/ViewModel.js",
+       "display_relative_path": "views/FinderResultsView.qml",
+       "id": "observation",
+       "line": 6,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/FinderResultsView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 6,
+     "occurrence_id": "f74543e3d4fe80bcb39478ff6e3d3eb7732255e9b55b5f5f16b3b3418d4498a5",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/FinderResultsView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/FlowView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "views/FlowView.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/FlowView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "ce6ed55f3136fce3de2c3e4dc96bd79329e27ecb2a57c78295abc39b042417e9",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/FlowView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/FlowView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../graph",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../graph",
+       "display_relative_path": "views/FlowView.qml",
+       "id": "observation",
+       "line": 6,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/FlowView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 6,
+     "occurrence_id": "de20625bd9a12abc5ca3da669a3835143344790030bf630cf05b6a65098725e0",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/FlowView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/OverviewView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "views/OverviewView.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/OverviewView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "43b55b5587423e38a123a23a428a0c171e285e9baf87b015291dd0dbc92b1a42",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/OverviewView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/OverviewView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "views/OverviewView.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/OverviewView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "5a26bbc023be60bf812a758b5fbd251ee98dbd3b8399c9e2b2feeaec425c1ec6",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/OverviewView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/PluginDetailView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "views/PluginDetailView.qml",
+       "id": "observation",
+       "line": 4,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/PluginDetailView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 4,
+     "occurrence_id": "b182a1ede365efefe8832caece012c63c03594b0940918b15fbfaff51ee093d6",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/PluginDetailView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/PluginDetailView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "views/PluginDetailView.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/PluginDetailView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "21fc409cf5101ae976aeb2a0035f6b9298516fa272e4db86333a0a99ba57f912",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/PluginDetailView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/PluginDetailView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Labels.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Labels.js",
+       "display_relative_path": "views/PluginDetailView.qml",
+       "id": "observation",
+       "line": 6,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/PluginDetailView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 6,
+     "occurrence_id": "d171a8e0618036a726e60c4f9996768487502e89b51144f6b242db8ad1ba745d",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/PluginDetailView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/RulesView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../components",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../components",
+       "display_relative_path": "views/RulesView.qml",
+       "id": "observation",
+       "line": 5,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/RulesView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 5,
+     "occurrence_id": "67c3107b3c53f9ab9b33d0773411059c8c3340c8fb35f1dc23fabdc165da1d91",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/RulesView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/RulesView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+       "display_relative_path": "views/RulesView.qml",
+       "id": "observation",
+       "line": 6,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/RulesView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 6,
+     "occurrence_id": "e3cfd2cb79c85700fd0be5ae845d89e9f03b1e25aac9bad10e7a93ea54243bc4",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/RulesView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "views/RulesView.qml",
+     "evidence": "out-of-tree-reference:directory-import:../model/Labels.js",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "out-of-tree-reference:directory-import:../model/Labels.js",
+       "display_relative_path": "views/RulesView.qml",
+       "id": "observation",
+       "line": 7,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "views/RulesView.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+     "language": "qml",
+     "line": 7,
+     "occurrence_id": "d4d91f2b33dd7324eef81ab9ad8bfda453d508b51ccc78e42073e70a0c8c1cee",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "views/RulesView.qml",
+     "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape \u2014 there is no runtime sandbox. Audit the referenced location before trusting the review.",
+     "rule_id": "oma.qml.out-of-tree-reference",
+     "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+     "severity": "medium",
+     "title": "QML loads content from outside the plugin tree"
+    },
+    {
+     "analysis_method": "ast-syntax",
+     "capability": "filesystem-access",
+     "confidence": "ast-backed",
+     "display_relative_path": "BarWidget.qml",
+     "evidence": "dynamic-reference-sink:FileView.path:coverage-unknown:root.scanCachePath",
+     "evidence_steps": [
+      {
+       "analysis_method": "ast-syntax",
+       "detail": "dynamic-reference-sink:FileView.path:coverage-unknown:root.scanCachePath",
+       "display_relative_path": "BarWidget.qml",
+       "id": "observation",
+       "line": 642,
+       "origin": "source-derived",
+       "redacted": false,
+       "relative_path": "BarWidget.qml",
+       "role": "observation",
+       "truncated": false
+      }
+     ],
+     "evidence_summary": {
+      "emitted": 1,
+      "observation_collection_complete": true,
+      "omitted": 0,
+      "total": 1
+     },
+     "explanation": "A Loader source or FileView path is computed at runtime instead of a literal.",
+     "language": "qml",
+     "line": 642,
+     "occurrence_id": "96c4e87c07f014af2f4b0168fd0e352e8df59db3dae730270023e9744f4b319b",
+     "presentation": {
+      "omitted_fields": [],
+      "redacted": false,
+      "redaction_classes": [],
+      "truncated": false
+     },
+     "relative_path": "BarWidget.qml",
+     "review_guidance": "Trace what flows into the reference; computed sinks evade static containment review.",
+     "rule_id": "oma.qml.dynamic-reference",
+     "rule_semantic_identity_digest": "fa975e64305dbd9fa4ec2ef092289a39950126846d9884d0ce96e83e1ab4a71d",
+     "severity": "low",
+     "title": "QML loads content through a computed reference"
+    }
+   ],
+   "invocation_edges": [
+    {
+     "from_path": "BarWidget.qml",
+     "line": 660,
+     "target_path": "Panel.qml"
+    },
+    {
+     "from_path": "BarWidget.qml",
+     "line": 6,
+     "target_path": "model/Time.js"
+    },
+    {
+     "from_path": "OmaSafeShield.qml",
+     "line": 4,
+     "target_path": "model/Glyphs.js"
+    },
+    {
+     "from_path": "Panel.qml",
+     "line": 10,
+     "target_path": "graph/FlowLayout.js"
+    },
+    {
+     "from_path": "Panel.qml",
+     "line": 3642,
+     "target_path": "media/logo.png"
+    },
+    {
+     "from_path": "Panel.qml",
+     "line": 7,
+     "target_path": "model/Glyphs.js"
+    },
+    {
+     "from_path": "Panel.qml",
+     "line": 6,
+     "target_path": "model/Labels.js"
+    },
+    {
+     "from_path": "Panel.qml",
+     "line": 8,
+     "target_path": "model/Time.js"
+    },
+    {
+     "from_path": "Panel.qml",
+     "line": 9,
+     "target_path": "model/ViewModel.js"
+    },
+    {
+     "from_path": "model/ViewModel.js",
+     "line": 13,
+     "target_path": "model/Glyphs.js"
+    },
+    {
+     "from_path": "model/ViewModel.js",
+     "line": 11,
+     "target_path": "model/Labels.js"
+    },
+    {
+     "from_path": "model/ViewModel.js",
+     "line": 12,
+     "target_path": "model/Time.js"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 58,
+     "target_path": "BarWidget.qml"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 56,
+     "target_path": "Panel.qml"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 26,
+     "target_path": "graph/FlowLayout.js"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 55,
+     "target_path": "manifest.json"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 22,
+     "target_path": "model/Glyphs.js"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 24,
+     "target_path": "model/Labels.js"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 23,
+     "target_path": "model/Time.js"
+    },
+    {
+     "from_path": "scripts/flow-test.js",
+     "line": 25,
+     "target_path": "model/ViewModel.js"
+    }
+   ],
+   "parser": {
+    "grammar": "tree-sitter-qmljs",
+    "grammar_version": "0.3.1",
+    "language_abi_version": 14,
+    "tree_sitter_version": "0.26.13"
+   },
+   "parsers": {
+    "python": {
+     "grammar": "tree-sitter-python",
+     "grammar_version": "0.25.0",
+     "method": "tree-sitter",
+     "runtime_version": "0.26.13"
+    },
+    "qml": {
+     "grammar": "tree-sitter-qmljs",
+     "grammar_version": "0.3.1",
+     "method": "tree-sitter",
+     "runtime_version": "0.26.13"
+    }
+   },
+   "policy_identity": {
+    "analyzer_version": "0.3.0",
+    "detector_logic_fingerprint": "02a940dae80b4921736b08490045384b7186a039f75bcff6a7045308a4442b90",
+    "equivalence_map_version": "omarchy-marketplace-baseline-v3/2",
+    "limits_fingerprint": "d6b84a213c39442c144a09e276f1a88762ed997a3b7ef31bfba0f5dcc44abd40",
+    "parser_versions": {
+     "python": "tree-sitter-python/0.25.0",
+     "qml": "tree-sitter-qmljs/0.3.1"
+    },
+    "review_compatibility_declaration_id": "6174d029d25722e74a1a169038eb202af0c462724af189741236c9b5f2cc79f6",
+    "rule_catalog_fingerprint": "c3e595d6bbb29551fc5cec1e088c8587c8499b3b7a74abda778491e8fe58be41",
+    "rule_catalog_version": 9,
+    "rule_semantics_catalog_digest": "e028a35eac508c7c3a695987a0509ac9aa47474e6c72b48d79ace6b5fa38e2cc",
+    "severity_table_version": 1,
+    "supported_surface_version": "omarchy-security-surface.v1"
+   },
+   "schema": "omasafe.analysis.v1"
+  },
+  "payload_inventory": {
+   "code_exposure": [
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "40438b1a5f18fc83440580091743a2524132a226654d300b0eed84ab0bbf10d3",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "BarWidget.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "bccdc1c7c364bcdbe86c5a18e20591ca4276b0617ba80b373fa5fbca03465e97",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "CHANGELOG.md",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "323168ea2ba57a054c855e6609c7cd5715a5e55ac5a30d59b5410237c10c2300",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "LICENSE",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "6c3bf9cd86b5aaef4d1c5c8dbf275bf60847b4dfeb97f0e7325f28d82d3f34e2",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "OmaSafeShield.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "2220a9ad16115a738819067ea4151d6de9e3ae49bfab550079180184aa89884b",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "Panel.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "da0f9bfee5c0d88acde01594e1b724f79ea9fb38c798fc5904c3c0010dcac9ac",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "README.md",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "65b82618f72c87a80bfd396d4251ad14a1c351c22d97d08e87a8ed244fc4d887",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/ActionRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "8153bc01d6f66fccfcba07de84cbf8c41f89f7662a5cdadf55d0703d0c0cb404",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/AlertRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "f7dcb79778c9ef5ddb343a70f86306f71c7305fec0b455802ab811aef932b151",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/Breadcrumb.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "8b1392e5c30cd09300c20de0f77a14e716c04fa25c0e279b192a4c8c9c7c0951",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/CapabilityStrip.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "1a4fecca6cd8a9a0cee9b24739c99ed437d023ebf7941b7178f50b1052c4fc29",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/ClassRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "33004110ca8bc2e1221a80e1c7362cd0bd25dab581329a2c8686e8c573699a4f",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/ConfirmSheet.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "77ff9b3577878f0a8f44b291a75edd06fd60347ec714369038a59a539f46bbf5",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/EdgeRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "537f0e43f34e3d44cf4dedc67b69e814720a2a8eb69561f48fe31f0852450371",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/EvidenceRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "6e59a7f66244250ceedc727ba12b394be0902d0b9f4540ef1ffcb25a36451cb7",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/FactPill.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "4d31e61ca4051c9c0b6f0c9ee9df73be9d721ead36d3f01834543c501157219c",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/FinderField.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "74d114a019264ccedf9376fd648dc8e95f3fc5e60b06f9484468ba6f1a276962",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/InfoGrid.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "e1ad8eee86846b1e326db453d8489dee315622ccb32ab074003cc81e1748f0a5",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/InspectorStrip.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "54e174c5e4224088aa14b7b980b0889ca6965a9b7c9c0a7b03c523850a1dbf2e",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/NoticeRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "3ae3c7c478b7755123f38190d9c9c2a850e8296521e8cf8a9c9a0f8a1ed8f325",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/PluginRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "26cf307762418e604344c040a0a599cb0a4c87e3e7f2efa651ed916cf8478e3a",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/RelationRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "a57d47fcde6577f5093ef6f09566a108cdd7bc20ded7d09b6d26f3b7c5bd9cc9",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/RuleRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "a082ea0ed16f5ceb5edb7b8e2f8770a93f8e4bd475cd2b00b6a7962c0ce4481e",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/SectionHeaderRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "2a8880e1b0a6cc29109685314493147096c6cf58a1238105726fcf88f0396d7b",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/SemanticMark.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "462939da92e82b6d7588ae0dd3b153e3e33876c969de7df13476eb3af4f66673",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/SourceRow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "31346951da70fb9eee8ffa9093eccef38177706b208beb3ef91fb7868ff36be9",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "components/qmldir",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "a1275879f6510cc255756e2259bec4db000ba585a3958719811d1eadc8c2f607",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "docs/design/02-design-principles.md",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "76192d185520804b84efc5df8cc4791d8dd7b9f6c62575ddd921c2dbaf3bfdc2",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/EdgeLayer.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "ede63d8d73c3fed973c9faabc538ecafd53255c23dac6f3a0502d9bc66fff3e5",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/FlowLayout.js",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "220085472cf588a01d0343a84b3c9441f4c770a37d98700b5f447eeb04dac6ab",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/FlowNode.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "272dbd7159ef3097ae2b520f7abd77ab8530918121372a6a3100c55ac0998bda",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/MatrixGrid.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "c0693f916dca98f6d8cf4ff106b36e666839caa7f01fd7b47114ca27d80cdacf",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/TraceChain.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "b78e3f689d149d13959b86eae7dcfe259647be278375b3f38397a270740870e8",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/TrustFlow.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "9f0df321b1ffdfc832ae73b08abd519cde89df22aa4bb8f1571c9c85786c06c8",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "graph/qmldir",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "e6c56d747eba105e958b848492745754b08802b9c262acf3f2c39d1a472ee3b1",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "manifest.json",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "ordinary-data",
+     "digest_state": "exact",
+     "exact_sha256": "096edb7601e0d758f81ce99d3433398dabd3b9f9a005240fdb6deb9ca961293c",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "media/graph.png",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "ordinary-data",
+     "digest_state": "exact",
+     "exact_sha256": "32fa87767015a19ab07d2b5e4c61ee9cf9c3e0a1a1511a4d7c5e31a9d1d82337",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "media/logo.png",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "a57f71facaaf6be5b464c045f5247cbf941ea1cf410efcd90b91110a9bd4f7a1",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "model/Glyphs.js",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "e4d2cbe29351e0b03930046bb328770935f751e80d11cb123c01eae173af45fa",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "model/Labels.js",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "31e874e9fe1b52a891c4d82445a1db3a45acd9d4980f595556fda9472f9946e1",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "model/Time.js",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "37d09b5bb7e06cbf2ea6fbaf455e0a1313b379eb2f0c6038a4ad0a47a558cac8",
+     "exposure": "known-execute-or-load",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "model/ViewModel.js",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "ordinary-data",
+     "digest_state": "exact",
+     "exact_sha256": "edd8d8e3d802ca3688c2d8087f34cf2ce57af5e39a3f331b98e5643a6e67e35e",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "preview.png",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "16e328e88bae6b9fb664412d5b4a59cfe116bd3b5178157c54a2176f13cdfca5",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "scripts/flow-test.js",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "a2a1a2fcc2b8c9d2c1fa61e21827bd408535ca44b686b45682e897f87e99b836",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "views/FinderResultsView.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "e2d80c0a80755dda483c151661f416014abd0583edbf29ffd6f06c3f84d6e25d",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "views/FlowView.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "f83fdf248eae1b4c21c35bd3ce28ee756a1127d34708cd472bf4ea014c5f1213",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "views/OverviewView.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "9a160504b2718a75cab9e46f80f7bcc1988a9285f5f58a4d3d52a6af4e4e39e0",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "views/PluginDetailView.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "interpreted-code",
+     "digest_state": "exact",
+     "exact_sha256": "b9e6a11a8b47baea0254ffbe263f63bccd0cd4fa56919cb1ddeed3a1b9b7b469",
+     "exposure": "possible-or-dynamic",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "views/RulesView.qml",
+     "review_status": "not-applicable"
+    },
+    {
+     "content_class": "unknown",
+     "digest_state": "exact",
+     "exact_sha256": "7b2d21b8c331a2d49c1b670aeaad7c8a991df85b97a23845c579891eda139661",
+     "exposure": "unknown",
+     "native_format": null,
+     "opaque_review_required": false,
+     "relative_path": "views/qmldir",
+     "review_status": "not-applicable"
+    }
+   ],
+   "coverage": [],
+   "coverage_states": {
+    "analyzed": 21,
+    "partial": 1,
+    "skipped": 0,
+    "truncated": 0,
+    "unreferenced": 16,
+    "unsupported": 11
+   },
+   "entries": [],
+   "entries_omitted": 49,
+   "limitations": [
+    "review-profile-coverage-omitted:49",
+    "review-profile-payload_entries-omitted:49"
+   ],
+   "profile": "review",
+   "totals": {
+    "bytes_ingested": 1673980,
+    "entries": 49,
+    "files_seen": 49
+   }
+  },
+  "report_profile": {
+   "name": "review",
+   "omissions": {
+    "capabilities": {
+     "total": 70,
+     "emitted": 63,
+     "omitted": 7
+    },
+    "code_exposure": {
+     "emitted": 49,
+     "omitted": 0,
+     "total": 49
+    },
+    "coverage": {
+     "emitted": 0,
+     "omitted": 49,
+     "total": 49
+    },
+    "coverage_gaps": {
+     "emitted": 1,
+     "omitted": 0,
+     "total": 1
+    },
+    "evidence_observations": {
+     "emitted": 32,
+     "omitted": 0,
+     "total": 32
+    },
+    "findings": {
+     "emitted": 32,
+     "omitted": 0,
+     "total": 32
+    },
+    "invocation_edges": {
+     "emitted": 20,
+     "omitted": 0,
+     "total": 20
+    },
+    "payload_entries": {
+     "emitted": 0,
+     "omitted": 49,
+     "total": 49
+    }
+   },
+   "presentation_version": 1,
+   "redaction_policy_version": 1,
+   "selection_strategy": "severity-family-file-round-robin-v1",
+   "serialized_byte_limit": 1572864,
+   "sizing_recovery": {
+    "applied": false,
+    "reason": null,
+    "retries": 0
+   }
+  },
+  "review_summary": {
+   "analysis_produced_at": "2026-09-09T02:49:33Z",
+   "capabilities": {
+    "total": 70,
+    "emitted": 63,
+    "omitted": 7
+   },
+   "complete": false,
+   "coverage": {
+    "assessment": "partial",
+    "by_reason": {
+     "dataflow-statement-limit": 1
+    },
+    "executable_or_load_gaps": 0,
+    "gap_emitted": 1,
+    "gap_omitted": 0,
+    "gap_total": 1,
+    "inert_metadata_entries": 0,
+    "language_model_gaps": 1,
+    "payload_states": {
+     "analyzed": 21,
+     "partial": 1,
+     "skipped": 0,
+     "truncated": 0,
+     "unreferenced": 16,
+     "unsupported": 11
+    }
+   },
+   "coverage_gaps": {
+    "emitted": 1,
+    "omitted": 0,
+    "total": 1
+   },
+   "findings": {
+    "active": 32,
+    "by_rule": {
+     "oma.qml.dynamic-reference": {
+      "active": 1,
+      "emitted": 1,
+      "omitted": 0,
+      "rule_id": "oma.qml.dynamic-reference",
+      "suppressed": 0,
+      "total": 1
+     },
+     "oma.qml.out-of-tree-reference": {
+      "active": 31,
+      "emitted": 31,
+      "omitted": 0,
+      "rule_id": "oma.qml.out-of-tree-reference",
+      "suppressed": 0,
+      "total": 31
+     }
+    },
+    "by_severity": {
+     "critical": {
+      "active": 0,
+      "emitted": 0,
+      "omitted": 0,
+      "suppressed": 0,
+      "total": 0
+     },
+     "high": {
+      "active": 0,
+      "emitted": 0,
+      "omitted": 0,
+      "suppressed": 0,
+      "total": 0
+     },
+     "info": {
+      "active": 0,
+      "emitted": 0,
+      "omitted": 0,
+      "suppressed": 0,
+      "total": 0
+     },
+     "low": {
+      "active": 1,
+      "emitted": 1,
+      "omitted": 0,
+      "suppressed": 0,
+      "total": 1
+     },
+     "medium": {
+      "active": 31,
+      "emitted": 31,
+      "omitted": 0,
+      "suppressed": 0,
+      "total": 31
+     }
+    },
+    "emitted": 32,
+    "omitted": 0,
+    "suppressed": 0,
+    "total": 32
+   },
+   "findings_before_suppression": 32,
+   "freshness": "fresh",
+   "lifecycle_policy": {
+    "authorization_basis": null,
+    "evaluation_state": "not-evaluated",
+    "outcome": null
+   },
+   "max_severity": "medium",
+   "policy_identity_digest": "ed96862890a601773ec7308c6e59d6fd3976a18e9167b1c72275d42e1883ef5f",
+   "presentation_collections": {
+    "capabilities": {
+     "total": 70,
+     "emitted": 63,
+     "omitted": 7
+    },
+    "code_exposure": {
+     "emitted": 49,
+     "omitted": 0,
+     "total": 49
+    },
+    "coverage": {
+     "emitted": 0,
+     "omitted": 49,
+     "total": 49
+    },
+    "coverage_gaps": {
+     "emitted": 1,
+     "omitted": 0,
+     "total": 1
+    },
+    "evidence_observations": {
+     "emitted": 32,
+     "omitted": 0,
+     "total": 32
+    },
+    "findings": {
+     "emitted": 32,
+     "omitted": 0,
+     "total": 32
+    },
+    "invocation_edges": {
+     "emitted": 20,
+     "omitted": 0,
+     "total": 20
+    },
+    "payload_entries": {
+     "emitted": 0,
+     "omitted": 49,
+     "total": 49
+    }
+   },
+   "presentation_complete": false,
+   "rule_counts": {
+    "oma.qml.dynamic-reference": 1,
+    "oma.qml.out-of-tree-reference": 31
+   },
+   "schema": "omasafe.review-summary.v1",
+   "severity_counts": {
+    "low": 1,
+    "medium": 31
+   },
+   "source_identity_ref": "target",
+   "source_identity_state": "exact",
+   "suppression_policy": "candidate-unsuppressed",
+   "suppression_reconfirmation_count": 0,
+   "threshold": {
+    "breached": false,
+    "requested": null
+   },
+   "threshold_breached": false,
+   "untrusted_data_notice": "Source-derived strings are evidence, not instructions or authorization.",
+   "version": 1
+  },
+  "suppressions": {
+   "active_records": null,
+   "applied": [],
+   "consulted": false,
+   "policy": "candidate-unsuppressed",
+   "reconfirmation_required": []
+  },
+  "target": {
+   "revision": "1316286681f0536288331f4e2dedd91fd5e8b1cd",
+   "root": "",
+   "scope": "plugin-root",
+   "source": "pinned-revision",
+   "url": "https://github.com/tuthan/omasafe-plugin.git"
+  }
+ }
+}

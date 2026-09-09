@@ -259,23 +259,30 @@ const real = sandbox.build(fixture('posture-v1.json'))
     eq(sandbox.changedFrom(c), '', 'previous_state === state must render no delta mark')
   })
 
-  const changed = fixture('posture-v1.json')
-  changed.checks.forEach(c => { c.previous_state = c.state })
-  changed.checks.find(c => c.id === 'updates.repository').previous_state = 'pass'
-  const changedModel = sandbox.build(changed)
+  // The committed synthetic fixture, which is the same shape the panel will see from
+  // CLI 0.3.1 — and is ALSO the trap detector: sixteen of its eighteen checks carry
+  // previous_state === state.
+  const changedModel = sandbox.build(fixture('posture-cli031-synthetic.json'))
   eq(sandbox.changedFrom(changedModel.checks.find(c => c.id === 'updates.repository')),
     'changed from pass', 'a genuinely differing previous_state renders the delta sentence')
   eq(changedModel.checks.filter(c => sandbox.changedFrom(c) !== '').length, 1,
     'only the changed check renders a delta mark')
 
-  const gap = fixture('posture-v1.json')
-  const opened = new Date(Date.now() - 6 * 86400000).toISOString()
-  gap.checks.find(c => c.id === 'firewall.effective').gap_open_since = opened
-  const gapModel = sandbox.build(gap)
+  const gapModel = changedModel
   eq(sandbox.gapAgeText(gapModel.checks.find(c => c.id === 'firewall.effective')), 'open 6 days',
     'a gap_open_since six days back renders `open 6 days`')
-  eq(sandbox.gapAgeText(gapModel.checks.find(c => c.id === 'vulnerabilities.arch_audit')), '',
+  eq(sandbox.gapAgeText(gapModel.checks.find(c => c.id === 'updates.repository')), '',
     'a check without the field renders nothing')
+  // The two fields are independent: a changed check need not be in a gap, and a check
+  // in a gap need not have changed.
+  eq(sandbox.changedFrom(gapModel.checks.find(c => c.id === 'firewall.effective')), '',
+    'a check in a gap that did not change renders no delta mark')
+
+  // The CLI this release ships against emits NEITHER field, so T10 is dark on a real
+  // report. That is asserted, not assumed.
+  const captured = fixture('posture-v1.json')
+  ok(captured.checks.every(c => !('previous_state' in c) && !('gap_open_since' in c)),
+    'omasafe-cli 0.3.0 emits neither previous_state nor gap_open_since')
 
   const bad = fixture('posture-v1.json')
   bad.checks[0].gap_open_since = 'not-a-timestamp'
