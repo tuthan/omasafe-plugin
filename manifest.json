@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.tuthan.omasafe",
   "name": "OmaSafe",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "Hung Vo",
   "license": "MIT",
   "description": "Inspect installed plugins and review GitHub candidates for source drift, capabilities, rule coverage, and scan alerts.",

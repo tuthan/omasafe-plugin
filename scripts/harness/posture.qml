@@ -25,7 +25,8 @@ ShellRoot {
   readonly property string fixture: Quickshell.env("HARNESS_FIXTURE") || ""
   // The compact panel body: 420 units wide. A rule is drawn at 420 units down so the
   // "above the fold" acceptance can be read off the image.
-  readonly property int foldHeight: 420
+  // 0 hides the rule — used for the README captures, which are not acceptance shots.
+  readonly property int foldHeight: Number(Quickshell.env("HARNESS_FOLD") || "420")
   // Park the cursor on a named section/index before the grab, so the highlight and the
   // tooltip that follow it can be read off the image.
   readonly property string cursorSection: Quickshell.env("HARNESS_SECTION") || ""
@@ -127,7 +128,7 @@ ShellRoot {
         width: parent.width
         height: Math.max(1, Style.space(1))
         color: Color.urgent
-        visible: y < sheet.height
+        visible: harness.foldHeight > 0 && y < sheet.height
       }
       Text {
         y: Style.space(8) + Style.space(harness.foldHeight) + Style.space(2)
@@ -136,7 +137,7 @@ ShellRoot {
         color: Color.urgent
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
-        visible: y < sheet.height
+        visible: harness.foldHeight > 0 && y < sheet.height
       }
     }
 

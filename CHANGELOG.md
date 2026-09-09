@@ -2,7 +2,105 @@
 
 All notable changes to the OmaSafe plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
-semantic versioning (`0.4.0` for the current Phase 5 feature).
+semantic versioning (`0.5.0` for the current v0.3.1 glanceability release).
+
+## [Unreleased] — v0.3.1 glanceability
+
+Paired with `omasafe-cli 0.3.1`. `cliVersionMin` stays `0.3.0`: every surface below
+degrades cleanly on 0.3.0, and the two fields that need the newer CLI ship dark.
+
+Nothing here adds a score, grade, percentage or aggregate judgement, and no action
+was added to any boundary — no install, enable, trust, suppress, override, schedule
+or approve, and the Source Scan install-command visibility rule is untouched.
+
+### Added
+
+- **Posture summary band** — a unit strip of one cell per check in CLI catalog
+  order, the state counts in attention order with their zeros, a coverage
+  *sentence*, the host/age line, and a tools line that names a missing tool
+  together with its consequence. Six lines, above the fold at base 12.
+- **Posture attention-first body** — `NEEDS ATTENTION` (error · regression ·
+  incomplete · attention) expanded with evidence, the coverage limitation labelled
+  `Not observed`, and the next step; then `OBSERVED`, grouped by the domain prefix
+  of the check id and collapsed to one line each carrying a fact from the check's
+  first evidence string. The tab went from ~90 rendered lines to a summary plus 26
+  collapsed rows.
+- **Copy command** on a posture next step, copying the backticked span the report
+  printed, verbatim. The panel never runs it and never synthesises one.
+- **Source Scan result band** — severity meter, `BY RULE` ranked bars, a 17-cell
+  capability strip in the same catalog order an installed plugin uses, and a
+  coverage meter over the payload states. Above the install command and above the
+  findings, so the first sweep lands on the distribution rather than on an action.
+- **One reconciliation line per collection**, printed always
+  (`n shown · n omitted by the scanner · n hidden by the display cap`), replacing
+  five omission notices with one that names every non-zero term.
+- **Keyboard reach on both tabs.** Posture and Source Scan gain real cursor
+  sections: the check strip, the attention set, the copy actions, the observed
+  list, the scan findings and the scan copy actions. `/` finds posture checks and
+  scan findings. No new keys.
+- **Tab chips carry counts** — Overview and Posture. A digit when the collector
+  ran and found items, `·` when it ran and found none, `–` when it has not run.
+- **Bar shield tooltip** gains one host-posture line, in the same words as the tab.
+  `alertCount` is unchanged.
+- `components/UnitStrip.qml`, `components/MeterBar.qml`,
+  `components/RankedBars.qml`, `components/PostureCheckBlock.qml`,
+  `model/Tiers.js`, `model/Posture.js`, `scripts/posture-test.js`,
+  `scripts/harness/` and `docs/design/fixtures/`.
+- Three glyphs, verified by codepoint **and** glyph name: `incomplete`
+  (`md-progress_question`), `not-applicable` (`md-minus_circle_outline`) and
+  `changed` (`md-delta`).
+
+### Changed
+
+- **`incomplete` no longer shares severity `high`'s mark.** In a unit strip, where
+  the state word is not on the cell, "we could not look" and "high severity" were
+  the same glyph.
+- **The semantic tier palette moved to `model/Tiers.js`** so the charts and the row
+  marker paint from one ladder. `SemanticMark`'s public API is unchanged.
+- The posture header no longer prints `14 COMPLETE · 2 INCOMPLETE · 2 N/A`.
+  `complete` there means "observation succeeded" and includes the regression, so
+  the line read as "14 fine". It is a sentence now, on its own axis.
+- Plugin detail renders the six payload coverage states as the candidate's meter
+  and counts line, and gains a `BY RULE` block from `review_summary.rule_counts`.
+  The Rules Baseline V3 summary gains a bar; its counts line is unchanged.
+- Source Scan findings are collapsed rows that `Enter` expands, instead of every
+  line of every finding always rendered.
+
+### Fixed
+
+- **The installed path could draw omission as absence.** `ViewModel` grouped
+  `analysis.capabilities[]` and `analysis.findings[]` without consulting
+  `report_profile.omissions`, so the Overview capability strip, the Matrix cells
+  and the Rules green check treated "we cannot claim completeness" as "we looked
+  and there was nothing". A new `analysisExact` verdict is required before any
+  cell renders `·` and before the green check is drawn; it is true only when each
+  consumed collection reports finite counters that reconcile with `omitted === 0`
+  and sizing recovery was not applied. **A missing counter is not evidence of
+  zero.** No visual change against a real report — `plugins analyze` resolves
+  exact today — and correct degradation against eight synthetic ones.
+- The candidate capability strip renders `–`, not `·`, at unobserved positions
+  whenever anything was omitted or capped, with the header marked `PARTIAL` and
+  the derived counts prefixed `at least`.
+- **The two new tabs were keyboard-unreachable.** `sectionCount()` returned 1 for
+  each, which pinned the cursor on the first cell of a horizontal section; 18
+  posture checks and 32 findings existed and none was reachable.
+- Plugin detail truncated `changed_files` at five with no disclosure; it now
+  prints `+N more changed files`.
+- `Posture.build()` never infers: a missing field yields null and the view renders
+  nothing, so an absent coverage block produces no reconstructed sentence.
+
+### Deferred
+
+- **`checks[].previous_state` and `checks[].gap_open_since` (CLI 0.3.1).** The
+  change mark and the `open N days` slot are implemented and absent-safe, and ship
+  **dark**: `omasafe-cli 0.3.0` emits neither field, so no delta mark can be
+  produced from a real report. Do not export `posture-state.json →
+  previous_states` — despite its name it holds the states of the report that
+  produced it, so `previous_state == state` for every check and every delta mark
+  would silently disappear. The CLI must capture the displaced prior before the
+  insert. The panel-side guard is in place; the real two-run verification is open.
+- Posture history and a state timeline; posture in `BarWidget.alertCount`; the
+  structural merge of `UnitStrip` and `CapabilityStrip`; top-files hot-spot bars.
 
 ## [Unreleased] — v0.2.4 review evidence compatibility
 

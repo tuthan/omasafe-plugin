@@ -27,6 +27,14 @@ operations.
 
 ![Analysis graph showing a plugin, capabilities, rules, and Baseline V3](media/graph.png)
 
+### Host posture
+
+![Host posture: a check strip, state counts, a coverage sentence and a tools line, then the three checks needing attention above the observed list](media/posture.png)
+
+### Source scan result
+
+![Source scan result band: a severity meter, findings by rule, a capability strip and a coverage meter, each with its exact counts printed beneath](media/source-scan.png)
+
 ## What the panel shows
 
 The panel has five views:
@@ -38,6 +46,11 @@ The panel has five views:
 | **Rules** | Rule catalog, local hits, and Baseline V3 coverage relations. |
 | **Posture** | Host posture report, coverage state, update awareness, and post-update hook observation. |
 | **Source Scan** | Manual pre-install scan of a public GitHub URL or copied install command. |
+
+The **Overview** and **Posture** chips carry a count so you can see which tab has
+something in it without visiting all five: a digit when the collector ran and
+found items, `·` when it ran and found none, `–` when it has not run or is
+unavailable. A chip with no count is a tab with no collector, never a clean tab.
 
 Analysis counts are evidence, not permissions or scores. A capability “use” is
 one source-level reference emitted by the analyzer; the file count is the number
@@ -62,13 +75,42 @@ Status markers are shared across the views:
 Markers always retain the corresponding word or glyph and never represent a
 safety verdict. Cached results are explicitly labeled stale.
 
+### Charts
+
+Where the panel draws a chart it is a shape aid attached to printed numbers, never
+a substitute for them. Every chart prints each category's exact count immediately
+beside it; delete the chart and you lose reading speed, never information. Only
+cell position in a fixed order and segment length on a common baseline are used —
+no pie, no gauge, no heatmap, no sparkline — and no chart is titled with a
+judgement, has a target line, or shows an aggregate. Segment counts always sum to
+the printed total, including the omitted and zero terms.
+
+OmaSafe does not draw a score, index, grade or percentage-healthy for the host,
+for a plugin or for a candidate. A number that summarises safety in one figure is
+the thing this panel exists not to produce.
+
+### Placeholders
+
+One set, in every view:
+
+| Mark | Meaning |
+| --- | --- |
+| a digit | the observed count |
+| `·` | analyzed, and none observed |
+| `–` | not analyzed, or analyzed with completeness not established |
+| `unavailable` | the word, when a collection could not be read |
+
+`·` is a positive claim and has to be earned. Where the scanner omitted entries or
+a display cap hid them, cells that would read `·` render `–` instead and the
+section header says `PARTIAL` — on a candidate and on an installed plugin alike.
+
 ## Keyboard shortcuts
 
 | Key | Action |
 | --- | --- |
 | `↑` `↓` / `j` `k` | Move within a list or graph column. |
-| `←` `→` / `h` `l` | Move across view chips or graph columns. |
-| `Enter` | Open a plugin, pin a graph node, or follow a link. |
+| `←` `→` / `h` `l` | Move across view chips, graph columns, the posture check strip, or a row of copy actions. |
+| `Enter` | Open a plugin, pin a graph node, follow a link, expand a posture check or a scan finding, or jump from a strip cell to its check. |
 | `Esc` | Go back, close a confirmation sheet, or close the panel. |
 | `r` | Run a scan. |
 | `4` | Open the Posture tab. |
@@ -79,6 +121,7 @@ safety verdict. Cached results are explicitly labeled stale.
 | `g` | Expand or compact the panel. |
 | `x` | Unpin a graph node or cancel a running analysis sweep. |
 | `?` | Show the Analysis legend. |
+| `/` | Find a plugin, capability class, rule, Baseline id, posture check or scan finding. |
 
 ## Requirements
 
@@ -90,15 +133,55 @@ shows an unavailable state and never implies that the system is clean.
 
 ## Host Posture
 
-The **Posture** tab reads the CLI's `omasafe.posture.v1` report and keeps each
-check's state word, evidence, next step, and coverage limitation visible. Use
-**Run posture scan** (or press `r`) to collect a current report. The first
+The **Posture** tab reads the CLI's `omasafe.posture.v1` report. It opens on a
+summary band and puts the checks worth acting on above everything else.
+
+**The summary band.** One cell per check, in the CLI's catalog order, so a cell
+position means the same check on every host and every run. Beneath it, three
+lines that answer three different questions:
+
+```
+HOST POSTURE                                     CATALOG V1 · 18 CHECKS
+  i  v  v  i  %  i  v  v  i  i  _  v  i  _  v  i  !  %
+  0 error · 1 regression · 2 incomplete · 0 attention · 7 informational ·
+  6 pass · 2 not applicable
+  Observation completed for 14 of 18 checks. 2 incomplete, 2 not applicable.
+  Report 12 hours old · x86_64 7.1.9-arch1-2 · Omarchy 4.0.2-1
+  Tools 11 of 12 observed · arch-audit unavailable, 1 check incomplete
+```
+
+The counts line is the **state** axis and prints every state's exact count,
+including its zeros. The sentence below it is the **observation** axis:
+"completed" means the check could be observed, not that it passed — it includes
+the regression. The tools line names the missing tool *and* its consequence, so a
+coverage gap arrives with its cause instead of unexplained.
+
+**The body.** `NEEDS ATTENTION` comes first — every `error`, `regression`,
+`incomplete` and `attention` check, expanded, with its evidence, its coverage
+limitation labelled `Not observed`, and its next step. `OBSERVED` follows,
+grouped by the domain prefix of the check id, one collapsed line per check
+carrying a fact drawn from its first evidence string. `Enter` expands a check or
+collapses a domain.
+
+Where a next step names a command, a **Copy command** button copies exactly the
+command the report printed. OmaSafe never runs it and never invents one.
+
+**Keyboard.** `j`/`k` walk the tab, `h`/`l` walk the check strip and the copy
+actions, `Enter` on a strip cell jumps to that check and expands it, and `/`
+finds a check by id, title, state, evidence, limitation or next step.
+
+Use **Run posture scan** (or press `r`) to collect a current report. The first
 export may say **not yet run**; that is an absence of observation, not a clean
 result. The CLI owns the report, state history, and optional notification
 behavior; the panel only renders the bounded result. It shows report age and
-marks observations older than 24 hours as stale. The compact bar count remains
-the plugin-alert surface; posture coverage is surfaced in this tab and through
-CLI notifications until the planned M7 bar indicator is implemented.
+marks observations older than 24 hours as stale.
+
+The **Posture** tab chip carries the size of the `NEEDS ATTENTION` set: a digit
+when there is something to look at, `·` when a scan ran and found nothing, `–`
+when no scan has run or the CLI is unavailable. It is a count of items to look
+at, never a score. The bar's shield tooltip carries the same sentence once a
+report has arrived. The compact bar **count** remains the plugin-alert surface
+until the planned M7 bar indicator is implemented.
 
 ## Plugin Source Scan
 
@@ -111,6 +194,56 @@ full commit, acquisition facts, findings, capabilities, coverage limitations,
 and a copyable exact-commit rescan command. When the complete findings list has
 no high or critical item, it also shows a suggested `omarchy plugin add|install`
 command for manual review and copying.
+
+**The result band** sits above the install command and above the findings, so the
+first thing read is the distribution and not an action:
+
+```
+FINDINGS                                                              32
+[################################################################]
+0 critical · 0 high · 31 medium · 1 low · 0 info
+32 shown · 0 omitted by the scanner · 0 hidden by the display cap · 0 suppressed
+
+BY RULE                                                                2
+oma.qml.out-of-tree-reference   [############################]        31
+oma.qml.dynamic-reference       [#]                                    1
+
+CAPABILITIES              63 uses · 4 classes · 3 files
+PX  ·  FS  ·  ·  ·  ·  TM  CB  ·  ·  ·  ·  ·  ·  ·  ·
+persistence scheduling 39 · process execution 20 · clipboard access 3 ·
+filesystem access 1
+
+COVERAGE                                    PARTIAL · 49 PAYLOAD ENTRIES
+[##### analyzed 21 #####][#][######## unsupported 11 ##########][unref 16]
+21 analyzed · 1 partial · 0 truncated · 0 skipped · 11 unsupported ·
+16 unreferenced
+```
+
+`BY RULE` turns "32 findings" into "one rule, 31 times", which is a different
+review. The capability strip uses the same 17 catalog positions an installed
+plugin shows, so the two can be compared at a glance. `COVERAGE` makes "21 of 49
+payload entries analysed" the second thing you see rather than the last, and no
+segment of it is ever "done" green.
+
+Every chart prints its exact counts immediately beneath it; delete the chart and
+you lose speed, never information.
+
+**Reconciliation.** Each collection prints one arithmetic line that always adds
+up — `n shown · n omitted by the scanner · n hidden by the display cap` — whether
+or not anything was omitted. A single notice is raised when any term is non-zero,
+naming every one of them. A summary whose parts only sometimes add up stops being
+read.
+
+**Where completeness is not established, the panel says so.** If the scanner
+omitted capability entries or the display capped them, every unobserved strip
+position renders `–` rather than `·`, the header reads `CAPABILITIES · PARTIAL`,
+and the derived counts are prefixed `at least`. `·` means "we looked and there was
+nothing", which is a positive claim; a count that could be short has not earned
+it. The same rule now governs the installed capability strip, the Matrix grid and
+the Rules green check.
+
+**Keyboard.** `j`/`k` walk the findings, `Enter` expands one, `h`/`l` walk the
+copy actions, and `/` finds a finding by rule id, title or path.
 
 Plugin Source Scan never installs, enables, trusts, suppresses, overrides,
 schedules, or approves the candidate. Archive and registry inputs are not
