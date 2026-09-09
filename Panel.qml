@@ -239,11 +239,22 @@ Panel {
   property string authorizedDigest: ""
   property string authorizedBaselineDigest: ""
 
-  // Phase 2 IA: the tabs collapse to views. Milestone 2a ships Overview (plus
-  // its plugin detail sheet at depth 1); 2b adds Rules at key 3. Flow (key 2) is
-  // hidden until Phase 3, so no digit ever changes meaning.
+  // Phase 2 IA: the tabs collapse to views. Milestone 2a ships the plugin list (plus
+  // its detail sheet at depth 1); 2b adds Rules at key 3. Flow (key 2) is hidden until
+  // Phase 3, so **no digit ever changes meaning** — that commitment is why v0.3.1
+  // renamed a tab rather than reordering the row.
+  //
+  // A tab's KEY is not its label and never has been: key `flow` has always been
+  // labelled "Analysis". So `overview` keeps its key, its section names and
+  // `views/OverviewView.qml`, and only the word on the chip changes. A comment
+  // elsewhere saying "the Overview row" still points at the right file.
   readonly property var tabs: [
-    { key: "overview", label: "Overview" },
+    // "Plugins", not "Overview": the tab holds ALERTS, PLUGINS and SOURCES — the
+    // plugin inventory, its alerts, and where their data comes from. It never
+    // overviewed the panel, and since the host got its own tab the old label actively
+    // implied it covered both subjects. The whole-panel view is the hero plus the chip
+    // counts, which are visible from every tab.
+    { key: "overview", label: "Plugins" },
     { key: "flow", label: "Analysis" },
     { key: "rules", label: "Rules" },
     { key: "posture", label: "Posture" },

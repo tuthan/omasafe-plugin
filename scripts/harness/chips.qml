@@ -26,7 +26,7 @@ ShellRoot {
   // cost of a change is visible against the alternatives rather than on its own.
   // The five tabs, with the counts the captured report produces.
   readonly property var tabOptions: [
-    { value: "overview", label: "Overview", count: "2" },
+    { value: "overview", label: "Plugins", count: "2" },
     { value: "flow", label: "Analysis", count: "" },
     { value: "rules", label: "Rules", count: "" },
     { value: "posture", label: "Posture", count: "3" },
@@ -50,11 +50,11 @@ ShellRoot {
     { name: "alt md-padding, Source Scan", opts: tabOptions, pad: Style.spacing.md },
     { name: "was kit-padding, Source Scan", opts: tabOptions, pad: Style.spacing.controlPaddingX },
     { name: "realmax two-digit counts", opts: [
-        { value: "a", label: "Overview", count: "12" }, { value: "b", label: "Analysis", count: "" },
+        { value: "a", label: "Plugins", count: "12" }, { value: "b", label: "Analysis", count: "" },
         { value: "c", label: "Rules", count: "" }, { value: "d", label: "Posture", count: "18" },
         { value: "e", label: "Source", count: "" }], pad: Style.spacing.md },
     { name: "worst all-counted", opts: [
-        { value: "a", label: "Overview", count: "12" }, { value: "b", label: "Analysis", count: "·" },
+        { value: "a", label: "Plugins", count: "12" }, { value: "b", label: "Analysis", count: "·" },
         { value: "c", label: "Rules", count: "·" }, { value: "d", label: "Posture", count: "18" },
         { value: "e", label: "Source", count: "·" }], pad: Style.spacing.md }
   ]

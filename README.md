@@ -37,17 +37,18 @@ operations.
 
 ## What the panel shows
 
-The panel has five views:
+The panel has five views over two subjects — the plugins installed on this machine,
+and the machine itself:
 
 | View | Purpose |
 | --- | --- |
-| **Overview** | Plugin inventory, trust baseline state, scan alerts, and marketplace claims. |
+| **Plugins** | Plugin inventory, trust baseline state, scan alerts, and marketplace claims. |
 | **Analysis** | Matrix, graph, trace, detected capabilities, linked rules, and Baseline V3 coverage. |
 | **Rules** | Rule catalog, local hits, and Baseline V3 coverage relations. |
 | **Posture** | Host posture report, coverage state, update awareness, and post-update hook observation. |
 | **Source Scan** | Manual pre-install scan of a public GitHub URL or copied install command. |
 
-The **Overview** and **Posture** chips carry a count in parentheses so you can see
+The **Plugins** and **Posture** chips carry a count in parentheses so you can see
 which tab has something in it without visiting all five: a digit when the
 collector ran and found items, `·` when it ran and found none, `–` when it has
 not run or is unavailable. A chip with no count is a tab with no collector, never

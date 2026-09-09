@@ -38,8 +38,8 @@ or approve, and the Source Scan install-command visibility rule is untouched.
   sections: the check strip, the attention set, the copy actions, the observed
   list, the scan findings and the scan copy actions. `/` finds posture checks and
   scan findings. No new keys.
-- **Tab chips carry counts** — Overview and Posture, in parentheses:
-  `Overview (2)  Analysis  Rules  Posture (3)  Source`. A digit when the collector
+- **Tab chips carry counts** — Plugins and Posture, in parentheses:
+  `Plugins (2)  Analysis  Rules  Posture (3)  Source`. A digit when the collector
   ran and found items, `·` when it ran and found none, `–` when it has not run.
   Each counted chip's tooltip says in words what its count means, since `–` and `·`
   are claims a reader should not have to infer.
@@ -56,6 +56,13 @@ or approve, and the Source Scan install-command visibility rule is untouched.
 
 ### Changed
 
+- **The Overview tab is now called Plugins.** It holds ALERTS, PLUGINS and SOURCES
+  — the plugin inventory, its alerts, and where their data comes from. It never
+  overviewed the panel, and once the host got its own tab the old label implied it
+  covered both subjects. The whole-panel view is the hero plus the chip counts,
+  which are visible from every tab. The tab's key, section names and view file are
+  unchanged; the digit keys are unchanged, and the tab order is unchanged, because
+  a digit never changes meaning.
 - **`incomplete` no longer shares severity `high`'s mark.** In a unit strip, where
   the state word is not on the cell, "we could not look" and "high severity" were
   the same glyph.
