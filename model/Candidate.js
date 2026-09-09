@@ -4,6 +4,10 @@
 // accepts the versioned scan-only report, bounds target-derived display text,
 // and turns it into view data. It never executes a command or infers safety.
 .pragma library
+// The capability catalog order is defined ONCE, in Glyphs.js, so a strip position
+// means the same class on every plugin and every candidate. Importing it is the
+// alternative to a second copy that can drift.
+.import "Glyphs.js" as Glyphs
 
 var MAX_TEXT = 2048
 var MAX_ITEMS = 200
@@ -376,6 +380,184 @@ function _codeExposure(value) {
   return out
 }
 
+// ---------------------------------------------------------------- T5 derivations
+//
+// Presentation shapes for the result band (doc 08 §5.4). These are DERIVATIONS over
+// data `build()` has already normalised and validated — no new normalisation, no new
+// boundary, and nothing here can make a report acceptable that was not.
+
+// Attention order (CH8). All five tiers are always emitted, zeros included: a
+// measured zero is data, and a tier absent from the legend of a chart that ran is
+// indistinguishable from a tier that was not measured (CH7).
+var SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"]
+
+// Payload coverage states, in a fixed order from most to least analysed. The levels
+// are deliberately NOT the healthy tier: no coverage segment is ever "done" green and
+// no coverage bar ever "fills" (08 §7.6). `analyzed` takes the foreground role,
+// `partial`/`truncated` the incomplete tier — we tried and could not finish — and the
+// rest the dim role, meaning not attempted.
+var COVERAGE_ORDER = [
+  { key: "analyzed", level: "foreground" },
+  { key: "partial", level: "incomplete" },
+  { key: "truncated", level: "incomplete" },
+  { key: "skipped", level: "" },
+  { key: "unsupported", level: "" },
+  { key: "unreferenced", level: "" }
+]
+
+function _severityRows(reviewSummary, findingOmission) {
+  var bySeverity = reviewSummary ? reviewSummary.findings.bySeverity : null
+  var counts = reviewSummary ? reviewSummary.severityCounts : null
+  var rows = [], text = []
+  for (var i = 0; i < SEVERITY_ORDER.length; i++) {
+    var tier = SEVERITY_ORDER[i]
+    var n = 0
+    if (bySeverity && bySeverity[tier] && typeof bySeverity[tier] === "object")
+      n = _countOr(bySeverity[tier].total, 0)
+    else if (bySeverity && typeof bySeverity[tier] === "number") n = bySeverity[tier]
+    else if (counts && typeof counts[tier] === "number") n = counts[tier]
+    rows.push({ key: tier, count: n, level: tier, label: tier })
+    text.push(n + " " + tier)
+  }
+  return {
+    rows: rows,
+    total: findingOmission.total,
+    countsText: text.join(" · "),
+    // The rows account for the whole total only when every finding carried a severity
+    // the panel recognises. Where they do not, the caller says so rather than drawing
+    // a bar that quietly comes up short.
+    reconciles: rows.reduce(function(sum, row) { return sum + row.count }, 0) === findingOmission.total
+  }
+}
+
+// Rule rows for the BY RULE block. A rule's tier colour is derived from the highest
+// severity among the EMITTED findings for that rule, and only where finding coverage
+// is complete — under omission the emitted set could understate the tier, and a chart
+// that understates severity is the one direction GR3 forbids.
+function _ruleRows(reviewSummary, findings, complete) {
+  var source = reviewSummary ? reviewSummary.ruleCounts : null
+  var byRule = reviewSummary ? reviewSummary.findings.byRule : null
+  var worst = {}
+  if (complete) {
+    for (var f = 0; f < findings.length; f++) {
+      var id = findings[f].ruleId, severity = String(findings[f].severity || "").toLowerCase()
+      var rank = SEVERITY_ORDER.indexOf(severity)
+      if (rank < 0) continue
+      if (!(id in worst) || rank < worst[id]) worst[id] = rank
+    }
+  }
+  var rows = [], key
+  // `_mapCounts` yields {} rather than null for an absent block, so emptiness — not
+  // presence — is what selects the fallback.
+  var hasSource = false
+  for (key in (source || {})) { hasSource = true; break }
+  if (hasSource) {
+    for (key in source) rows.push({ label: key, count: source[key], level: "" })
+  } else if (byRule) {
+    for (key in byRule) {
+      var row = byRule[key]
+      rows.push({ label: key, count: typeof row === "number" ? row : _countOr(row.total, 0), level: "" })
+    }
+  }
+  for (var r = 0; r < rows.length; r++) {
+    if (rows[r].label in worst) rows[r].level = SEVERITY_ORDER[worst[rows[r].label]]
+  }
+  return rows
+}
+
+// The capability strip's cells, one per catalog position, plus a trailing cell for any
+// observed class the catalog does not know (counted, never dropped — 02 §3.4).
+//
+// `analysis.capabilities[]` is scanner-SELECTED and capped again at MAX_ITEMS, so a
+// class whose every instance was dropped is simply absent from the grouping. Drawing
+// that absence as `·` — "analyzed, none observed" — would be a false negative in the
+// one direction GR3 forbids, and 17 cells of `·` say "clean" louder than a notice says
+// "incomplete". So under any omission the unobserved positions are `–` (08 D7).
+function _capabilitySummary(capabilities, capabilityOmission, displayOmitted) {
+  var complete = capabilityOmission.omitted === 0 && displayOmitted === 0
+  var counts = {}, files = {}, order = Glyphs.capabilityOrder
+  for (var i = 0; i < capabilities.length; i++) {
+    var cls = capabilities[i].capability
+    if (cls === "") continue
+    counts[cls] = (counts[cls] || 0) + 1
+    if (capabilities[i].relativePath !== "") files[capabilities[i].relativePath] = true
+  }
+
+  var cells = [], observed = [], seen = {}, j
+  for (j = 0; j < order.length; j++) {
+    var n = counts[order[j]] || 0
+    seen[order[j]] = true
+    cells.push({
+      key: order[j],
+      count: n,
+      // "observed" carries no tier of its own: presence is the fact, and the class name
+      // is on the tooltip and in the observed list beneath.
+      level: n > 0 ? "observed" : (complete ? "none" : "absent")
+    })
+    if (n > 0) observed.push({ cls: order[j], count: n })
+  }
+  for (var extra in counts) {
+    if (seen[extra]) continue
+    cells.push({ key: extra, count: counts[extra], level: "observed", unknown: true })
+    observed.push({ cls: extra, count: counts[extra], unknown: true })
+  }
+  observed.sort(function(a, b) {
+    if (b.count !== a.count) return b.count - a.count
+    return a.cls < b.cls ? -1 : (a.cls > b.cls ? 1 : 0)
+  })
+
+  var fileCount = 0
+  for (var path in files) fileCount++
+  return {
+    cells: cells,
+    observed: observed,
+    complete: complete,
+    // `uses` is exact even under omission: it is the collection total, not a count of
+    // what survived selection. `classes` and `files` are derived from the EMITTED
+    // items only, so under omission they are lower bounds and say so.
+    uses: capabilityOmission.total,
+    classes: observed.length,
+    files: fileCount,
+    countsText: capabilityOmission.total + " uses · " +
+      (complete ? "" : "at least ") + observed.length + " classes · " +
+      (complete ? "" : "at least ") + fileCount + " files"
+  }
+}
+
+function _coverageRows(reviewSummary, payloadOmission) {
+  var states = reviewSummary && reviewSummary.coverage ? reviewSummary.coverage.payloadStates : null
+  if (!states) return null
+  var rows = [], text = [], sum = 0
+  for (var i = 0; i < COVERAGE_ORDER.length; i++) {
+    var key = COVERAGE_ORDER[i].key
+    var n = typeof states[key] === "number" ? states[key] : 0
+    rows.push({ key: key, count: n, level: COVERAGE_ORDER[i].level, label: key })
+    text.push(n + " " + key)
+    sum += n
+  }
+  // A state the panel does not know is counted at the end rather than dropped, so the
+  // bar's parts still reconcile with the payload total.
+  var other = 0
+  for (var state in states) {
+    var known = false
+    for (var k = 0; k < COVERAGE_ORDER.length; k++) if (COVERAGE_ORDER[k].key === state) known = true
+    if (!known && typeof states[state] === "number") other += states[state]
+  }
+  if (other > 0) {
+    rows.push({ key: "other", count: other, level: "", label: "other" })
+    text.push(other + " other")
+    sum += other
+  }
+  return {
+    rows: rows,
+    total: payloadOmission.total,
+    countsText: text.join(" · "),
+    reconciles: sum === payloadOmission.total,
+    assessment: reviewSummary && reviewSummary.coverage
+      ? reviewSummary.coverage.assessment : ""
+  }
+}
+
 function build(report) {
   var top = _obj(report)
   if (!top || top.schema !== "omasafe.report.v1" || !_atLeast(top.tool_version, [0, 2, 2]))
@@ -522,6 +704,13 @@ function build(report) {
   try { policyKey = JSON.stringify(analysis.policy_identity || {}) } catch (ignore) { policyKey = "" }
   policyKey = _display(policyKey, MAX_TEXT)
   var reviewSummary = _reviewSummary(result.review_summary)
+  var findingsDisplayOmitted = Math.max(0, findingOmission.emitted - findings.length)
+  var capabilitiesDisplayOmitted = Math.max(0, capabilityOmission.emitted - capabilities.length)
+  var severity = _severityRows(reviewSummary, findingOmission)
+  var capabilitySummary = _capabilitySummary(capabilities, capabilityOmission, capabilitiesDisplayOmitted)
+  var coverage = _coverageRows(reviewSummary, payloadOmission)
+  var ruleRows = _ruleRows(reviewSummary, findings,
+    findingOmission.omitted === 0 && findingsDisplayOmitted === 0)
   var presentationComplete = reviewSummary
     ? reviewSummary.presentationComplete
     : (findingOmission.omitted === 0 && capabilityOmission.omitted === 0 &&
@@ -561,11 +750,11 @@ function build(report) {
       findings: findings,
       findingsTotal: findingOmission.total,
       findingsOmitted: findingOmission.omitted,
-      findingsDisplayOmitted: Math.max(0, findingOmission.emitted - findings.length),
+      findingsDisplayOmitted: findingsDisplayOmitted,
       capabilities: capabilities,
       capabilitiesTotal: capabilityOmission.total,
       capabilitiesOmitted: capabilityOmission.omitted,
-      capabilitiesDisplayOmitted: Math.max(0, capabilityOmission.emitted - capabilities.length),
+      capabilitiesDisplayOmitted: capabilitiesDisplayOmitted,
       edges: edges,
       edgesTotal: edgeOmission.total,
       edgesOmitted: edgeOmission.omitted,
@@ -605,6 +794,30 @@ function build(report) {
       }
     },
     reviewSummary: reviewSummary,
+    // The result band (08 §5.4). Derivations only: every number here is already in
+    // `analysis` or `reviewSummary`, arranged so the view can print it without
+    // re-deriving it differently.
+    summary: {
+      severityRows: severity.rows,
+      severityTotal: severity.total,
+      severityCountsText: severity.countsText,
+      severityReconciles: severity.reconciles,
+      ruleRows: ruleRows,
+      ruleTotal: findingOmission.total,
+      capabilityCells: capabilitySummary.cells,
+      capabilityObserved: capabilitySummary.observed,
+      capabilitiesComplete: capabilitySummary.complete,
+      capabilityUses: capabilitySummary.uses,
+      capabilityClasses: capabilitySummary.classes,
+      capabilityFiles: capabilitySummary.files,
+      capabilityCountsText: capabilitySummary.countsText,
+      coverageAvailable: coverage !== null,
+      coverageRows: coverage ? coverage.rows : [],
+      coverageTotal: coverage ? coverage.total : 0,
+      coverageCountsText: coverage ? coverage.countsText : "",
+      coverageReconciles: coverage ? coverage.reconciles : false,
+      coverageAssessment: coverage ? coverage.assessment : ""
+    },
     freshness: reviewSummary ? reviewSummary.freshness : "unknown",
     presentationComplete: presentationComplete,
     marketplace: marketplace,

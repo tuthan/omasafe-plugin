@@ -3,6 +3,8 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Ui
 import "../components"
+import "../model/Glyphs.js" as Glyphs
+import "../model/Labels.js" as Labels
 
 // Persistent-in-session v0.2.2 Plugin Source Scan surface. The input remains one text value;
 // the CLI owns its finite grammar and this view never extracts or executes it.
@@ -223,6 +225,188 @@ Column {
       wrapMode: Text.WordWrap
     }
 
+    // ---- result band (doc 08 §5.4) ---------------------------------------------
+    //
+    // Above the install command and above the 32 finding blocks, so the reader's
+    // first sweep lands on the distribution rather than on an action. Every chart
+    // here has its exact counts printed immediately beneath it: delete the chart and
+    // the reader loses speed, never information (CH1).
+
+    SectionHeaderRow {
+      text: "FINDINGS"
+      value: root.candidate ? String(root.candidate.summary.severityTotal) : ""
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    MeterBar {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      segments: root.candidate ? root.candidate.summary.severityRows : []
+      total: root.candidate ? root.candidate.summary.severityTotal : 0
+      foreground: root.col("fg"); dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate ? root.candidate.summary.severityCountsText : ""
+      color: root.col("fg")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    // The severity rows account for every finding only when each one carried a
+    // severity the panel recognises. Where they do not, say so rather than let the
+    // bar quietly come up short of its own header.
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root.candidate && !root.candidate.summary.severityReconciles
+      textFormat: Text.PlainText
+      text: "Some findings carry a severity this panel does not recognise; the bar is short of the total."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
+    // "33 findings" and "one rule, 33 times" are different reviews. This is the block
+    // that tells them apart.
+    SectionHeaderRow {
+      text: "BY RULE"
+      value: root.candidate ? String(root.candidate.summary.ruleRows.length) : ""
+      visible: root.candidate && root.candidate.summary.ruleRows.length > 0
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    RankedBars {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root.candidate && root.candidate.summary.ruleRows.length > 0
+      rows: root.candidate ? root.candidate.summary.ruleRows : []
+      total: root.candidate ? root.candidate.summary.ruleTotal : 0
+      foreground: root.col("fg"); dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+    }
+
+    // The same 17-cell catalog strip an installed plugin shows, so a candidate and an
+    // installed plugin are read the same way — but built on UnitStrip, not
+    // CapabilityStrip, because a candidate's capability list is not guaranteed
+    // complete and `·` is a claim that has to be earned.
+    SectionHeaderRow {
+      text: "CAPABILITIES"
+      value: root.candidate
+        ? (root.candidate.summary.capabilityCountsText +
+           (root.candidate.summary.capabilitiesComplete ? "" : " · PARTIAL")) : ""
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    UnitStrip {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      cells: {
+        var out = []
+        var cells = root.candidate ? root.candidate.summary.capabilityCells : []
+        for (var i = 0; i < cells.length; i++) {
+          var name = Labels.capability(cells[i].key)
+          out.push({
+            key: cells[i].key,
+            glyph: Glyphs.cap(cells[i].key, root.rf),
+            level: cells[i].level,
+            tooltip: cells[i].level === "observed"
+              ? name + " · " + cells[i].count + (cells[i].count === 1 ? " use" : " uses")
+              : (cells[i].level === "none" ? name + " · none observed" : name + " · no data")
+          })
+        }
+        return out
+      }
+      foreground: root.col("fg"); dim: root.col("dim"); accent: Color.accent
+      fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root.candidate && root.candidate.summary.capabilityObserved.length > 0
+      textFormat: Text.PlainText
+      text: {
+        if (!root.candidate) return ""
+        var parts = []
+        var observed = root.candidate.summary.capabilityObserved
+        for (var i = 0; i < observed.length; i++)
+          parts.push(Labels.capability(observed[i].cls) + " " + observed[i].count)
+        return parts.join(" · ")
+      }
+      color: root.col("fg")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    NoticeRow {
+      width: parent.width
+      visible: root.candidate && root.candidate.summary.capabilityObserved.length === 0 &&
+        root.candidate.summary.capabilitiesComplete
+      reason: "none"
+      text: "No capability uses were observed under this scan's reported coverage."
+      foreground: root.col("fg"); dim: root.col("dim")
+      fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
+    }
+
+    // 23 of 66 payload entries analysed is the strongest argument against trusting an
+    // empty finding list, so it is the second thing the reader sees, not the last.
+    SectionHeaderRow {
+      text: "COVERAGE"
+      value: root.candidate && root.candidate.summary.coverageAvailable
+        ? ((root.candidate.summary.coverageAssessment !== ""
+            ? root.candidate.summary.coverageAssessment.toUpperCase() + " · " : "") +
+           root.candidate.summary.coverageTotal + " PAYLOAD ENTRIES")
+        : "UNAVAILABLE"
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader")
+      fontFamily: root.col("fontFamily")
+    }
+
+    MeterBar {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      available: root.candidate && root.candidate.summary.coverageAvailable
+      segments: root.candidate ? root.candidate.summary.coverageRows : []
+      total: root.candidate ? root.candidate.summary.coverageTotal : 0
+      foreground: root.col("fg"); dim: root.col("dim")
+      fontFamily: root.col("fontFamily")
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate && root.candidate.summary.coverageAvailable
+        ? root.candidate.summary.coverageCountsText
+        : "unavailable — this report carries no payload coverage summary."
+      color: root.col("fg")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.bodySmall
+      wrapMode: Text.WordWrap
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      visible: root.candidate && root.candidate.summary.coverageAvailable &&
+        !root.candidate.summary.coverageReconciles
+      textFormat: Text.PlainText
+      text: "The coverage states do not sum to the payload entry total; the bar is incomplete."
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
+    Text {
+      width: parent.width - Style.space(18); x: Style.space(10)
+      textFormat: Text.PlainText
+      text: root.candidate
+        ? (root.candidate.analysis.coverageGapsTotal +
+           (root.candidate.analysis.coverageGapsTotal === 1 ? " coverage gap · " : " coverage gaps · ") +
+           root.candidate.analysis.limitations.length +
+           (root.candidate.analysis.limitations.length === 1 ? " limitation" : " limitations")) : ""
+      color: root.col("dim")
+      font.family: root.col("fontFamily"); font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
     NoticeRow {
       width: parent.width
       visible: root.candidate && root.candidate.reviewSummary && !root.candidate.presentationComplete
@@ -364,7 +548,7 @@ Column {
     }
 
     SectionHeaderRow {
-      text: "FINDINGS"
+      text: "FINDING DETAIL"
       value: root.candidate ? (root.candidate.analysis.findingsTotal +
         (root.candidate.analysis.findingsOmitted > 0 ? " · " + root.candidate.analysis.findingsOmitted + " omitted" : "") +
         (root.candidate.analysis.findingsDisplayOmitted > 0 ? " · " + root.candidate.analysis.findingsDisplayOmitted + " hidden in UI" : "")) : ""
@@ -490,7 +674,7 @@ Column {
     }
 
     SectionHeaderRow {
-      text: "CAPABILITIES"
+      text: "CAPABILITY USES"
       value: root.candidate ? (root.candidate.analysis.capabilitiesTotal +
         (root.candidate.analysis.capabilitiesOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesOmitted + " omitted" : "") +
         (root.candidate.analysis.capabilitiesDisplayOmitted > 0 ? " · " + root.candidate.analysis.capabilitiesDisplayOmitted + " hidden in UI" : "")) : ""
@@ -557,24 +741,6 @@ Column {
       dim: root.col("dim")
       fontFamily: root.col("fontFamily")
       resolvedFamily: root.rf
-    }
-
-    Text {
-      width: parent.width - Style.space(18)
-      x: Style.space(10)
-      visible: root.candidate && Object.keys(root.candidate.analysis.coverageStates).length > 0
-      textFormat: Text.PlainText
-      text: {
-        if (!root.candidate) return ""
-        var values = []
-        var states = root.candidate.analysis.coverageStates
-        for (var key in states) values.push(key + ": " + states[key])
-        return "Coverage states: " + values.join(" · ")
-      }
-      color: root.col("dim")
-      font.family: root.col("fontFamily")
-      font.pixelSize: Style.font.bodySmall
-      wrapMode: Text.WordWrap
     }
 
     SectionHeaderRow {

@@ -117,8 +117,15 @@ Item {
           width: root._widths[segment.index] || 0
           height: parent ? parent.height : 0
           visible: width > 0
+          // Two theme ROLES are permitted beside the tier ladder, and only these two:
+          // `foreground` for a measured, un-judged category, and the dim fallback for
+          // one with no tier. Coverage needs them — no coverage segment may take the
+          // healthy tier, because no coverage bar may ever read as "done" (08 §7.6) —
+          // and without them every coverage state would paint the same dim grey.
           color: {
-            var tier = Tiers.color(segment.modelData ? segment.modelData.level : "", root.darkSurface)
+            var level = String(segment.modelData ? segment.modelData.level : "")
+            if (level === "foreground") return root.foreground
+            var tier = Tiers.color(level, root.darkSurface)
             return tier === "" ? root.dim : tier
           }
         }
