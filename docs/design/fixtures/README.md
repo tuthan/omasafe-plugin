@@ -28,7 +28,7 @@ fixture was retired once `omasafe-cli 0.3.1` could produce the real thing:
 `posture-two-run.json` replaces it. The reason still stands — a fixture where every
 check has `previous_state == state` is exactly what the `previous_states` export bug
 produces, so "no delta marks" only means something beside a capture that does produce
-one. See `../../v0.3.1-plan.md` §5 and `omasafe/docs/plans/v0.3.1.md`.
+one. See `../../../omasafe-docs/Plugin/v0.3.1-plan.md` §5 and `../../../omasafe-docs/Cli/plans/v0.3.1.md`.
 
 ## Re-capturing
 

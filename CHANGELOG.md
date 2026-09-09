@@ -233,7 +233,7 @@ or approve, and the Source Scan install-command visibility rule is untouched.
 ## [Unreleased] — Phase 4: comprehension, correctness and polish
 
 The Flow surface is made correct in the running shell and rewritten to explain itself
-before any cosmetic polish. See `../omasafe-docs/implementation/phase-4-polish.md`.
+before any cosmetic polish. See `../omasafe-docs/Plugin/implementation/phase-4-polish.md`.
 
 ### Fixed
 
@@ -275,7 +275,7 @@ before any cosmetic polish. See `../omasafe-docs/implementation/phase-4-polish.m
 ## [Unreleased] — Phase 3: the trust flow
 
 The third view lands: an interactive trust graph inside the 420-unit popup. See
-`../omasafe-docs/implementation/phase-3-trust-flow.md`.
+`../omasafe-docs/Plugin/implementation/phase-3-trust-flow.md`.
 
 ### Added
 
@@ -309,7 +309,7 @@ The third view lands: an interactive trust graph inside the 420-unit popup. See
 ## [0.3.0] — Phase 2: information architecture
 
 The four-tab UI becomes two views plus a plugin detail sheet, and every fact is placed by
-authority (see `../omasafe-docs/implementation/phase-2-information-architecture.md`). Every list is
+authority (see `../omasafe-docs/Plugin/implementation/phase-2-information-architecture.md`). Every list is
 now written once, on the kit row grammar, bound to one normalised view model.
 
 ### Changed
@@ -352,7 +352,7 @@ now written once, on the kit row grammar, bound to one normalised view model.
 ### Fixed
 
 Phase 0 correctness and authorization fixes, made inside the existing four-tab UI with no
-visual change (see `../omasafe-docs/implementation/phase-0-correctness.md`):
+visual change (see `../omasafe-docs/Plugin/implementation/phase-0-correctness.md`):
 
 - **Forced tab jump** — opening with alerts, and a successful trust, no longer yank the
   view to Findings / away from Plugins (T0.7, A1).
@@ -401,7 +401,7 @@ text (T0.2, A6/GR4).
 
 Phase 1 rebuilds the chrome around the content out of `qs.Ui` primitives and theme tokens,
 puts one keyboard cursor over the shell targets, and replaces the overlay with a sheet that
-cannot be bypassed (see `../omasafe-docs/implementation/phase-1-shell-and-confirmation.md`). The four
+cannot be bypassed (see `../omasafe-docs/Plugin/implementation/phase-1-shell-and-confirmation.md`). The four
 tab bodies are untouched and keep working by mouse; Phase 2 rebuilds them on kit rows.
 
 - **Kit shell** — the hand-rolled tab strip and status-identity block become a `PanelHero`
@@ -427,4 +427,4 @@ tab bodies are untouched and keep working by mouse; Phase 2 rebuilds them on kit
   verified Nerd/ASCII glyph table, and relative-time/age formatting (T1.1).
 
 - Planned for Phases 2–4: two-view information architecture, the Trust Flow graph, and the
-  polish pass. See `../omasafe-docs/implementation/`.
+  polish pass. See `../omasafe-docs/Plugin/implementation/`.
