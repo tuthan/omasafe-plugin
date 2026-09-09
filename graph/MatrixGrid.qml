@@ -6,8 +6,10 @@ import "../model/Glyphs.js" as Glyphs
 import "../model/Labels.js" as Labels
 
 // MatrixGrid — the Matrix lens (doc 04 §9.5, T3.10): plugins × capability classes as a
-// grid of occurrence digits. `·` = analyzed, none observed; `–` = not analyzed (never
-// `0`). Columns are in catalog order (a column means the same class on every row);
+// grid of occurrence digits. `·` = analyzed, none observed; `–` = not analyzed, OR
+// analyzed with completeness not established (v0.3.1 T12) — a zero-cell drawn `·`
+// claims "we looked and there was nothing", and a count that could be short has not
+// earned that claim. Never `0`. Columns are in catalog order (a column means the same class on every row);
 // header glyphs carry the class name in a PanelToolTip. Horizontal scrolling lives
 // only inside this grid's own Flickable — the panel body never scrolls sideways.
 Item {

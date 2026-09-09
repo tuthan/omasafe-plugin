@@ -118,6 +118,7 @@ Column {
         severity: modelData.severityLevel
         noLocalHits: modelData.noLocalHits
         analysisComplete: modelData.analysisComplete
+        analysisExactForAll: modelData.analysisExactForAll === true
         rowHitText: modelData.rowHitText
         expanded: panel && panel.expandedRuleId === modelData.id
         summary: modelData.summary

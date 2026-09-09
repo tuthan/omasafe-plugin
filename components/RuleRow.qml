@@ -18,7 +18,12 @@ CursorSurface {
   property string rowHitText: "–"
   property string severity: "unknown"
   property bool noLocalHits: false
+  // "every installed plugin has been analyzed".
   property bool analysisComplete: false
+  // "…and every one of those analyses was emitted whole". Default false: the green
+  // check is the panel's only positive claim on this tab, and a call site that forgets
+  // to bind this must lose the mark, not keep it.
+  property bool analysisExactForAll: false
 
   property bool expanded: false
   property string summary: ""
@@ -102,7 +107,11 @@ CursorSurface {
         anchors.right: severityMark.left
         anchors.rightMargin: Style.space(2)
         anchors.verticalCenter: severityMark.verticalCenter
-        visible: root.noLocalHits && root.analysisComplete
+        // Where completeness is not established the row keeps its `0` in dim and DROPS
+        // the mark — no green, no red, no new state word. A green check derived from a
+        // count that could be short is a positive claim from absent data, which is the
+        // highest-consequence instance of the failure GR3 exists to prevent.
+        visible: root.noLocalHits && root.analysisComplete && root.analysisExactForAll
         compact: true
         kind: "health"
         level: "healthy"

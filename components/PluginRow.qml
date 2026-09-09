@@ -19,6 +19,9 @@ CursorSurface {
   property string trustTooltip: ""
 
   property bool analyzed: false
+  // Passed straight through to the strip: an unobserved class renders `–` rather than
+  // `·` where completeness is not established (doc 08 E1).
+  property bool analysisExact: false
   property string healthState: "unknown"
   property string healthLabel: "Plugin status unavailable"
   property var counts: ({})
@@ -130,6 +133,7 @@ CursorSurface {
         anchors.verticalCenter: parent.verticalCenter
         width: Math.min(implicitWidth, Style.space(190))
         analyzed: root.analyzed
+        complete: root.analysisExact
         counts: root.counts
         rowHasCursor: root.hasCursor
         foreground: root.foreground

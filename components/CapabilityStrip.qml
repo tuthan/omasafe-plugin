@@ -15,6 +15,15 @@ Item {
 
   // true once the plugin has a cached analysis; false → the single `–` placeholder.
   property bool analyzed: false
+  // true only when every collection the counts were drawn from was emitted whole
+  // (`ViewModel.analysisExact`). When false, an unobserved position renders `–`
+  // instead of `·`, because `·` is a positive claim — "we looked and there was
+  // nothing" — and a count that could be short has not earned it.
+  //
+  // **The default is false on purpose.** A call site that forgets to bind it degrades
+  // to "we cannot claim completeness" rather than to a silent `·`. Every call site is
+  // bound, so this is a backstop, not a behaviour.
+  property bool complete: false
   // { "<class-key>": <occurrence count>, … } — only observed classes are present.
   property var counts: ({})
   // The tooltip fires on the owning row's cursor, passed in by the row.
@@ -35,7 +44,9 @@ Item {
     var out = []
     for (var i = 0; i < order.length; i++) {
       var cls = order[i]
-      out.push((Number(counts[cls] || 0) > 0) ? Glyphs.cap(cls, resolvedFamily) : "·")
+      out.push((Number(counts[cls] || 0) > 0)
+        ? Glyphs.cap(cls, resolvedFamily)
+        : (complete ? "·" : "–"))
     }
     return out
   }
@@ -51,11 +62,13 @@ Item {
       if (n > 0) seen.push({ cls: cls, n: n })
     }
     seen.sort(function(a, b) { return b.n - a.n })
-    if (seen.length === 0) return "No capabilities observed"
+    var hedge = analyzed && !complete ? " · counts are at least this" : ""
+    if (seen.length === 0)
+      return (complete ? "No capabilities observed" : "No capabilities observed in the emitted report") + hedge
     var parts = []
     for (var j = 0; j < seen.length; j++)
       parts.push(Labels.capability(seen[j].cls) + " " + seen[j].n)
-    return "Observed: " + parts.join(" · ")
+    return "Observed: " + parts.join(" · ") + hedge
   }
 
   implicitWidth: root.analyzed ? (Glyphs.capabilityOrder.length * root.cellW) : dash.implicitWidth

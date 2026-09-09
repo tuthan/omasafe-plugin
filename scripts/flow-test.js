@@ -474,5 +474,135 @@ const layoutZero = FlowLayout.build(finZero, geo)
 eq(layoutZero.nodes[3][0].label, 'not analyzed', 'sentinel node reads "not analyzed"')
 eq(Object.values(layoutZero.paths).join('').length, 0, 'zero analyses: eight empty path strings')
 
+// ---- T12: the completeness guard on the installed path ------------------------
+//
+// `analyzed` answers "did we run an analysis"; `analysisExact` answers "and was every
+// collection it drew from emitted whole". The second question was never asked, and the
+// consumers that render an absent class as `·` — the CapabilityStrip on every Overview
+// row, the MatrixGrid cells and the Rules green check — were answering it "yes" by
+// omission. This is latent today (`canonical-full-v1`, no byte limit, every omitted 0)
+// and fails silently toward "clean" the moment it stops being.
+console.log('T12 completeness guard:')
+
+function exactProfile(over) {
+  const base = {
+    name: 'full',
+    selection_strategy: 'canonical-full-v1',
+    sizing_recovery: { applied: false, reason: null, retries: 0 },
+    omissions: {
+      capabilities: { total: 2, emitted: 2, omitted: 0 },
+      findings: { total: 1, emitted: 1, omitted: 0 },
+      invocation_edges: { total: 1, emitted: 1, omitted: 0 },
+      coverage_gaps: { total: 0, emitted: 0, omitted: 0 },
+    },
+  }
+  return Object.assign({}, base, over || {})
+}
+function guardVm(profile) {
+  return ViewModel.build({
+    inventory: { plugins: [{ id: 'p.one', classification: 'git-checkout', content_digest: 'd1' }] },
+    alerts: [], scanMeta: { hasResult: true, outstanding: 0 },
+    statusById: {}, checkingIds: [],
+    analysisById: { 'p.one': { capabilities: [cap('process-execution', 'oma.qml.process-execution', 'ast-backed', 'a.qml', 1)],
+      findings: [], invocation_edges: [], coverage_limitations: [] } },
+    profileById: { 'p.one': profile },
+    coverage: null, rulesList: rulesList, schedule: null, overrides: null, nowMs: 0,
+  })
+}
+
+// The no-change case: a real `plugins analyze` profile resolves exact, so nothing on
+// screen changes. If this fails, the metadata path is wrong and real reports would
+// start reading as incomplete.
+const exactVm = guardVm(exactProfile())
+ok(exactVm.plugins[0].analyzed, 'a real report is analyzed')
+ok(exactVm.plugins[0].analysisExact, 'a real full-profile report resolves EXACT (no visual change)')
+ok(exactVm.analysisExactForAll, 'and the fleet-wide verdict follows')
+
+// The same, against the REAL `plugins analyze` report captured on this host, so the
+// no-change case rests on the CLI's own metadata and not on a fixture author's idea of
+// it. `plugins analyze` uses canonical-full-v1 with no serialized byte limit; if this
+// ever fails, real reports have started reading as incomplete and every strip on
+// Overview would silently switch from `·` to `–`.
+{
+  const captured = JSON.parse(fs.readFileSync(
+    path.join(ROOT, 'docs/design/fixtures/installed-analyze.json'), 'utf8'))
+  const profile = captured.result.report_profile
+  ok(profile.selection_strategy === 'canonical-full-v1',
+    'the captured installed report uses the full profile')
+  const vm = guardVm(profile)
+  ok(vm.plugins[0].analysisExact,
+    'the captured `plugins analyze` profile resolves EXACT — no visual change on Overview')
+  ok(vm.analysisExactForAll, 'and the fleet verdict with it')
+}
+
+// The degradation matrix. Each must fail CLOSED.
+const degradations = [
+  ['omissions.capabilities.omitted = 3',
+    exactProfile({ omissions: Object.assign({}, exactProfile().omissions,
+      { capabilities: { total: 5, emitted: 2, omitted: 3 } }) })],
+  ['no report_profile at all', null],
+  ['report_profile.omissions = {}', exactProfile({ omissions: {} })],
+  ['omissions missing invocation_edges', (function () {
+    const o = Object.assign({}, exactProfile().omissions); delete o.invocation_edges
+    return exactProfile({ omissions: o })
+  })()],
+  ['omissions.findings has no `omitted` counter',
+    exactProfile({ omissions: Object.assign({}, exactProfile().omissions,
+      { findings: { total: 10, emitted: 10 } }) })],
+  ['omissions.findings counters contradict',
+    exactProfile({ omissions: Object.assign({}, exactProfile().omissions,
+      { findings: { total: 10, emitted: 4, omitted: 2 } }) })],
+  ['sizing_recovery.applied = true with every omitted 0',
+    exactProfile({ sizing_recovery: { applied: true, reason: 'byte-limit', retries: 1 } })],
+  ['a counter that is not a finite non-negative integer',
+    exactProfile({ omissions: Object.assign({}, exactProfile().omissions,
+      { findings: { total: 1, emitted: 1, omitted: -0.5 } }) })],
+]
+for (const [label, profile] of degradations) {
+  const vm = guardVm(profile)
+  ok(vm.plugins[0].analyzed, label + ': still analyzed')
+  ok(!vm.plugins[0].analysisExact, label + ': must NOT be exact')
+  ok(!vm.analysisExactForAll, label + ': the fleet verdict must fail closed too')
+}
+
+// The atomic-pair rule: an analysis that validates whose profile did not is not exact.
+// (Panel.resolvedAnalysisEntryFor returns null for BOTH or neither; this asserts the
+// model half — a report present with no profile beside it.)
+ok(!guardVm(undefined).plugins[0].analysisExact,
+  'an analysis with no profile beside it is analyzed but never exact')
+
+// A plugin with no analysis at all is not exact either, and a backup never is.
+{
+  const none = ViewModel.build({
+    inventory: { plugins: [
+      { id: 'p.one', classification: 'git-checkout', content_digest: 'd1' },
+      { id: 'p.bak', classification: 'backup' },
+    ] },
+    alerts: [], scanMeta: { hasResult: true }, statusById: {}, checkingIds: [],
+    analysisById: {}, profileById: {}, coverage: null, rulesList: rulesList, nowMs: 0,
+  })
+  ok(!none.plugins[0].analyzed && !none.plugins[0].analysisExact,
+    'an unanalyzed plugin is neither analyzed nor exact')
+  ok(none.backups[0].analysisExact === false, 'a backup row is never exact')
+  ok(!none.analysisExactForAll, 'a fleet with an unanalyzed plugin is not exact')
+}
+
+// The Rules green check and the Baseline prose take the same guard. `analysisComplete`
+// alone was the basis for the panel's ONLY green mark on that tab.
+{
+  const inexact = guardVm(exactProfile({ omissions: Object.assign({}, exactProfile().omissions,
+    { capabilities: { total: 5, emitted: 2, omitted: 3 } }) }))
+  const rule = inexact.rules.find(r => r.id === RDX)
+  ok(rule !== undefined, 'the rule catalog is present in the guard fixture')
+  if (rule) {
+    ok(rule.noLocalHits, 'the rule has no local hits in this fixture')
+    ok(rule.analysisComplete, 'every plugin IS analyzed, so analysisComplete holds')
+    ok(!rule.analysisExactForAll, 'but the counts could be short, so the green check is dropped')
+  }
+  const exactRule = exactVm.rules.find(r => r.id === RDX)
+  ok(exactRule && exactRule.analysisExactForAll,
+    'and a complete report keeps the green check exactly as before')
+}
+
 console.log('\n' + (fail === 0 ? 'ALL PASS' : 'FAILURES') + ': ' + pass + ' passed, ' + fail + ' failed')
 process.exit(fail === 0 ? 0 : 1)

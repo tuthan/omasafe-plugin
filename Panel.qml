@@ -1304,6 +1304,8 @@ Panel {
       "edges show the cursor's one hop or the pinned path, not the whole weave\n" +
       "thin ≤ 3 · medium 4–9 · thick ≥ 10 occurrences\n" +
       "digits = occurrences · RULES digits = local hits (occurrences + review items)\n" +
+      "Matrix cell: digit = occurrences · · = analyzed, none observed · – = not analyzed, " +
+      "or analyzed with completeness not established\n" +
       "= same check · ≈ partial match\n" +
       "class glyph on a BASELINE row = matched via a capability class\n" +
       "no mark, dim = no matching OmaSafe check · 󰝦 not analyzed\n" +
@@ -2351,10 +2353,18 @@ Panel {
       var cells = []
       for (var c = 0; c < cols.length; c++) {
         var cls = cols[c]
+        // Three cases, not two. `–` now covers both "not analyzed" and "analysed, but
+        // completeness is not established": a zero-cell drawn as `·` claims "we looked
+        // and there was nothing", and a count that could be short has not earned it
+        // (doc 08 E1). A non-zero count is still exact enough to print — it is a lower
+        // bound and a digit, never a claim of absence.
+        var n = Number((p.counts || {})[cls] || 0)
         if (!p.analyzed) cells.push("–")
-        else { var n = Number((p.counts || {})[cls] || 0); cells.push(n > 0 ? String(n) : "·") }
+        else if (n > 0) cells.push(String(n))
+        else cells.push(p.analysisExact === true ? "·" : "–")
       }
-      out.push({ id: p.id, bold: p.alerted === true, analyzed: p.analyzed === true, cells: cells })
+      out.push({ id: p.id, bold: p.alerted === true, analyzed: p.analyzed === true,
+        analysisExact: p.analysisExact === true, cells: cells })
     }
     return { columns: cols, rows: out }
   }
@@ -3970,10 +3980,17 @@ Panel {
       String(finding.line || "")
   }
 
-  // The cached analysis report for a plugin, or null when there is none valid — the
-  // same validity check ensureAnalysis() uses (digest + CLI version + analyzer policy
-  // key), so a stale-policy or moved-digest cache hit is treated as not analyzed.
-  function resolvedAnalysisFor(plugin) {
+  // The cached analysis for a plugin as an ATOMIC { report, reportProfile } pair, or
+  // null when there is none valid — the same validity check ensureAnalysis() uses
+  // (digest + CLI version + analyzer policy key), so a stale-policy or moved-digest
+  // cache hit is treated as not analyzed.
+  //
+  // The pair matters. `analysisExact` is derived from the profile's omission counters,
+  // and resolving the report and the profile through two separate gates would let a
+  // stale profile vouch for a fresh analysis. A plugin whose analysis validates but
+  // whose profile is absent or invalid is `analysisExact: false`, never exact — the
+  // same reading that makes `unavailable ≠ clean`, applied to metadata.
+  function resolvedAnalysisEntryFor(plugin) {
     if (!plugin) return null
     var cached = root.analysisCache[plugin.id]
     if (!cached) return null
@@ -3982,8 +3999,14 @@ Panel {
     if (cached.digest === digest && cached.cliVersion === cliVersion &&
         cached.policyKey !== undefined &&
         cached.policyKey === root.analysisPolicyKeyFor(cached.report))
-      return cached.report
+      return { report: cached.report, reportProfile: cached.reportProfile || null }
     return null
+  }
+
+  // Existing callers want only the report; this keeps every one of them untouched.
+  function resolvedAnalysisFor(plugin) {
+    var entry = root.resolvedAnalysisEntryFor(plugin)
+    return entry ? entry.report : null
   }
 
   // Assemble the ViewModel input from the collectors and normalise it (T2.1). Called
@@ -3993,10 +4016,15 @@ Panel {
     var inv = root.inventoryReport
     var plugins = (inv && inv.plugins) || []
     var analysisById = ({})
+    // The report and its profile are resolved together, in the same loop, from the
+    // same validity gate. Two loops would be two gates.
+    var profileById = ({})
     for (var i = 0; i < plugins.length; i++) {
       var p = plugins[i]
       if (p.classification === "backup") continue
-      analysisById[p.id] = root.resolvedAnalysisFor(p)
+      var entry = root.resolvedAnalysisEntryFor(p)
+      analysisById[p.id] = entry ? entry.report : null
+      profileById[p.id] = entry ? entry.reportProfile : null
     }
     return ViewModel.build({
       inventory: inv,
@@ -4012,6 +4040,7 @@ Panel {
       statusById: root.pluginStatuses,
       checkingIds: root.statusQueue,
       analysisById: analysisById,
+      profileById: profileById,
       coverage: root.coverageReport,
       rulesList: root.rulesListReport,
       schedule: root.scheduleReport,

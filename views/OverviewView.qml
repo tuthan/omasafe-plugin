@@ -145,6 +145,7 @@ Column {
         trustBold: modelData.trustBold
         trustTooltip: modelData.trustLong
         analyzed: modelData.analyzed
+        analysisExact: modelData.analysisExact === true
         healthState: modelData.healthState
         healthLabel: modelData.healthLabel
         counts: modelData.counts
@@ -181,6 +182,7 @@ Column {
         pluginId: modelData.id
         trustWord: modelData.trustWord
         analyzed: false
+        analysisExact: false
         healthState: modelData.healthState
         healthLabel: modelData.healthLabel
         counts: ({})

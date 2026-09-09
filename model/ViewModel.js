@@ -41,6 +41,55 @@ function _stripDigests(obj) {
   return out
 }
 
+// ---- analysis completeness (doc 08 §2.4 E1/E2, v0.3.1 T12) --------------------
+//
+// `analyzed` answers "did we run an analysis". `analysisExact` answers "and was every
+// collection it drew from emitted whole". They are different questions and the panel
+// has been answering only the first: `_capCounts()`, `_ruleOccurrences()` and
+// `_pluginByClass()` group `analysis.capabilities[]` and `analysis.findings[]` without
+// ever consulting `report_profile.omissions`, and the consumers that render an absent
+// class as `·` — "analyzed, none observed" — are the CapabilityStrip on every Overview
+// row, the MatrixGrid cells and the Rules green check.
+//
+// This is LATENT, not live: `plugins analyze` uses `canonical-full-v1` with no
+// serialized byte limit, every `omitted` is 0 and `sizing_recovery.applied` is false,
+// so the counts are complete today. They stop being complete the moment the CLI sets a
+// limit on that profile or introduces another, and nothing in the panel would notice.
+// The failure is silent and it fails toward "clean", which is the one direction GR3
+// forbids — and the candidate path is being fixed by D7 in the same release, so
+// leaving this side unguarded would make the asymmetry the bug.
+//
+// The four collections are the ones the installed path actually consumes.
+var CONSUMED_COLLECTIONS = ["capabilities", "findings", "invocation_edges", "coverage_gaps"]
+
+function _finiteCount(value) {
+  return typeof value === "number" && isFinite(value) && value >= 0 && Math.floor(value) === value
+}
+
+// True ONLY when every consumed collection is accounted for and empty of omissions.
+// Everything else is false, including: no report_profile, an omissions block that is
+// {}, a block missing any one of the four, an entry missing its `omitted` counter, and
+// an entry whose counters contradict.
+//
+// **Absence of a counter is not evidence of zero.** That is the same reading that makes
+// `unavailable ≠ clean`, applied to metadata rather than to a scan result.
+function _analysisExact(profile) {
+  if (!profile || typeof profile !== "object") return false
+  if (profile.sizing_recovery && profile.sizing_recovery.applied === true) return false
+  var omissions = profile.omissions
+  if (!omissions || typeof omissions !== "object") return false
+  for (var i = 0; i < CONSUMED_COLLECTIONS.length; i++) {
+    var entry = omissions[CONSUMED_COLLECTIONS[i]]
+    if (!entry || typeof entry !== "object") return false
+    if (!_finiteCount(entry.total) || !_finiteCount(entry.emitted) || !_finiteCount(entry.omitted))
+      return false
+    // The CH5 reconciliation, applied to the INPUT rather than to the output.
+    if (entry.emitted + entry.omitted !== entry.total) return false
+    if (entry.omitted !== 0) return false
+  }
+  return true
+}
+
 // ---- capability occurrence counts (analysis.capabilities[] by class) ----------
 
 function _capCounts(analysis) {
@@ -111,6 +160,7 @@ function buildPlugins(input) {
   }
   var scanMeta = input.scanMeta || {}
   var scanHasResult = scanMeta.hasResult === true
+  var profileById = input.profileById || {}
 
   var out = []
   for (var i = 0; i < plugins.length; i++) {
@@ -119,6 +169,10 @@ function buildPlugins(input) {
     var status = statusById[id] || null
     var analysis = analysisById[id] || null
     var analyzed = !!analysis
+    // An analysis with no valid profile beside it is analyzed but NOT exact. The pair
+    // is resolved atomically upstream, so a stale profile can never vouch for a fresh
+    // analysis.
+    var analysisExact = analyzed && _analysisExact(profileById[id] || null)
     var isChecking = !status && checking.indexOf(id) >= 0
 
     var trustWord, trustLong, trustGlyphKey = "", trustBold = false
@@ -165,6 +219,7 @@ function buildPlugins(input) {
       trustGlyphKey: trustGlyphKey,
       trustBold: trustBold,
       analyzed: analyzed,
+      analysisExact: analysisExact,
       counts: counts,
       reviewCount: analyzed ? _arr(analysis.findings).length : 0,
       countText: countText,
@@ -202,6 +257,7 @@ function buildBackups(input) {
       trustGlyphKey: "",
       trustBold: false,
       analyzed: false,
+      analysisExact: false,
       counts: {},
       countText: "",
       limitsText: "",
@@ -354,7 +410,12 @@ function buildRules(input, plugins) {
   var rl = input.rulesList || null
   var analysisById = input.analysisById || {}
   var analyzedCount = 0
-  for (var p = 0; p < plugins.length; p++) if (plugins[p].analyzed) analyzedCount++
+  var exactCount = 0
+  for (var p = 0; p < plugins.length; p++) {
+    if (plugins[p].analyzed) analyzedCount++
+    if (plugins[p].analysisExact) exactCount++
+  }
+  var exactForAll = plugins.length > 0 && exactCount === plugins.length
 
   var rules = rl ? _arr(rl.rules) : []
   var out = []
@@ -395,7 +456,12 @@ function buildRules(input, plugins) {
       rowHitText: analyzedCount === 0 ? "–" : _str(hitOccurrences)
       ,severityLevel: Labels.severityTier(r.default_severity),
       noLocalHits: analyzedCount > 0 && analyzedCount === plugins.length && hitOccurrences === 0,
-      analysisComplete: analyzedCount === plugins.length
+      // `analysisComplete` means only "every installed plugin has been analyzed".
+      // `analysisExactForAll` means "and every one of those analyses was emitted
+      // whole". The green check is the panel's only positive claim on this tab, and it
+      // was resting on the first alone.
+      analysisComplete: analyzedCount === plugins.length,
+      analysisExactForAll: exactForAll
     })
   }
   // capability class then id.
@@ -416,6 +482,8 @@ function buildRules(input, plugins) {
 // ---- Baseline V3 coverage table ----------------------------------------------
 
 function buildBaseline(input, plugins, analyzedCount) {
+  var exactForAll = plugins.length > 0
+  for (var e = 0; e < plugins.length; e++) if (!plugins[e].analysisExact) { exactForAll = false; break }
   var cov = input.coverage || null
   if (!cov) return { available: false, rows: [], equivalentCount: 0, partialCount: 0, notCoveredCount: 0 }
   var entries = _arr(cov.coverage)
@@ -438,8 +506,11 @@ function buildBaseline(input, plugins, analyzedCount) {
       if (!plugins[j].analyzed) continue
       if (_ruleOccurrences(analysisById[plugins[j].id], ruleId) > 0) k++
     }
-    return k > 0 ? "observed in " + k + " analyzed plugins"
-                 : "not observed in " + analyzedCount + " analyzed plugins"
+    if (k > 0) return "observed in " + k + " analyzed plugins"
+    // A negative claim from counts that could be short is the same false clean the
+    // green check would be, in prose.
+    return "not observed in " + analyzedCount + " analyzed plugins" +
+      (exactForAll ? "" : " (counts may be incomplete)")
   }
 
   var rows = [], equivalentCount = 0, partialCount = 0
@@ -574,7 +645,12 @@ function build(input) {
   for (var i = 0; i < plugins.length; i++) pluginsById[plugins[i].id] = plugins[i]
 
   var analyzedCount = 0
-  for (var a = 0; a < plugins.length; a++) if (plugins[a].analyzed) analyzedCount++
+  var exactCount = 0
+  for (var a = 0; a < plugins.length; a++) {
+    if (plugins[a].analyzed) analyzedCount++
+    if (plugins[a].analysisExact) exactCount++
+  }
+  var exactForAll = plugins.length > 0 && exactCount === plugins.length
 
   var inv = input.inventory || {}
   var liveCount = _arr(inv.plugins).filter(function(p) { return _str(p.classification) !== "backup" }).length
@@ -589,6 +665,8 @@ function build(input) {
     pluginsById: pluginsById,
     backups: buildBackups(input),
     analyzedCount: analyzedCount,
+    analysisExactCount: exactCount,
+    analysisExactForAll: exactForAll,
     liveCount: liveCount,
     backupCount: backupCount,
     alerts: buildAlerts(input, pluginsById),
