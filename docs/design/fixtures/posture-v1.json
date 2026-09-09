@@ -1,0 +1,446 @@
+{
+  "check_catalog_version": 1,
+  "checks": [
+    {
+      "dependencies": [
+        "bootctl"
+      ],
+      "evidence": [
+        "Secure Boot is disabled"
+      ],
+      "id": "boot.secure_boot",
+      "limitations": [],
+      "next_step": "Secure Boot state is reported for context and is not graded.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Secure Boot state",
+      "tool": {
+        "available": true,
+        "name": "bootctl",
+        "path": "/usr/bin/bootctl",
+        "version": "systemd 261 (261.2-1-arch)"
+      }
+    },
+    {
+      "dependencies": [
+        "lsblk"
+      ],
+      "evidence": [
+        "A LUKS/crypt ancestor was found for the root device"
+      ],
+      "id": "encryption.root_luks",
+      "limitations": [],
+      "next_step": "Review the root-device layout before changing encryption settings.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "pass",
+      "title": "Root filesystem encryption",
+      "tool": {
+        "available": true,
+        "name": "lsblk",
+        "path": "/usr/bin/lsblk",
+        "version": "lsblk from util-linux 2.42.2"
+      }
+    },
+    {
+      "dependencies": [],
+      "evidence": [
+        "no world-writable PATH entry was observed"
+      ],
+      "id": "execution.path",
+      "limitations": [],
+      "next_step": "Keep executable search directories owned and non-writable by other users.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "pass",
+      "title": "Executable search path integrity",
+      "tool": null
+    },
+    {
+      "dependencies": [
+        "nft"
+      ],
+      "evidence": [
+        "/etc/nftables.conf is readable",
+        "an /etc/ufw configuration file is readable"
+      ],
+      "id": "firewall.configuration",
+      "limitations": [],
+      "next_step": "Review the active firewall configuration if listeners change.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Firewall configuration",
+      "tool": {
+        "available": true,
+        "name": "nft",
+        "path": "/usr/bin/nft",
+        "version": "nftables v1.1.6 (Commodore Bullmoose #7)"
+      }
+    },
+    {
+      "dependencies": [
+        "nft"
+      ],
+      "evidence": [],
+      "id": "firewall.effective",
+      "limitations": [
+        "runtime firewall policy was denied or unavailable to the unprivileged scan"
+      ],
+      "next_step": "Run the posture scan as the supported user session; OmaSafe does not request elevation.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "incomplete",
+      "title": "Effective firewall policy",
+      "tool": {
+        "available": true,
+        "name": "nft",
+        "path": "/usr/bin/nft",
+        "version": "nftables v1.1.6 (Commodore Bullmoose #7)"
+      }
+    },
+    {
+      "dependencies": [
+        "systemctl"
+      ],
+      "evidence": [
+        "a supported firewall service is active; runtime policy is checked separately"
+      ],
+      "id": "firewall.service",
+      "limitations": [],
+      "next_step": "Review firewall service state together with the effective-policy check.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Firewall service state",
+      "tool": {
+        "available": true,
+        "name": "systemctl",
+        "path": "/usr/bin/systemctl",
+        "version": "systemd 261 (261.2-1-arch)"
+      }
+    },
+    {
+      "dependencies": [],
+      "evidence": [
+        "Omarchy path: /usr/share/omarchy"
+      ],
+      "id": "host.context",
+      "limitations": [],
+      "next_step": "Keep OmaSafe checks scoped to this host context.",
+      "observed_at": "2026-09-08T14:23:30Z",
+      "state": "pass",
+      "title": "Omarchy host context",
+      "tool": null
+    },
+    {
+      "dependencies": [
+        "pacman"
+      ],
+      "evidence": [
+        "running kernel: 7.1.9-arch1-2",
+        "installed kernel packages: 1"
+      ],
+      "id": "kernel.restart",
+      "limitations": [],
+      "next_step": "Restart after a kernel update when convenient.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "pass",
+      "title": "Kernel restart state",
+      "tool": {
+        "available": true,
+        "name": "pacman",
+        "path": "/usr/bin/pacman",
+        "version": ".--.                  Pacman v7.1.0 - libalpm v16.0.1"
+      }
+    },
+    {
+      "dependencies": [
+        "ss"
+      ],
+      "evidence": [
+        "listening: 172.17.0.1:53",
+        "listening: 127.0.0.54:53",
+        "listening: 127.0.0.53%lo:53",
+        "listening: 224.0.0.251:5353",
+        "listening: 224.0.0.251:5353",
+        "listening: 224.0.0.251:5353",
+        "listening: 172.17.0.1:53",
+        "listening: 127.0.0.53%lo:53",
+        "listening: 127.0.0.54:53"
+      ],
+      "id": "network.listeners",
+      "limitations": [
+        "process attribution is incomplete because socket ownership was not readable"
+      ],
+      "next_step": "Review listeners against your expected services; ports 22 and 53317 are common Omarchy defaults.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Listening network sockets",
+      "tool": {
+        "available": true,
+        "name": "ss",
+        "path": "/usr/bin/ss",
+        "version": "ss utility, iproute2-7.2.0"
+      }
+    },
+    {
+      "dependencies": [
+        "pacman"
+      ],
+      "evidence": [
+        "13 foreign package(s) reported"
+      ],
+      "id": "packages.foreign",
+      "limitations": [
+        "Foreign packages are inventoried but are not declared unsafe by this check"
+      ],
+      "next_step": "Review foreign packages when investigating a vulnerability.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Foreign package inventory",
+      "tool": {
+        "available": true,
+        "name": "pacman",
+        "path": "/usr/bin/pacman",
+        "version": ".--.                  Pacman v7.1.0 - libalpm v16.0.1"
+      }
+    },
+    {
+      "dependencies": [
+        "pacman"
+      ],
+      "evidence": [
+        "Integrity verification is scheduled separately from the quick posture scan"
+      ],
+      "id": "packages.integrity",
+      "limitations": [],
+      "next_step": "Use the weekly integrity profile for pacman -Qkk metadata.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "not_applicable",
+      "title": "Pacman package integrity metadata",
+      "tool": {
+        "available": true,
+        "name": "pacman",
+        "path": "/usr/bin/pacman",
+        "version": ".--.                  Pacman v7.1.0 - libalpm v16.0.1"
+      }
+    },
+    {
+      "dependencies": [],
+      "evidence": [
+        "pacman keyring directory is present"
+      ],
+      "id": "packages.keyring",
+      "limitations": [],
+      "next_step": "Initialize or refresh the supported pacman keyring.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "pass",
+      "title": "Pacman keyring state",
+      "tool": null
+    },
+    {
+      "dependencies": [],
+      "evidence": [
+        "/etc/systemd/system: at least 32 entry(s)",
+        "$HOME/.config/autostart: 4 entry(s)",
+        "$HOME/.config/systemd/user: 9 entry(s)"
+      ],
+      "id": "persistence.selected",
+      "limitations": [],
+      "next_step": "Review unexpected persistence entries before accepting a baseline.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Selected persistence surfaces",
+      "tool": null
+    },
+    {
+      "dependencies": [
+        "systemctl"
+      ],
+      "evidence": [
+        "sshd is not active"
+      ],
+      "id": "ssh.configuration",
+      "limitations": [],
+      "next_step": "Enable this check when an SSH service is intentionally enabled.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "not_applicable",
+      "title": "SSH daemon configuration",
+      "tool": {
+        "available": true,
+        "name": "systemctl",
+        "path": "/usr/bin/systemctl",
+        "version": "systemd 261 (261.2-1-arch)"
+      }
+    },
+    {
+      "dependencies": [
+        "checkupdates"
+      ],
+      "evidence": [
+        "no packaged omarchy or omarchy-dev update was found in the validated inventory"
+      ],
+      "id": "updates.omarchy",
+      "limitations": [],
+      "next_step": "Keep the supported Omarchy installation current.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "pass",
+      "title": "Omarchy update availability",
+      "tool": {
+        "available": true,
+        "name": "checkupdates",
+        "path": "/usr/bin/checkupdates",
+        "version": "checkupdates 1.13.1"
+      }
+    },
+    {
+      "dependencies": [],
+      "evidence": [
+        "No verified OmaSafe post-update hook observation is available"
+      ],
+      "id": "updates.post_update_hook",
+      "limitations": [
+        "missing or unverified hook stamp is reported as unknown"
+      ],
+      "next_step": "Run `omasafe-cli posture hook install` before the next supported `omarchy update`.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "informational",
+      "title": "Last observed post-update hook",
+      "tool": null
+    },
+    {
+      "dependencies": [
+        "checkupdates"
+      ],
+      "evidence": [
+        "openai-codex-desktop 26.901.20858-1 -> 26.901.51231-1"
+      ],
+      "id": "updates.repository",
+      "limitations": [],
+      "next_step": "Run `omarchy update` after reviewing the pending packages.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "regression",
+      "title": "Repository package updates",
+      "tool": {
+        "available": true,
+        "name": "checkupdates",
+        "path": "/usr/bin/checkupdates",
+        "version": "checkupdates 1.13.1"
+      }
+    },
+    {
+      "dependencies": [
+        "arch-audit"
+      ],
+      "evidence": [],
+      "id": "vulnerabilities.arch_audit",
+      "limitations": [
+        "required tool arch-audit was unavailable"
+      ],
+      "next_step": "Install the official `arch-audit` package and retry.",
+      "observed_at": "2026-09-08T14:23:31Z",
+      "state": "incomplete",
+      "title": "Known official package vulnerabilities",
+      "tool": {
+        "available": false,
+        "name": "arch-audit",
+        "path": null,
+        "version": null
+      }
+    }
+  ],
+  "coverage": {
+    "complete": 14,
+    "errors": 0,
+    "incomplete": 2,
+    "limitations": [
+      "Foreign packages are inventoried but are not declared unsafe by this check",
+      "missing or unverified hook stamp is reported as unknown",
+      "process attribution is incomplete because socket ownership was not readable",
+      "required tool arch-audit was unavailable",
+      "runtime firewall policy was denied or unavailable to the unprivileged scan"
+    ],
+    "not_applicable": 2
+  },
+  "generated_at": "2026-09-08T14:23:30Z",
+  "host": {
+    "arch": "x86_64",
+    "kernel": "7.1.9-arch1-2",
+    "omarchy_path": "/usr/share/omarchy",
+    "omarchy_version": "4.0.2-1",
+    "os": "arch"
+  },
+  "last_observed_post_update_hook": null,
+  "result_age_seconds": 44743,
+  "schema": "omasafe.posture.v1",
+  "tools": [
+    {
+      "available": true,
+      "name": "checkupdates",
+      "path": "/usr/bin/checkupdates",
+      "version": "checkupdates 1.13.1"
+    },
+    {
+      "available": true,
+      "name": "pacman",
+      "path": "/usr/bin/pacman",
+      "version": ".--.                  Pacman v7.1.0 - libalpm v16.0.1"
+    },
+    {
+      "available": false,
+      "name": "arch-audit",
+      "path": null,
+      "version": null
+    },
+    {
+      "available": true,
+      "name": "findmnt",
+      "path": "/usr/bin/findmnt",
+      "version": "findmnt from util-linux 2.42.2"
+    },
+    {
+      "available": true,
+      "name": "lsblk",
+      "path": "/usr/bin/lsblk",
+      "version": "lsblk from util-linux 2.42.2"
+    },
+    {
+      "available": true,
+      "name": "nft",
+      "path": "/usr/bin/nft",
+      "version": "nftables v1.1.6 (Commodore Bullmoose #7)"
+    },
+    {
+      "available": true,
+      "name": "ufw",
+      "path": "/usr/bin/ufw",
+      "version": "ufw 0.36.2"
+    },
+    {
+      "available": true,
+      "name": "ss",
+      "path": "/usr/bin/ss",
+      "version": "ss utility, iproute2-7.2.0"
+    },
+    {
+      "available": true,
+      "name": "uname",
+      "path": "/usr/bin/uname",
+      "version": "uname (GNU coreutils) 9.11"
+    },
+    {
+      "available": true,
+      "name": "bootctl",
+      "path": "/usr/bin/bootctl",
+      "version": "systemd 261 (261.2-1-arch)"
+    },
+    {
+      "available": true,
+      "name": "systemctl",
+      "path": "/usr/bin/systemctl",
+      "version": "systemd 261 (261.2-1-arch)"
+    },
+    {
+      "available": true,
+      "name": "git",
+      "path": "/usr/bin/git",
+      "version": "git version 2.55.0"
+    }
+  ]
+}
