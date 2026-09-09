@@ -4,18 +4,25 @@
 
 # OmaSafe Omarchy plugin
 
-OmaSafe is an Omarchy bar widget and review panel for inspecting installed
-plugins and reviewing public GitHub candidates before installation. It surfaces
-source drift, detected capabilities, rule coverage, scan alerts, trust baselines,
-and marketplace metadata. The separate `omasafe-cli` binary does the scanning;
-this plugin renders its reports and does not declare plugins safe.
+> Know what your system can do. Catch what quietly changed.
+
+OmaSafe is an Omarchy bar widget and review panel over two subjects: the plugins
+installed on this machine, and the machine itself. It surfaces source drift,
+detected capabilities, rule coverage, scan alerts, trust baselines, marketplace
+metadata, and host posture. The separate `omasafe-cli` binary owns identity,
+analysis, and report state; this plugin renders its reports and does not declare
+plugins or hosts safe.
+
+The panel also reviews public GitHub candidates before installation through the
+CLI's scan-only route. It shows the resolved commit, findings, capabilities, and
+coverage limitations without installing or enabling the candidate.
 
 The plugin runs as unsandboxed QML inside `omarchy-shell`, so review the source
 before enabling it. Installing the plugin and installing the CLI are separate
 operations.
 
 - Plugin ID: `io.github.tuthan.omasafe`
-- [Omarchy plugin marketplace](https://plugins.omarchy.org/index.html)
+- [Omarchy plugin marketplace](https://plugins.omarchy.org/plugin.html?id=io.github.tuthan.omasafe)
 - [OmaSafe CLI repository](https://github.com/tuthan/omasafe)
 
 
