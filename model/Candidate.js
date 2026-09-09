@@ -899,3 +899,34 @@ function build(report) {
     noActiveFindings: findingOmission.total === 0 && findingOmission.omitted === 0
   }
 }
+
+// The `/` finder's Source Scan results (doc 08 §5.6). Matches an emitted finding on
+// its rule id, its title or its path. The index is carried back because it is the
+// finding's identity in the cursor's index space — the emitted list is the only
+// ordering the view has.
+function searchFindings(model, query) {
+  var text = _str(query).trim().toLowerCase()
+  if (!model || model.ok !== true || text === "") return []
+  var findings = model.analysis.findings
+  var out = []
+  for (var i = 0; i < findings.length && out.length < 6; i++) {
+    var f = findings[i]
+    var hay = (f.ruleId + " " + f.title + " " + f.displayRelativePath + " " + f.relativePath).toLowerCase()
+    if (hay.indexOf(text) >= 0) out.push({ index: i, finding: f })
+  }
+  return out
+}
+
+// The enabled copy actions on a Source Scan result — the `scan-summary` horizontal
+// cursor section (doc 08 §5.6). The install command appears here only when it appears
+// at all: its visibility rule is untouched and this list follows it rather than
+// restating it, so the section count can never disagree with the boundary.
+function copyActions(model) {
+  if (!model || model.ok !== true) return []
+  var out = []
+  if (model.rescanCommand !== "")
+    out.push({ key: "rescan", label: "Copy exact rescan command", value: model.rescanCommand })
+  if (model.installCommand !== "")
+    out.push({ key: "install", label: "Copy install command", value: model.installCommand })
+  return out
+}

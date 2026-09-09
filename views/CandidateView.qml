@@ -19,7 +19,13 @@ Column {
   width: parent ? parent.width : implicitWidth
   spacing: Style.space(12)
 
+  // Filters synthetic hover churn from delegates reflowing under a stationary pointer.
+  PointerMoveGate { id: gate; referenceItem: root }
+
   function col(name) { return panel ? panel[name] : Color.foreground }
+  function has(section, index) {
+    return panel && panel.cursorActive && panel.focusSection === section && panel.selectedIndex === index
+  }
 
   Connections {
     target: root.panel
@@ -96,10 +102,12 @@ Column {
       text: "Scan source"
       bordered: true
       enabled: root.panel && root.panel.candidateCanRun && requestInput.text.trim() !== ""
+      hasCursor: root.has("scan-input", 0)
       foreground: enabled ? root.col("fg") : root.col("faint")
       fontFamily: root.col("fontFamily")
       tooltipText: "Resolve and scan this plugin source without installing it"
       onClicked: if (root.panel) root.panel.runCandidate()
+      onHovered: function(h) { if (h && root.panel) root.panel.hoverCursor("scan-input", 0) }
     }
 
     Button {
@@ -465,20 +473,6 @@ Column {
       resolvedFamily: root.rf
     }
 
-    Row {
-      width: parent.width
-      spacing: Style.space(8)
-      visible: root.candidate && root.candidate.installCommand !== ""
-      Button {
-        text: "Copy install command"
-        bordered: true
-        enabled: root.candidate && root.candidate.installCommand !== ""
-        foreground: enabled ? root.col("fg") : root.col("faint")
-        fontFamily: root.col("fontFamily")
-        tooltipText: "Copy the suggested command; installation remains a separate manual decision"
-        onClicked: if (root.panel) root.panel.copyValue(root.candidate.installCommand)
-      }
-    }
 
     Text {
       width: parent.width - Style.space(18)
@@ -544,17 +538,34 @@ Column {
       wrapMode: Text.WordWrap
     }
 
-    Row {
+    // One horizontal cursor section over the ENABLED copy actions. `scan-summary`
+    // counts these, not the rows on screen, so `l` reaches the last one instead of
+    // being pinned to the first. The install command's visibility rule is untouched:
+    // it is simply absent from this list when it is withheld.
+    ActionRow {
       width: parent.width
-      spacing: Style.space(8)
-      Button {
-        text: "Copy exact rescan command"
-        bordered: true
-        enabled: root.candidate && root.candidate.rescanCommand !== ""
-        foreground: enabled ? root.col("fg") : root.col("faint")
-        fontFamily: root.col("fontFamily")
-        tooltipText: "Copy the immutable Git rescan command"
-        onClicked: if (root.panel) root.panel.copyCandidateCommand()
+      visible: root.panel && root.panel.candidateCopyActions().length > 0
+      actions: {
+        var out = []
+        var list = root.panel ? root.panel.candidateCopyActions() : []
+        for (var i = 0; i < list.length; i++) {
+          out.push({
+            label: list[i].label, enabled: true,
+            tooltip: list[i].key === "install"
+              ? "Copy the suggested command; installation remains a separate manual decision"
+              : "Copy the immutable Git rescan command"
+          })
+        }
+        return out
+      }
+      cursorIndex: root.panel && root.panel.cursorActive &&
+        root.panel.focusSection === "scan-summary" ? root.panel.selectedIndex : -1
+      foreground: root.col("fg"); faint: root.col("faint"); dim: root.col("dim")
+      locked: root.panel && root.panel.navigationLocked
+      fontFamily: root.col("fontFamily")
+      onTriggered: function(index) { if (root.panel) root.panel.candidatePerformCopy(index) }
+      onHovered: function(index, isHovered) {
+        if (isHovered && root.panel) root.panel.hoverCursor("scan-summary", index)
       }
     }
 
@@ -592,84 +603,155 @@ Column {
 
 
 
+    // Each finding is a cursor row (`scan-findings`), collapsed to its identity and
+    // expanded with Enter. 32 findings used to render every line of every one of them
+    // with no way to reach any of them from the keyboard.
     Repeater {
+      id: findingRepeater
       model: root.candidate ? root.candidate.analysis.findings : []
-      delegate: Column {
+
+      delegate: CursorSurface {
+        id: findingRow
         required property var modelData
-        width: resultColumn.width - Style.space(18)
-        x: Style.space(10)
-        spacing: Style.space(2)
-        Text {
-          width: parent.width
-          textFormat: Text.PlainText
-          text: String(modelData.severity || "unknown").toUpperCase() + " · " + modelData.title
-          color: root.col("fg")
-          font.family: root.col("fontFamily")
-          font.pixelSize: Style.font.body
-          wrapMode: Text.WordWrap
-        }
-        Text {
-          width: parent.width
-          textFormat: Text.PlainText
-          text: modelData.ruleId + " · " + (modelData.displayRelativePath || modelData.relativePath) +
-            (modelData.line !== "" ? ":" + modelData.line : "")
-          color: root.col("dim")
-          font.family: root.col("fontFamily")
-          font.pixelSize: Style.font.bodySmall
-          wrapMode: Text.WrapAnywhere
-        }
-        Text {
-          width: parent.width
-          visible: modelData.analysisMethod !== "" || modelData.occurrenceId !== ""
-          textFormat: Text.PlainText
-          text: (modelData.analysisMethod !== "" ? "Method: " + modelData.analysisMethod : "") +
-            (modelData.occurrenceId !== "" ?
-              (modelData.analysisMethod !== "" ? " · occurrence " : "Occurrence ") + modelData.occurrenceId : "")
-          color: root.col("dim")
-          font.family: root.col("fontFamily")
-          font.pixelSize: Style.font.caption
-          wrapMode: Text.WrapAnywhere
-        }
-        Text {
-          width: parent.width
-          visible: modelData.evidence !== ""
-          textFormat: Text.PlainText
-          text: "Evidence\n" + modelData.evidence
-          color: root.col("dim")
-          font.family: root.col("fontFamily")
-          font.pixelSize: Style.font.bodySmall
-          wrapMode: Text.WrapAnywhere
-        }
-        Text {
-          width: parent.width
-          visible: modelData.behaviorContext
-          textFormat: Text.PlainText
-          text: modelData.behaviorContext
-            ? ("Behavior: " + (modelData.behaviorContext.connection || "unresolved") +
-              " · source " + (modelData.behaviorContext.sourceClass || "unknown") +
-              " · sink " + (modelData.behaviorContext.sinkKind || "unknown") +
-              " · trigger " + (modelData.behaviorContext.trigger || "unknown")) : ""
-          color: root.col("dim")
-          font.family: root.col("fontFamily")
-          font.pixelSize: Style.font.caption
-          wrapMode: Text.WrapAnywhere
-        }
-        Repeater {
-          model: modelData.evidenceSteps || []
-          delegate: Text {
-            required property var modelData
-            width: resultColumn.width - Style.space(28)
-            x: Style.space(20)
+        required property int index
+        readonly property bool expanded: root.panel
+          ? root.panel.candidateFindingExpanded(findingRow.index) : false
+
+        width: parent.width
+        implicitHeight: findingBody.implicitHeight + Style.space(6)
+        hasCursor: root.has("scan-findings", findingRow.index)
+        foreground: root.col("fg")
+        onHasCursorChanged: if (hasCursor && root.panel) root.panel.ensureCursorVisible(this)
+
+        Column {
+          id: findingBody
+          anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
+          anchors.leftMargin: Style.space(10)
+          anchors.rightMargin: Style.space(8)
+          spacing: Style.space(2)
+
+          Row {
+            width: parent.width
+            spacing: Style.space(6)
+
+            SemanticMark {
+              anchors.verticalCenter: parent.verticalCenter
+              compact: true
+              level: String(findingRow.modelData.severity || "unknown")
+              foreground: root.col("fg"); dim: root.col("dim")
+              fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
+            }
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              width: parent.width - Style.space(26)
+              textFormat: Text.PlainText
+              text: String(findingRow.modelData.severity || "unknown").toUpperCase() +
+                " · " + findingRow.modelData.title
+              color: root.col("fg")
+              font.family: root.col("fontFamily")
+              font.pixelSize: Style.font.bodySmall
+              elide: Text.ElideRight
+            }
+          }
+
+          Text {
+            width: parent.width
             textFormat: Text.PlainText
-            text: "Step " + (modelData.role || "observation") + " · " +
-              (modelData.displayRelativePath || modelData.relativePath || "") +
-              (modelData.line !== "" ? ":" + modelData.line : "") +
-              (modelData.detail !== "" ? " · " + modelData.detail : "")
+            text: findingRow.modelData.ruleId + " · " +
+              (findingRow.modelData.displayRelativePath || findingRow.modelData.relativePath) +
+              (findingRow.modelData.line !== "" ? ":" + findingRow.modelData.line : "")
             color: root.col("dim")
             font.family: root.col("fontFamily")
             font.pixelSize: Style.font.caption
             wrapMode: Text.WrapAnywhere
           }
+
+          Text {
+            width: parent.width
+            visible: findingRow.expanded &&
+              (findingRow.modelData.analysisMethod !== "" || findingRow.modelData.occurrenceId !== "")
+            textFormat: Text.PlainText
+            text: (findingRow.modelData.analysisMethod !== ""
+                ? "Method: " + findingRow.modelData.analysisMethod : "") +
+              (findingRow.modelData.occurrenceId !== ""
+                ? (findingRow.modelData.analysisMethod !== "" ? " · occurrence " : "Occurrence ") +
+                  findingRow.modelData.occurrenceId : "")
+            color: root.col("dim")
+            font.family: root.col("fontFamily")
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WrapAnywhere
+          }
+
+          Text {
+            width: parent.width
+            visible: findingRow.expanded && findingRow.modelData.evidence !== ""
+            textFormat: Text.PlainText
+            text: "Evidence\n" + findingRow.modelData.evidence
+            color: root.col("dim")
+            font.family: root.col("fontFamily")
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WrapAnywhere
+          }
+
+          Text {
+            width: parent.width
+            visible: findingRow.expanded && !!findingRow.modelData.behaviorContext
+            textFormat: Text.PlainText
+            text: findingRow.modelData.behaviorContext
+              ? ("Behavior: " + (findingRow.modelData.behaviorContext.connection || "unresolved") +
+                " · source " + (findingRow.modelData.behaviorContext.sourceClass || "unknown") +
+                " · sink " + (findingRow.modelData.behaviorContext.sinkKind || "unknown") +
+                " · trigger " + (findingRow.modelData.behaviorContext.trigger || "unknown")) : ""
+            color: root.col("dim")
+            font.family: root.col("fontFamily")
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WrapAnywhere
+          }
+
+          Repeater {
+            model: findingRow.expanded ? (findingRow.modelData.evidenceSteps || []) : []
+            delegate: Text {
+              required property var modelData
+              width: findingBody.width - Style.space(10)
+              x: Style.space(10)
+              textFormat: Text.PlainText
+              text: "Step " + (modelData.role || "observation") + " · " +
+                (modelData.displayRelativePath || modelData.relativePath || "") +
+                (modelData.line !== "" ? ":" + modelData.line : "") +
+                (modelData.detail !== "" ? " · " + modelData.detail : "")
+              color: root.col("dim")
+              font.family: root.col("fontFamily")
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.WrapAnywhere
+            }
+          }
+
+          // An evidence collection that was cut short says so on the row it belongs
+          // to, not only in the band's reconciliation line.
+          Text {
+            width: parent.width
+            visible: findingRow.expanded && !!findingRow.modelData.evidenceSummary &&
+              findingRow.modelData.evidenceSummary.omitted > 0
+            textFormat: Text.PlainText
+            text: findingRow.modelData.evidenceSummary
+              ? findingRow.modelData.evidenceSummary.omitted +
+                " evidence observations for this finding were omitted." : ""
+            color: root.col("dim")
+            font.family: root.col("fontFamily")
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WordWrap
+          }
+        }
+
+        MouseArea {
+          anchors.fill: parent
+          hoverEnabled: true
+          acceptedButtons: Qt.LeftButton
+          onPositionChanged: function(mouse) {
+            if (gate.moved(this, mouse) && root.panel)
+              root.panel.hoverCursor("scan-findings", findingRow.index)
+          }
+          onClicked: if (root.panel) root.panel.candidateToggleFinding(findingRow.index)
         }
       }
     }

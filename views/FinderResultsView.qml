@@ -4,6 +4,7 @@ import qs.Ui
 import "../components"
 import "../model/Glyphs.js" as Glyphs
 import "../model/ViewModel.js" as ViewModel
+import "../model/Posture.js" as Posture
 
 // Finder results (doc 03 §8): the matching groups (PLUGINS · CAPABILITIES · RULES ·
 // BASELINE V3) drawn with the row grammar, one result section, ≤ 6 rows each. Groups
@@ -26,6 +27,11 @@ Column {
   readonly property int nPlugins: res ? res.plugins.length : 0
   readonly property int nClasses: res ? res.classes.length : 0
   readonly property int nRules: res ? res.rules.length : 0
+  readonly property int nBaseline: res ? res.baseline.length : 0
+  // The two v0.3.1 result kinds. They come from their own pure modules and do not
+  // need `vm`, so a finder opened before the inventory has loaded still finds them.
+  readonly property var postureRes: panel ? panel.postureFinderResults() : []
+  readonly property var scanRes: panel ? panel.candidateFinderResults() : []
 
   function has(i) { return panel && panel.cursorActive && panel.focusSection === "results" && panel.selectedIndex === i }
   function hover(i) { if (panel) panel.hoverCursor("results", i) }
@@ -33,9 +39,10 @@ Column {
   // Empty state.
   NoticeRow {
     width: parent.width
-    visible: root.res && root.res.empty
+    visible: root.res && root.res.empty && root.postureRes.length === 0 && root.scanRes.length === 0
     reason: "none"
-    text: "No plugin, class, rule or baseline id matches \"" + (panel ? panel.finderText : "") + "\"."
+    text: "No plugin, class, rule, baseline id, posture check or scan finding matches \"" +
+      (panel ? panel.finderText : "") + "\"."
     foreground: root.col("fg"); dim: root.col("dim")
     fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
   }
@@ -117,6 +124,51 @@ Column {
         glyph: modelData.relationMark
         line1: modelData.externalId
         base: root.nPlugins + root.nClasses + root.nRules; idx: index
+      }
+    }
+  }
+
+  // ---- HOST POSTURE ------------------------------------------------------------
+  Column {
+    width: parent.width
+    visible: root.postureRes.length > 0
+    spacing: Style.space(6)
+    SectionHeaderRow { text: "HOST POSTURE"; value: String(root.postureRes.length)
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader"); fontFamily: root.col("fontFamily") }
+    Repeater {
+      model: root.postureRes
+      delegate: FinderResultRow {
+        required property var modelData
+        required property int index
+        width: parent.width
+        glyph: Glyphs.ui_(modelData.glyphKey, root.rf)
+        line1: modelData.title
+        line2: modelData.id + " · " + modelData.stateLabel
+        base: root.nPlugins + root.nClasses + root.nRules + root.nBaseline
+        idx: index
+      }
+    }
+  }
+
+  // ---- SOURCE SCAN ---------------------------------------------------------------
+  Column {
+    width: parent.width
+    visible: root.scanRes.length > 0
+    spacing: Style.space(6)
+    SectionHeaderRow { text: "SOURCE SCAN"; value: String(root.scanRes.length)
+      foreground: root.col("dimHeader"); valueColor: root.col("dimHeader"); fontFamily: root.col("fontFamily") }
+    Repeater {
+      model: root.scanRes
+      delegate: FinderResultRow {
+        required property var modelData
+        required property int index
+        width: parent.width
+        glyph: Glyphs.ui_("rule", root.rf)
+        line1: modelData.finding.title
+        line2: modelData.finding.ruleId + " · " +
+          (modelData.finding.displayRelativePath || modelData.finding.relativePath)
+        base: root.nPlugins + root.nClasses + root.nRules + root.nBaseline + root.postureRes.length
+        idx: index
       }
     }
   }

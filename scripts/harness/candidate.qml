@@ -65,6 +65,26 @@ ShellRoot {
       property bool candidateCanRun: true
       property bool candidateProcessRunning: false
 
+      property bool navigationLocked: false
+      property bool cursorActive: false
+      property string focusSection: "hero"
+      property int selectedIndex: 0
+      property var candidateExpandedFindings: ({})
+
+      function candidateCopyActions() { return Candidate.copyActions(candidateModel) }
+      function candidatePerformCopy(index) { }
+      function candidateFindingExpanded(index) { return candidateExpandedFindings[String(index)] === true }
+      function candidateToggleFinding(index) {
+        var next = {}, key
+        for (key in candidateExpandedFindings) next[key] = candidateExpandedFindings[key]
+        next[String(index)] = !(next[String(index)] === true)
+        candidateExpandedFindings = next
+      }
+      function hoverCursor(section, index) {
+        cursorActive = true; focusSection = section; selectedIndex = index
+      }
+      function ensureCursorVisible(item) { }
+
       function candidateProgressText() { return "Scanning plugin source…" }
       function leaveSourceScan() { }
       function runCandidate() { }

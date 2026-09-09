@@ -26,6 +26,10 @@ ShellRoot {
   // The compact panel body: 420 units wide. A rule is drawn at 420 units down so the
   // "above the fold" acceptance can be read off the image.
   readonly property int foldHeight: 420
+  // Park the cursor on a named section/index before the grab, so the highlight and the
+  // tooltip that follow it can be read off the image.
+  readonly property string cursorSection: Quickshell.env("HARNESS_SECTION") || ""
+  readonly property int cursorIndex: Number(Quickshell.env("HARNESS_INDEX") || "0")
 
   property var report: null
 
@@ -89,35 +93,10 @@ ShellRoot {
         next[String(domain)] = !(next[String(domain)] === true)
         postureCollapsedGroups = next
       }
-      function postureObservedRows() {
-        var model = postureModel
-        if (!model || !model.available) return []
-        var out = []
-        for (var g = 0; g < model.groups.length; g++) {
-          if (postureGroupCollapsed(model.groups[g].domain)) continue
-          for (var c = 0; c < model.groups[g].checks.length; c++) out.push(model.groups[g].checks[c])
-        }
-        return out
-      }
-      function postureCommandInStep(text) {
-        var match = /`([^`]{1,256})`/.exec(String(text || ""))
-        return match ? match[1] : ""
-      }
-      function postureCopyActions() {
-        var model = postureModel
-        if (!model || !model.available) return []
-        var out = []
-        for (var i = 0; i < model.attention.length; i++) {
-          var command = postureCommandInStep(model.attention[i].nextStep)
-          if (command === "") continue
-          out.push({
-            checkId: model.attention[i].id, value: command,
-            label: command.indexOf(" ") >= 0 ? "Copy command" : "Copy tool name",
-            tooltip: model.attention[i].title + " — copies `" + command + "`. OmaSafe never runs it."
-          })
-        }
-        return out
-      }
+      function postureObservedRows() { return Posture.observedRows(postureModel, postureCollapsedGroups) }
+      function postureRowIndex(kind, key) { return Posture.rowIndex(postureObservedRows(), kind, key) }
+      function postureActivateRow(index) { }
+      function postureCopyActions() { return Posture.copyActions(postureModel) }
       function posturePerformCopy(index) { }
       function postureRevealCheck(index) { }
       function hoverCursor(section, index) {
@@ -166,7 +145,11 @@ ShellRoot {
     Timer {
       interval: 1100
       running: true
-      onTriggered: { Style.fontBaseSize = harness.base; settle.start() }
+      onTriggered: {
+        Style.fontBaseSize = harness.base
+        if (harness.cursorSection !== "") panelStub.hoverCursor(harness.cursorSection, harness.cursorIndex)
+        settle.start()
+      }
     }
     Timer {
       id: settle
@@ -176,6 +159,9 @@ ShellRoot {
           " checks=" + panelStub.postureModel.checkTotal +
           " attention=" + panelStub.postureModel.attention.length +
           " groups=" + panelStub.postureModel.groups.length +
+          " rows=" + panelStub.postureObservedRows().length +
+          " actions=" + panelStub.postureCopyActions().length +
+          " cursor=" + panelStub.focusSection + "/" + panelStub.selectedIndex +
           " viewHeight=" + Math.round(view.implicitHeight) +
           " units=" + Math.round(view.implicitHeight / Style.space(1)))
         sheet.grabToImage(function(result) {

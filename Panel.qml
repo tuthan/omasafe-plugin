@@ -48,6 +48,7 @@ Panel {
   // cursor's index space depends on it: `sectionCount("posture-checks")` counts the
   // rows a collapsed domain removed. Same idiom as expandedFindingKey / expandedClass,
   // and it is reset on close with them.
+  property var candidateExpandedFindings: ({})
   property var postureExpandedChecks: ({})
   property var postureCollapsedGroups: ({})
   property bool postureHostExpanded: false
@@ -315,6 +316,7 @@ Panel {
       root.postureExpandedChecks = ({})
       root.postureCollapsedGroups = ({})
       root.postureHostExpanded = false
+      root.candidateExpandedFindings = ({})
     } else { root.cursorActive = false; root.focusSection = "hero"; root.selectedIndex = 0 }
   }
 
@@ -897,12 +899,19 @@ Panel {
     // The finder owns the whole body while open: one result section.
     if (root.finderActive) return ["results"]
     var out = ["hero", "views"]
+    var i
+    // Both new tabs list the sections that currently HAVE rows, in visual order. A
+    // section whose count is a row count while its cursor indexes cells is the way to
+    // get this silently wrong, so each count below is a count of selectable targets.
     if (root.activeTabKey === "source-scan") {
-      if (root.sectionCount("source-scan") > 0) out.push("source-scan")
+      var scan = ["scan-input", "scan-summary", "scan-findings"]
+      for (i = 0; i < scan.length; i++) if (root.sectionCount(scan[i]) > 0) out.push(scan[i])
       return out
     }
     if (root.activeTabKey === "posture") {
-      if (root.sectionCount("posture") > 0) out.push("posture")
+      var posture = ["posture-run", "posture-strip", "posture-attention",
+        "posture-actions", "posture-observed"]
+      for (i = 0; i < posture.length; i++) if (root.sectionCount(posture[i]) > 0) out.push(posture[i])
       return out
     }
     var candidates
@@ -966,15 +975,37 @@ Panel {
       var ci = Number(section.slice(4))
       return (root.flowNodes[ci] ? root.flowNodes[ci].length : 0)
     }
-    if (section === "source-scan") return root.activeTabKey === "source-scan" ? 1 : 0
-    if (section === "posture") return root.activeTabKey === "posture" ? 1 : 0
+    // Posture and Source Scan (doc 08 §5.6). Each of these is the number of
+    // SELECTABLE TARGETS, not the number of rows on screen: moveCursorH() clamps
+    // selectedIndex to sectionCount() - 1, so a horizontal section declaring 1 pins
+    // the cursor on its first cell and makes every later cell unreachable — the very
+    // defect this section list exists to fix, one layer down.
+    if (root.activeTabKey === "posture") {
+      switch (section) {
+        case "posture-run":       return 1   // the Run posture scan button
+        case "posture-strip":     return root.postureModel ? root.postureModel.strip.length : 0
+        case "posture-attention": return root.postureModel ? root.postureModel.attention.length : 0
+        case "posture-actions":   return root.postureCopyActions().length
+        case "posture-observed":  return root.postureObservedRows().length
+      }
+    }
+    if (root.activeTabKey === "source-scan") {
+      var candidate = root.candidateModel
+      switch (section) {
+        case "scan-input":    return 1       // the Scan source button
+        case "scan-summary":  return root.candidateCopyActions().length
+        case "scan-findings": return (candidate && candidate.ok === true)
+          ? candidate.analysis.findings.length : 0
+      }
+    }
     return 0
   }
   function sectionIsHorizontal(section) {
     return section === "hero" || section === "views" || section === "trust-actions"
       || section === "claim-actions" || section === "enforcement"
       || section === "lens" || section === "inspector-actions"
-      || section === "source-scan" || section === "posture"
+      || section === "posture-run" || section === "posture-strip" || section === "posture-actions"
+      || section === "scan-input" || section === "scan-summary"
   }
   function sectionFirstIndex(section) { return 0 }
   function sectionLastIndex(section) { return Math.max(0, root.sectionCount(section) - 1) }
@@ -1072,8 +1103,20 @@ Panel {
         if (i === 1) { root.togglePanelExpanded(); return }
         if (root.scanAvailable && root.hostWidget) root.hostWidget.runScan()
         return
-      case "source-scan": root.runCandidate(); return
-      case "posture": root.runPostureScan(); return
+      case "scan-input":  root.runCandidate(); return
+      case "posture-run": root.runPostureScan(); return
+      // Enter on a strip cell jumps to that check's row and expands it: the strip is
+      // an index into the tab, not a decoration.
+      case "posture-strip":     root.postureRevealCheck(i); return
+      case "posture-attention": {
+        var attention = root.postureModel ? root.postureModel.attention : []
+        if (i >= 0 && i < attention.length) root.postureToggleCheck(attention[i].id)
+        return
+      }
+      case "posture-actions":   root.posturePerformCopy(i); return
+      case "posture-observed":  root.postureActivateRow(i); return
+      case "scan-summary":      root.candidatePerformCopy(i); return
+      case "scan-findings":     root.candidateToggleFinding(i); return
       case "views":
         if (i >= 0 && i < root.tabs.length) root.setViewByKey(root.tabs[i].key)
         return
@@ -1359,53 +1402,46 @@ Panel {
     root.postureCollapsedGroups = next
   }
 
-  // The OBSERVED check rows currently on screen, flattened in render order. A
-  // collapsed domain contributes none.
   function postureObservedRows() {
-    var model = root.postureModel
-    if (!model || !model.available) return []
-    var out = []
-    for (var g = 0; g < model.groups.length; g++) {
-      var group = model.groups[g]
-      if (root.postureGroupCollapsed(group.domain)) continue
-      for (var c = 0; c < group.checks.length; c++) out.push(group.checks[c])
-    }
-    return out
+    return Posture.observedRows(root.postureModel, root.postureCollapsedGroups)
   }
-
-  // A next step often names the exact command to run, in backticks. The panel offers
-  // to copy that span VERBATIM and never runs it; it never synthesises a command the
-  // report did not print, so "install arch-audit" does not silently become a
-  // `pacman -S` line the CLI never suggested.
-  function postureCommandInStep(text) {
-    var match = /`([^`]{1,256})`/.exec(String(text || ""))
-    return match ? match[1] : ""
+  function postureRowIndex(kind, key) {
+    return Posture.rowIndex(root.postureObservedRows(), kind, key)
   }
-
-  function postureCopyActions() {
-    var model = root.postureModel
-    if (!model || !model.available) return []
-    var out = []
-    for (var i = 0; i < model.attention.length; i++) {
-      var check = model.attention[i]
-      var command = root.postureCommandInStep(check.nextStep)
-      if (command === "") continue
-      out.push({
-        checkId: check.id,
-        value: command,
-        // A span with an argument is a command line; a bare identifier is the name of
-        // a package or a tool. Both are worth copying and they are not the same thing,
-        // so the button says which one it is.
-        label: command.indexOf(" ") >= 0 ? "Copy command" : "Copy tool name",
-        tooltip: check.title + " — copies `" + command + "`. OmaSafe never runs it."
-      })
-    }
-    return out
+  function postureActivateRow(index) {
+    var rows = root.postureObservedRows()
+    if (index < 0 || index >= rows.length) return
+    if (rows[index].kind === "group") root.postureToggleGroup(rows[index].domain)
+    else root.postureToggleCheck(rows[index].id)
   }
+  function postureCopyActions() { return Posture.copyActions(root.postureModel) }
 
   function posturePerformCopy(index) {
     var actions = root.postureCopyActions()
     if (index >= 0 && index < actions.length) root.copyValue(actions[index].value)
+  }
+
+  // ---- Source Scan copy actions and finding disclosure (doc 08 §5.6) ------------
+  //
+  // `scan-summary` is a horizontal section over the ENABLED copy actions. The install
+  // command appears here only when it appears at all — its visibility rule is
+  // untouched — so the section's count follows the boundary rather than restating it.
+  function candidateCopyActions() { return Candidate.copyActions(root.candidateModel) }
+
+  function candidatePerformCopy(index) {
+    var actions = root.candidateCopyActions()
+    if (index >= 0 && index < actions.length) root.copyValue(actions[index].value)
+  }
+
+  // Findings are keyed by their position in the emitted list, which is the only
+  // ordering the view has and is stable for the life of one report. A new scan clears
+  // the map with the rest of the result state.
+  function candidateFindingExpanded(index) { return root.candidateExpandedFindings[String(index)] === true }
+  function candidateToggleFinding(index) {
+    var next = {}, key
+    for (key in root.candidateExpandedFindings) next[key] = root.candidateExpandedFindings[key]
+    next[String(index)] = !(next[String(index)] === true)
+    root.candidateExpandedFindings = next
   }
 
   // Enter (or a click) on a strip cell jumps to that check: expand it, uncollapse its
@@ -1422,10 +1458,8 @@ Panel {
     for (i = 0; i < model.attention.length; i++) {
       if (model.attention[i].id === check.id) { root.hoverCursor("posture-attention", i); return }
     }
-    var rows = root.postureObservedRows()
-    for (i = 0; i < rows.length; i++) {
-      if (rows[i].id === check.id) { root.hoverCursor("posture-checks", i); return }
-    }
+    var row = root.postureRowIndex("check", check.id)
+    if (row >= 0) root.hoverCursor("posture-observed", row)
   }
 
 
@@ -1455,7 +1489,7 @@ Panel {
     if (!root.cliVerified) return
     root.setViewByKey("source-scan")
     root.cursorActive = false
-    root.focusSection = "source-scan"
+    root.focusSection = "scan-input"
     root.selectedIndex = 0
     Qt.callLater(function() { if (activeFlick) activeFlick.contentY = 0 })
   }
@@ -1512,6 +1546,9 @@ Panel {
     candidateProcess.requestId = root.candidateRequestId
     root.candidateSettled = false
     root.candidateModel = null
+    // Finding disclosure is keyed by position in the emitted list, so it must not
+    // survive the report it indexes into.
+    root.candidateExpandedFindings = ({})
     root.candidateError = ""
     root.candidateStdout = ""
     root.candidateStderr = ""
@@ -2652,6 +2689,33 @@ Panel {
     Qt.callLater(function() { if (activeFlick) activeFlick.contentY = 0 })
   }
 
+  // Selecting a posture result jumps to the tab, expands the check and lands the
+  // cursor on it. `contentY` is deliberately NOT reset: the row's own
+  // onHasCursorChanged calls ensureCursorVisible, which is the same mechanism j/k
+  // uses, and resetting the scroll first would fight it.
+  function goToPostureCheck(id) {
+    root._selectTab("posture")
+    root.overviewDepth = 0
+    root.finderActive = false
+    root.finderText = ""
+    var model = root.postureModel
+    if (!model || !model.available) return
+    for (var i = 0; i < model.checks.length; i++)
+      if (model.checks[i].id === String(id)) { root.postureRevealCheck(i); return }
+  }
+
+  function goToScanFinding(index) {
+    root._selectTab("source-scan")
+    root.overviewDepth = 0
+    root.finderActive = false
+    root.finderText = ""
+    var model = root.candidateModel
+    if (!model || model.ok !== true) return
+    if (index < 0 || index >= model.analysis.findings.length) return
+    if (!root.candidateFindingExpanded(index)) root.candidateToggleFinding(index)
+    root.hoverCursor("scan-findings", index)
+  }
+
   function goToBaselineRow(externalId) {
     root._selectTab("rules")
     root.overviewDepth = 0
@@ -2716,16 +2780,27 @@ Panel {
     Qt.callLater(root.clampCursor)
   }
 
-  // The flat result list in cursor order: plugins → classes → rules → baseline.
+  // The flat result list in cursor order: plugins → classes → rules → baseline →
+  // posture checks → scan findings. The two new kinds are computed by their own pure
+  // modules and do not need `vm`, so a finder opened before the inventory has loaded
+  // still finds them.
+  function postureFinderResults() { return Posture.search(root.postureModel, root.finderText) }
+  function candidateFinderResults() { return Candidate.searchFindings(root.candidateModel, root.finderText) }
+
   function finderFlat() {
-    if (!root.vm || !root.vm.finder) return []
-    var res = ViewModel.search(root.vm.finder, root.finderText)
     var out = []
     var i
-    for (i = 0; i < res.plugins.length; i++) out.push({ kind: "plugin", id: res.plugins[i].id })
-    for (i = 0; i < res.classes.length; i++) out.push({ kind: "class", key: res.classes[i].key })
-    for (i = 0; i < res.rules.length; i++) out.push({ kind: "rule", id: res.rules[i].id })
-    for (i = 0; i < res.baseline.length; i++) out.push({ kind: "baseline", externalId: res.baseline[i].externalId })
+    if (root.vm && root.vm.finder) {
+      var res = ViewModel.search(root.vm.finder, root.finderText)
+      for (i = 0; i < res.plugins.length; i++) out.push({ kind: "plugin", id: res.plugins[i].id })
+      for (i = 0; i < res.classes.length; i++) out.push({ kind: "class", key: res.classes[i].key })
+      for (i = 0; i < res.rules.length; i++) out.push({ kind: "rule", id: res.rules[i].id })
+      for (i = 0; i < res.baseline.length; i++) out.push({ kind: "baseline", externalId: res.baseline[i].externalId })
+    }
+    var checks = root.postureFinderResults()
+    for (i = 0; i < checks.length; i++) out.push({ kind: "posture-check", id: checks[i].id })
+    var findings = root.candidateFinderResults()
+    for (i = 0; i < findings.length; i++) out.push({ kind: "scan-finding", index: findings[i].index })
     return out
   }
   function finderResultCount() { return root.finderFlat().length }
@@ -2749,6 +2824,8 @@ Panel {
     if (r.kind === "plugin") { root.returnFrame = origin; root._selectTab("overview"); root.openPlugin(r.id) }
     else if (r.kind === "rule") { root.returnFrame = origin; root.goToRule(r.id) }
     else if (r.kind === "baseline") { root.returnFrame = origin; root.goToBaselineRow(r.externalId) }
+    else if (r.kind === "posture-check") { root.returnFrame = origin; root.goToPostureCheck(r.id) }
+    else if (r.kind === "scan-finding") { root.returnFrame = origin; root.goToScanFinding(r.index) }
     else { root.finderActive = false; root.finderText = "" }   // class: Flow (Phase 3)
     Qt.callLater(function() { if (keyCatcher) keyCatcher.forceActiveFocus() })
   }

@@ -330,4 +330,96 @@ const real = sandbox.build(fixture('posture-v1.json'))
   eq(sandbox.barTooltipLine(null), '', 'a null model contributes no tooltip line')
 }
 
+// -------------------------------------------------- T7 cursor index spaces
+//
+// A section's count is its number of SELECTABLE TARGETS, not its number of rows on
+// screen: moveCursorH() clamps selectedIndex to sectionCount() - 1, so a horizontal
+// section declaring 1 pins the cursor on its first cell and makes every later cell
+// unreachable. These assert the counts themselves rather than trusting a manual walk.
+{
+  // sectionCount("posture-strip") on this host.
+  eq(real.strip.length, 18,
+    'sectionCount("posture-strip") must be the number of selectable cells, 18 on this host')
+  eq(real.attention.length, 3, 'sectionCount("posture-attention") on this host')
+
+  // sectionCount("posture-observed") over the FLATTENED list: eleven domain headers
+  // plus the fifteen checks under them.
+  const rows = sandbox.observedRows(real, {})
+  eq(rows.length, 11 + 15, 'sectionCount("posture-observed") counts headers AND checks')
+  eq(rows.filter(r => r.kind === 'group').length, 11, 'one row per domain header')
+  eq(rows.filter(r => r.kind === 'check').length, 15, 'one row per visible check')
+
+  // Render order: every check row follows its own domain's header, never another's.
+  let domain = null
+  rows.forEach(row => {
+    if (row.kind === 'group') { domain = row.domain; return }
+    eq(row.check.domain, domain, 'a check row must follow its own domain header')
+  })
+
+  // Every row is reachable by its identity, and no two share an index.
+  const seen = {}
+  rows.forEach((row, i) => {
+    const found = sandbox.rowIndex(rows, row.kind, row.kind === 'group' ? row.domain : row.id)
+    eq(found, i, 'rowIndex must return the row\'s own position')
+    ok(!seen[found], 'no two rows share a cursor index')
+    seen[found] = true
+  })
+
+  // Collapsing a domain removes exactly its checks from the index space — the reason
+  // this list, and not the model's groups, is what sectionCount counts.
+  const collapsed = sandbox.observedRows(real, { PACKAGES: true })
+  eq(collapsed.length, rows.length - 3, 'collapsing PACKAGES removes its three checks')
+  eq(collapsed.filter(r => r.kind === 'group').length, 11, 'a collapsed domain keeps its header')
+  eq(sandbox.rowIndex(collapsed, 'check', 'packages.keyring'), -1,
+    'a check under a collapsed domain is not in the index space')
+  eq(rows.filter(r => r.kind === 'check').length + real.attention.length, 18,
+    'attention plus observed accounts for every check exactly once')
+
+  eq(sandbox.observedRows(null, {}).length, 0, 'a null model has no rows')
+  eq(sandbox.observedRows(sandbox.build(fixture('posture-not-yet-run.json')), {}).length, 0,
+    'not_yet_run has no rows')
+}
+
+// -------------------------------------------------- T7 copy actions
+{
+  // The panel copies the backticked span the report printed, verbatim, and never
+  // synthesises a command the CLI did not suggest.
+  eq(sandbox.commandInStep('Run `omarchy update` after reviewing.'), 'omarchy update',
+    'a backticked span is extracted verbatim')
+  eq(sandbox.commandInStep('Install the official `arch-audit` package and retry.'), 'arch-audit',
+    'a bare identifier is extracted as itself, not expanded into an install line')
+  eq(sandbox.commandInStep('Review the root-device layout before changing settings.'), '',
+    'a next step with no command yields no action')
+
+  const actions = sandbox.copyActions(real)
+  // Two, not three: `firewall.effective`'s next step names no command, so it
+  // contributes no action rather than an empty button.
+  eq(actions.length, 2, 'sectionCount("posture-actions") on this host')
+  eq(actions.map(a => a.value).join(' | '), 'omarchy update | arch-audit',
+    'copy actions are the attention set\'s commands, in attention order')
+  eq(actions.map(a => a.checkId).join(' | '),
+    'updates.repository | vulnerabilities.arch_audit', 'and they carry their check id')
+  eq(actions[0].label, 'Copy command', 'a span with an argument is a command')
+  eq(actions[1].label, 'Copy tool name', 'a bare identifier is a name, and says so')
+  ok(actions[1].tooltip.indexOf('OmaSafe never runs it') >= 0,
+    'the tooltip states that the panel never runs the command')
+  eq(sandbox.copyActions(null).length, 0, 'a null model offers no copy actions')
+}
+
+// -------------------------------------------------- T7 finder
+{
+  eq(sandbox.search(real, '').length, 0, 'an empty query matches nothing')
+  eq(sandbox.search(null, 'arch').length, 0, 'a null model matches nothing')
+  const byTool = sandbox.search(real, 'arch-audit')
+  ok(byTool.some(c => c.id === 'vulnerabilities.arch_audit'),
+    'a finder query matches a check through its evidence and next step')
+  const byState = sandbox.search(real, 'incomplete')
+  ok(byState.length >= 2 && byState.slice(0, 2).every(c => c.state === 'incomplete'),
+    'a state word finds both incomplete checks first')
+  eq(byState[0].id, 'firewall.effective', 'finder results are in attention order')
+  ok(sandbox.search(real, 'firewall').length >= 3, 'an id prefix matches its whole domain')
+  ok(sandbox.search(real, 'ZZZZ-no-such-thing').length === 0, 'a non-matching query finds nothing')
+  ok(sandbox.search(real, 'e').length <= 6, 'finder results are capped at six')
+}
+
 console.log('posture model: ok (' + checked + ' assertions)')

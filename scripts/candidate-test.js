@@ -479,4 +479,57 @@ function loadFixture(name) {
     throw new Error('omitted evidence observations must be a term of the notice')
 }
 
+// -------------------------------------------------- T7 cursor and finder
+{
+  const git = sandbox.build(loadFixture('candidate-git-review.json'))
+
+  // sectionCount("scan-findings") is the number of emitted findings, each of which is
+  // a cursor row. There were 32 on screen and none reachable from the keyboard.
+  if (git.analysis.findings.length !== 32)
+    throw new Error('sectionCount("scan-findings") on the captured report')
+
+  // sectionCount("scan-summary") counts the ENABLED copy actions, so `l` reaches the
+  // last one. This report has 31 medium + 1 low and complete finding coverage, so the
+  // install command is offered and there are two.
+  const actions = sandbox.copyActions(git)
+  if (actions.length !== 2)
+    throw new Error('sectionCount("scan-summary"): ' + JSON.stringify(actions.map(a => a.key)))
+  if (actions[0].key !== 'rescan' || actions[1].key !== 'install')
+    throw new Error('the rescan command comes first; it is always available')
+  if (actions[1].value !== git.installCommand)
+    throw new Error('the install action copies exactly the model\'s install command')
+
+  // The section follows the install command's visibility rule rather than restating
+  // it: a high finding withholds the command, and the action disappears with it.
+  const high = report()
+  high.result.analysis.findings = [{ severity: 'high', title: 'reported finding' }]
+  high.result.report_profile.omissions.findings = { total: 1, emitted: 1, omitted: 0 }
+  const withheld = sandbox.build(high)
+  if (withheld.installCommand !== '')
+    throw new Error('a high finding must still withhold the install command')
+  const withheldActions = sandbox.copyActions(withheld)
+  if (withheldActions.length !== 1 || withheldActions[0].key !== 'rescan')
+    throw new Error('a withheld install command must not appear as a copy action')
+  if (sandbox.copyActions(null).length !== 0 || sandbox.copyActions({ ok: false }).length !== 0)
+    throw new Error('a failed or absent model offers no copy actions')
+
+  // Finder: rule id, title and path all match, and the emitted index comes back
+  // because it IS the finding's identity in the cursor's index space.
+  if (sandbox.searchFindings(git, '').length !== 0)
+    throw new Error('an empty query matches nothing')
+  if (sandbox.searchFindings(null, 'qml').length !== 0)
+    throw new Error('a null model matches nothing')
+  const byRule = sandbox.searchFindings(git, 'dynamic-reference')
+  if (byRule.length !== 1 || byRule[0].finding.ruleId !== 'oma.qml.dynamic-reference')
+    throw new Error('a rule id must match')
+  if (git.analysis.findings[byRule[0].index].ruleId !== byRule[0].finding.ruleId)
+    throw new Error('the returned index must address the same finding in the emitted list')
+  if (sandbox.searchFindings(git, 'components/AlertRow').length === 0)
+    throw new Error('a path must match')
+  if (sandbox.searchFindings(git, 'oma.').length > 6)
+    throw new Error('finder results are capped at six')
+  if (sandbox.searchFindings(git, 'ZZZZ-no-such-thing').length !== 0)
+    throw new Error('a non-matching query finds nothing')
+}
+
 console.log('candidate model: ok')

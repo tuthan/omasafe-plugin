@@ -416,6 +416,67 @@ function build(report) {
   })
 }
 
+// The OBSERVED rows currently on screen, flattened in RENDER order: a domain header
+// followed by that domain's checks, then the next domain.
+//
+// ONE section, not two. The plan's §5.6 table lists `posture-groups` and
+// `posture-checks` separately, but the two are interleaved on screen and two sections
+// cannot both be in visual order — splitting them would make `j` walk all eleven
+// headers and only then all fifteen checks, which is not what the reader sees. A
+// cursor whose order disagrees with the screen is the defect the cursor work exists to
+// remove, so this is the single index space `sectionCount("posture-observed")` counts.
+function observedRows(model, collapsedGroups) {
+  if (!model || !model.available) return []
+  var collapsed = collapsedGroups || {}
+  var out = []
+  for (var g = 0; g < model.groups.length; g++) {
+    var group = model.groups[g]
+    out.push({ kind: "group", domain: group.domain, label: group.label, count: group.count })
+    if (collapsed[group.domain] === true) continue
+    for (var c = 0; c < group.checks.length; c++)
+      out.push({ kind: "check", id: group.checks[c].id, check: group.checks[c] })
+  }
+  return out
+}
+
+function rowIndex(rows, kind, key) {
+  var list = rows || []
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].kind !== kind) continue
+    if (kind === "group" ? list[i].domain === String(key) : list[i].id === String(key)) return i
+  }
+  return -1
+}
+
+// A next step often names the exact command to run, in backticks. The panel offers to
+// copy that span VERBATIM and never runs it; it never synthesises a command the report
+// did not print, so "install arch-audit" does not silently become a `pacman -S` line
+// the CLI never suggested.
+function commandInStep(text) {
+  var match = /`([^`]{1,256})`/.exec(_str(text))
+  return match ? match[1] : ""
+}
+
+function copyActions(model) {
+  if (!model || !model.available) return []
+  var out = []
+  for (var i = 0; i < model.attention.length; i++) {
+    var check = model.attention[i]
+    var command = commandInStep(check.nextStep)
+    if (command === "") continue
+    out.push({
+      checkId: check.id,
+      value: command,
+      // A span with an argument is a command line; a bare identifier is the name of a
+      // package or a tool. Both are worth copying and they are not the same thing, so
+      // the button says which one it is.
+      label: command.indexOf(" ") >= 0 ? "Copy command" : "Copy tool name",
+      tooltip: check.title + " — copies `" + command + "`. OmaSafe never runs it."
+    })
+  }
+  return out
+}
+
 // The tab chip's suffix (doc 08 §5.7), from the SAME array the NEEDS ATTENTION
 // section renders, so the two can never disagree:
 //   `–`  not run, unavailable, or the CLI is unverified
@@ -445,4 +506,29 @@ function barTooltipLine(model) {
   var parts = []
   for (var o = 0; o < order.length; o++) parts.push(counts[order[o]] + " " + STATE_META[order[o]].label)
   return "Host posture: " + parts.join(", ") + " (" + model.ageText + " old)"
+}
+
+// The `/` finder's posture results (doc 08 §5.6). Matches a check on its id, its
+// title, its state word or any of its evidence strings, so "arch" finds the
+// arch-audit gap and "incomplete" finds every open one. Attention order first, so the
+// results are ranked the same way the tab is.
+function search(model, query) {
+  var text = _str(query).trim().toLowerCase()
+  if (!model || !model.available || text === "") return []
+  var ordered = model.attention.concat([])
+  for (var g = 0; g < model.groups.length; g++)
+    ordered = ordered.concat(model.groups[g].checks)
+  var out = []
+  for (var i = 0; i < ordered.length && out.length < 6; i++) {
+    var check = ordered[i]
+    // Limitations and the next step are part of the haystack, not just id/title/state/
+    // evidence: "arch-audit" appears in neither the id (`vulnerabilities.arch_audit`)
+    // nor the title ("Known official package vulnerabilities"), and a reader who
+    // searches for the tool that failed expects to find the check it blocked.
+    var hay = (check.id + " " + check.title + " " + check.stateLabel + " " +
+      check.evidence.join(" ") + " " + check.limitations.join(" ") + " " +
+      check.nextStep).toLowerCase()
+    if (hay.indexOf(text) >= 0) out.push(check)
+  }
+  return out
 }

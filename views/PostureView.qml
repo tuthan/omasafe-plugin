@@ -45,11 +45,6 @@ Column {
   function groupCollapsed(domain) { return panel ? panel.postureGroupCollapsed(domain) : false }
   function toggleGroup(domain) { if (panel) panel.postureToggleGroup(domain) }
 
-  // The flattened list of check rows currently on screen under OBSERVED, in the same
-  // order the Repeater renders them. `Panel.sectionCount("posture-checks")` reads the
-  // identical helper, so the cursor's index space and the rows on screen are the same
-  // list by construction rather than by agreement.
-  function observedRows() { return panel ? panel.postureObservedRows() : [] }
   function copyActions() { return panel ? panel.postureCopyActions() : [] }
 
   // ---- notices: unchanged copy, moved above the summary band -------------------
@@ -220,10 +215,12 @@ Column {
       text: "Run posture scan"
       bordered: true
       enabled: root.panel && root.panel.cliVerified && !root.panel.postureLoading
+      hasCursor: root.has("posture-run", 0)
       foreground: enabled ? root.col("fg") : root.col("faint")
       fontFamily: root.col("fontFamily")
       tooltipText: "Collect a current host posture report"
       onClicked: if (root.panel) root.panel.runPostureScan()
+      onHovered: function(h) { if (h && root.panel) root.panel.hoverCursor("posture-run", 0) }
     }
     Button {
       visible: root.panel && root.panel.postureLoading
@@ -394,7 +391,10 @@ Column {
           id: groupHeader
           width: parent.width
           implicitHeight: groupLabel.implicitHeight + Style.space(8)
-          hasCursor: root.has("posture-groups", group.index)
+          hasCursor: {
+            var flat = root.panel ? root.panel.postureRowIndex("group", group.modelData.domain) : -1
+            return flat >= 0 && root.has("posture-observed", flat)
+          }
           foreground: root.col("fg")
           onHasCursorChanged: if (hasCursor && root.panel) root.panel.ensureCursorVisible(this)
 
@@ -434,7 +434,9 @@ Column {
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton
             onPositionChanged: function(mouse) {
-              if (gate.moved(this, mouse) && root.panel) root.panel.hoverCursor("posture-groups", group.index)
+              if (!gate.moved(this, mouse) || !root.panel) return
+              var flat = root.panel.postureRowIndex("group", group.modelData.domain)
+              if (flat >= 0) root.panel.hoverCursor("posture-observed", flat)
             }
             onClicked: root.toggleGroup(group.modelData.domain)
           }
@@ -448,18 +450,15 @@ Column {
             id: checkRow
             required property var modelData
 
-            // The cursor index is the row's position in the FLATTENED visible list,
-            // which is what `sectionCount("posture-checks")` counts. Deriving it here
-            // from the same helper keeps the two from drifting apart.
-            readonly property int flatIndex: {
-              var rows = root.observedRows()
-              for (var i = 0; i < rows.length; i++) if (rows[i].id === checkRow.modelData.id) return i
-              return -1
-            }
+            // The cursor index is the row's position in the FLATTENED OBSERVED list,
+            // which is exactly what `sectionCount("posture-observed")` counts. The view
+            // asks the panel rather than counting for itself, so the two cannot drift.
+            readonly property int flatIndex: root.panel
+              ? root.panel.postureRowIndex("check", checkRow.modelData.id) : -1
 
             width: parent.width
             implicitHeight: checkBody.implicitHeight + Style.space(6)
-            hasCursor: checkRow.flatIndex >= 0 && root.has("posture-checks", checkRow.flatIndex)
+            hasCursor: checkRow.flatIndex >= 0 && root.has("posture-observed", checkRow.flatIndex)
             foreground: root.col("fg")
             onHasCursorChanged: if (hasCursor && root.panel) root.panel.ensureCursorVisible(this)
 
@@ -478,7 +477,7 @@ Column {
               acceptedButtons: Qt.LeftButton
               onPositionChanged: function(mouse) {
                 if (gate.moved(this, mouse) && root.panel && checkRow.flatIndex >= 0)
-                  root.panel.hoverCursor("posture-checks", checkRow.flatIndex)
+                  root.panel.hoverCursor("posture-observed", checkRow.flatIndex)
               }
               onClicked: root.toggleCheck(checkRow.modelData.id)
             }
