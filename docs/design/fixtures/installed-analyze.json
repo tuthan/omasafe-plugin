@@ -1,10 +1,10 @@
 {
   "schema": "omasafe.report.v1",
-  "tool_version": "0.3.0",
-  "generated_at": "2026-09-09T02:50:05Z",
+  "tool_version": "0.3.1",
+  "generated_at": "2026-09-09T05:22:44Z",
   "result": {
     "analysis": {
-      "analysis_fingerprint": "d139a8fca35930b2298eae06c79448f13a533326c25f43e198d01f3924ab7a21",
+      "analysis_fingerprint": "03deb35cc45ed09bca75cb436675400f602f76de05531c3ebeae914748d4be46",
       "capabilities": [
         {
           "capability": "clipboard-access",
@@ -13,7 +13,7 @@
           "display_relative_path": "Panel.qml",
           "explanation": "May observe or replace clipboard contents.",
           "language": "qml",
-          "line": 1304,
+          "line": 1439,
           "relative_path": "Panel.qml",
           "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
           "source_rule_id": "oma.qml.clipboard-access"
@@ -25,7 +25,7 @@
           "display_relative_path": "model/Glyphs.js",
           "explanation": "May observe or replace clipboard contents.",
           "language": "javascript",
-          "line": 59,
+          "line": 70,
           "relative_path": "model/Glyphs.js",
           "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
           "source_rule_id": "oma.qml.clipboard-access"
@@ -37,19 +37,67 @@
           "display_relative_path": "model/Glyphs.js",
           "explanation": "May observe or replace clipboard contents.",
           "language": "javascript",
-          "line": 75,
+          "line": 86,
           "relative_path": "model/Glyphs.js",
           "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
           "source_rule_id": "oma.qml.clipboard-access"
         },
         {
+          "capability": "clipboard-access",
+          "confidence": "lexical-fallback",
+          "detail": "clipboard-token",
+          "display_relative_path": "scripts/candidate-test.js",
+          "explanation": "May observe or replace clipboard contents.",
+          "language": "javascript",
+          "line": 239,
+          "relative_path": "scripts/candidate-test.js",
+          "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
+          "source_rule_id": "oma.qml.clipboard-access"
+        },
+        {
+          "capability": "clipboard-access",
+          "confidence": "lexical-fallback",
+          "detail": "clipboard-token",
+          "display_relative_path": "scripts/candidate-test.js",
+          "explanation": "May observe or replace clipboard contents.",
+          "language": "javascript",
+          "line": 286,
+          "relative_path": "scripts/candidate-test.js",
+          "review_guidance": "Continuous headless monitoring is higher concern than interactive use.",
+          "source_rule_id": "oma.qml.clipboard-access"
+        },
+        {
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "detail": "FileView",
+          "display_relative_path": "scripts/harness/candidate.qml",
+          "explanation": "QML reads or watches files and may participate in writes.",
+          "language": "qml",
+          "line": 30,
+          "relative_path": "scripts/harness/candidate.qml",
+          "review_guidance": "Raise priority for sensitive paths, persistence locations, or write participation.",
+          "source_rule_id": "oma.qml.filesystem-access"
+        },
+        {
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "detail": "FileView",
+          "display_relative_path": "scripts/harness/posture.qml",
+          "explanation": "QML reads or watches files and may participate in writes.",
+          "language": "qml",
+          "line": 37,
+          "relative_path": "scripts/harness/posture.qml",
+          "review_guidance": "Raise priority for sensitive paths, persistence locations, or write participation.",
+          "source_rule_id": "oma.qml.filesystem-access"
+        },
+        {
           "capability": "persistence-scheduling",
           "confidence": "ast-backed",
           "detail": "Timer",
           "display_relative_path": "BarWidget.qml",
           "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 725,
+          "line": 736,
           "relative_path": "BarWidget.qml",
           "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
           "source_rule_id": "oma.qml.persistence-scheduling"
@@ -61,7 +109,7 @@
           "display_relative_path": "BarWidget.qml",
           "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 740,
+          "line": 751,
           "relative_path": "BarWidget.qml",
           "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
           "source_rule_id": "oma.qml.persistence-scheduling"
@@ -73,7 +121,7 @@
           "display_relative_path": "BarWidget.qml",
           "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 748,
+          "line": 759,
           "relative_path": "BarWidget.qml",
           "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
           "source_rule_id": "oma.qml.persistence-scheduling"
@@ -85,7 +133,7 @@
           "display_relative_path": "BarWidget.qml",
           "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 770,
+          "line": 781,
           "relative_path": "BarWidget.qml",
           "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
           "source_rule_id": "oma.qml.persistence-scheduling"
@@ -96,717 +144,657 @@
           "detail": "Timer",
           "display_relative_path": "BarWidget.qml",
           "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 778,
-          "relative_path": "BarWidget.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "BarWidget.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 852,
-          "relative_path": "BarWidget.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "BarWidget.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 865,
-          "relative_path": "BarWidget.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4337,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4494,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4506,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4561,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4575,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4716,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4729,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4742,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4749,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4817,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4907,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4922,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 4929,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5000,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5013,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5090,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5104,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5179,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5194,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5264,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5277,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5350,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5363,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5433,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5446,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5457,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5681,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5696,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5799,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5812,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5897,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5909,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 5988,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6005,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6084,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6098,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6107,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6118,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6128,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "persistence-scheduling",
-          "confidence": "ast-backed",
-          "detail": "Timer",
-          "display_relative_path": "Panel.qml",
-          "explanation": "Enables periodic or headless long-running behavior.",
-          "language": "qml",
-          "line": 6146,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
-          "source_rule_id": "oma.qml.persistence-scheduling"
-        },
-        {
-          "capability": "process-execution",
-          "confidence": "ast-backed",
-          "detail": "Process",
-          "display_relative_path": "BarWidget.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
-          "language": "qml",
-          "line": 579,
-          "relative_path": "BarWidget.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
-        },
-        {
-          "capability": "process-execution",
-          "confidence": "ast-backed",
-          "detail": "Process",
-          "display_relative_path": "BarWidget.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
-          "language": "qml",
-          "line": 633,
-          "relative_path": "BarWidget.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
-        },
-        {
-          "capability": "process-execution",
-          "confidence": "ast-backed",
-          "detail": "Process",
-          "display_relative_path": "BarWidget.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
-          "language": "qml",
-          "line": 675,
-          "relative_path": "BarWidget.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
-        },
-        {
-          "capability": "process-execution",
-          "confidence": "ast-backed",
-          "detail": "Process",
-          "display_relative_path": "BarWidget.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
           "language": "qml",
           "line": 789,
           "relative_path": "BarWidget.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
-          "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "detail": "Timer",
+          "display_relative_path": "BarWidget.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4404,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "line": 863,
+          "relative_path": "BarWidget.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
-          "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "detail": "Timer",
+          "display_relative_path": "BarWidget.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4513,
-          "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "line": 876,
+          "relative_path": "BarWidget.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4582,
+          "line": 4626,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4649,
+          "line": 4783,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4756,
+          "line": 4795,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4830,
+          "line": 4850,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 4936,
+          "line": 4864,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 5022,
+          "line": 5005,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 5111,
+          "line": 5018,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 5201,
+          "line": 5031,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 5287,
+          "line": 5038,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
-          "line": 5370,
+          "line": 5106,
           "relative_path": "Panel.qml",
-          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
-          "source_rule_id": "oma.qml.process-execution"
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
         },
         {
-          "capability": "process-execution",
+          "capability": "persistence-scheduling",
           "confidence": "ast-backed",
-          "detail": "Process",
+          "detail": "Timer",
           "display_relative_path": "Panel.qml",
-          "explanation": "QML starts an arbitrary argv child process.",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5196,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5211,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5218,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5289,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5302,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5379,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5393,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
           "language": "qml",
           "line": 5468,
           "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5483,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5553,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5566,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5639,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5652,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5722,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5735,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5746,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5970,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 5985,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6088,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6101,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6186,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6198,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6277,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6294,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6373,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6387,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6396,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6407,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6417,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "Panel.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 6435,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/candidate.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 112,
+          "relative_path": "scripts/harness/candidate.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/candidate.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 117,
+          "relative_path": "scripts/harness/candidate.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/charts.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 154,
+          "relative_path": "scripts/harness/charts.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/charts.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 159,
+          "relative_path": "scripts/harness/charts.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/chips.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 137,
+          "relative_path": "scripts/harness/chips.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/chips.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 142,
+          "relative_path": "scripts/harness/chips.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/posture.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 146,
+          "relative_path": "scripts/harness/posture.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "persistence-scheduling",
+          "confidence": "ast-backed",
+          "detail": "Timer",
+          "display_relative_path": "scripts/harness/posture.qml",
+          "explanation": "Enables periodic or headless long-running behavior.",
+          "language": "qml",
+          "line": 155,
+          "relative_path": "scripts/harness/posture.qml",
+          "review_guidance": "Context signal for continuous monitoring; not malicious by itself.",
+          "source_rule_id": "oma.qml.persistence-scheduling"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "BarWidget.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 590,
+          "relative_path": "BarWidget.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "BarWidget.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 644,
+          "relative_path": "BarWidget.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "BarWidget.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 686,
+          "relative_path": "BarWidget.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "BarWidget.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 800,
+          "relative_path": "BarWidget.qml",
           "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
           "source_rule_id": "oma.qml.process-execution"
         },
@@ -817,7 +805,7 @@
           "display_relative_path": "Panel.qml",
           "explanation": "QML starts an arbitrary argv child process.",
           "language": "qml",
-          "line": 5703,
+          "line": 4693,
           "relative_path": "Panel.qml",
           "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
           "source_rule_id": "oma.qml.process-execution"
@@ -829,7 +817,7 @@
           "display_relative_path": "Panel.qml",
           "explanation": "QML starts an arbitrary argv child process.",
           "language": "qml",
-          "line": 5819,
+          "line": 4802,
           "relative_path": "Panel.qml",
           "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
           "source_rule_id": "oma.qml.process-execution"
@@ -841,7 +829,7 @@
           "display_relative_path": "Panel.qml",
           "explanation": "QML starts an arbitrary argv child process.",
           "language": "qml",
-          "line": 5916,
+          "line": 4871,
           "relative_path": "Panel.qml",
           "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
           "source_rule_id": "oma.qml.process-execution"
@@ -853,7 +841,7 @@
           "display_relative_path": "Panel.qml",
           "explanation": "QML starts an arbitrary argv child process.",
           "language": "qml",
-          "line": 6012,
+          "line": 4938,
           "relative_path": "Panel.qml",
           "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
           "source_rule_id": "oma.qml.process-execution"
@@ -865,10 +853,190 @@
           "display_relative_path": "Panel.qml",
           "explanation": "QML starts an arbitrary argv child process.",
           "language": "qml",
-          "line": 6153,
+          "line": 5045,
           "relative_path": "Panel.qml",
           "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
           "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5119,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5225,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5311,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5400,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5490,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5576,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5659,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5757,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 5992,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 6108,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 6205,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 6301,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "process-execution",
+          "confidence": "ast-backed",
+          "detail": "Process",
+          "display_relative_path": "Panel.qml",
+          "explanation": "QML starts an arbitrary argv child process.",
+          "language": "qml",
+          "line": 6442,
+          "relative_path": "Panel.qml",
+          "review_guidance": "Review the command argv and data provenance; spawning alone is not malicious.",
+          "source_rule_id": "oma.qml.process-execution"
+        },
+        {
+          "capability": "sensitive-path",
+          "confidence": "ast-backed",
+          "detail": "keyring",
+          "display_relative_path": "scripts/harness/charts.qml",
+          "explanation": "QML refers to credentials, keyrings, browser profiles, cloud credentials, wallets, or other sensitive user-data locations.",
+          "language": "qml",
+          "line": 183,
+          "relative_path": "scripts/harness/charts.qml",
+          "review_guidance": "Capability indicator only: confirm whether the path is actually read and whether any dataflow reaches an outbound sink.",
+          "source_rule_id": "oma.qml.sensitive-path"
+        },
+        {
+          "capability": "sensitive-path",
+          "confidence": "lexical-fallback",
+          "detail": "keyring",
+          "display_relative_path": "scripts/posture-test.js",
+          "explanation": "QML refers to credentials, keyrings, browser profiles, cloud credentials, wallets, or other sensitive user-data locations.",
+          "language": "javascript",
+          "line": 380,
+          "relative_path": "scripts/posture-test.js",
+          "review_guidance": "Capability indicator only: confirm whether the path is actually read and whether any dataflow reaches an outbound sink.",
+          "source_rule_id": "oma.qml.sensitive-path"
         }
       ],
       "coverage_gaps": [
@@ -1197,6 +1365,49 @@
           "analysis_method": "ast-syntax",
           "capability": "filesystem-access",
           "confidence": "ast-backed",
+          "display_relative_path": "components/MeterBar.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Tiers.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Tiers.js",
+              "display_relative_path": "components/MeterBar.qml",
+              "id": "observation",
+              "line": 4,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "components/MeterBar.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 4,
+          "occurrence_id": "c0f203195d5c279e30e8f1f0d0cfed98f2f3859739b7ee90dcf2b77c450261dd",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "components/MeterBar.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
           "display_relative_path": "components/NoticeRow.qml",
           "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
           "evidence_steps": [
@@ -1230,6 +1441,135 @@
             "truncated": false
           },
           "relative_path": "components/NoticeRow.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "components/PostureCheckBlock.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+              "display_relative_path": "components/PostureCheckBlock.qml",
+              "id": "observation",
+              "line": 4,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "components/PostureCheckBlock.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 4,
+          "occurrence_id": "66386452730507dc75e6a105628b90127496709530fbb46c51e648cc99bd097d",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "components/PostureCheckBlock.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "components/PostureCheckBlock.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Posture.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Posture.js",
+              "display_relative_path": "components/PostureCheckBlock.qml",
+              "id": "observation",
+              "line": 5,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "components/PostureCheckBlock.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 5,
+          "occurrence_id": "de07bbd6c02a54f2bb9ada08e0dc5f0ce00edf39ba9df724c94a10464f339249",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "components/PostureCheckBlock.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "components/RankedBars.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Tiers.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Tiers.js",
+              "display_relative_path": "components/RankedBars.qml",
+              "id": "observation",
+              "line": 4,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "components/RankedBars.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 4,
+          "occurrence_id": "f56977e8767292154a74dec93d322bdb7eaae26a2211d090745cce2589831aaa",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "components/RankedBars.qml",
           "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
           "rule_id": "oma.qml.out-of-tree-reference",
           "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
@@ -1369,6 +1709,49 @@
           "analysis_method": "ast-syntax",
           "capability": "filesystem-access",
           "confidence": "ast-backed",
+          "display_relative_path": "components/SemanticMark.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Tiers.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Tiers.js",
+              "display_relative_path": "components/SemanticMark.qml",
+              "id": "observation",
+              "line": 5,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "components/SemanticMark.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 5,
+          "occurrence_id": "c07c0b96208250a53db8762cc5113f61d63cd253c4904c0fd3f1e19e411db5bb",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "components/SemanticMark.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
           "display_relative_path": "components/SourceRow.qml",
           "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
           "evidence_steps": [
@@ -1402,6 +1785,49 @@
             "truncated": false
           },
           "relative_path": "components/SourceRow.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "components/UnitStrip.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Tiers.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Tiers.js",
+              "display_relative_path": "components/UnitStrip.qml",
+              "id": "observation",
+              "line": 4,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "components/UnitStrip.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 4,
+          "occurrence_id": "1e09c428fe96b09e952b1ff4f77277d968e114c0b2bfd13b7beff3069159a0cd",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "components/UnitStrip.qml",
           "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
           "rule_id": "oma.qml.out-of-tree-reference",
           "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
@@ -1713,6 +2139,92 @@
           "analysis_method": "ast-syntax",
           "capability": "filesystem-access",
           "confidence": "ast-backed",
+          "display_relative_path": "views/CandidateView.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+              "display_relative_path": "views/CandidateView.qml",
+              "id": "observation",
+              "line": 6,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "views/CandidateView.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 6,
+          "occurrence_id": "89928bff4d991061b0b9758ff18a6422c5c5bf4191b483752e190328ff3b2812",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "views/CandidateView.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "views/CandidateView.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Labels.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Labels.js",
+              "display_relative_path": "views/CandidateView.qml",
+              "id": "observation",
+              "line": 7,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "views/CandidateView.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 7,
+          "occurrence_id": "f65b3aad016c534c05eac73393a5ef50bfe4def2ccbbdde9e2c9c7b8f93353ba",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "views/CandidateView.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
           "display_relative_path": "views/FinderResultsView.qml",
           "evidence": "out-of-tree-reference:directory-import:../components",
           "evidence_steps": [
@@ -1825,6 +2337,49 @@
           "language": "qml",
           "line": 6,
           "occurrence_id": "f74543e3d4fe80bcb39478ff6e3d3eb7732255e9b55b5f5f16b3b3418d4498a5",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "views/FinderResultsView.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "views/FinderResultsView.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Posture.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Posture.js",
+              "display_relative_path": "views/FinderResultsView.qml",
+              "id": "observation",
+              "line": 7,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "views/FinderResultsView.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 7,
+          "occurrence_id": "5232cbd433f2a034d301417cb7d1a0e2489898eb6eb32c742d0ca80ea3b52d0f",
           "presentation": {
             "omitted_fields": [],
             "redacted": false,
@@ -2143,6 +2698,49 @@
           "analysis_method": "ast-syntax",
           "capability": "filesystem-access",
           "confidence": "ast-backed",
+          "display_relative_path": "views/PluginDetailView.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Candidate.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Candidate.js",
+              "display_relative_path": "views/PluginDetailView.qml",
+              "id": "observation",
+              "line": 7,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "views/PluginDetailView.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 7,
+          "occurrence_id": "ec9662599513d7cf42cf7ef9aba5583cac0072a931d585338e07899c3cbd613b",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "views/PluginDetailView.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
           "display_relative_path": "views/PostureView.qml",
           "evidence": "out-of-tree-reference:directory-import:../components",
           "evidence_steps": [
@@ -2169,6 +2767,92 @@
           "language": "qml",
           "line": 5,
           "occurrence_id": "5fbbe26097e46d8a8ddf261a87f2674e605d39925094d7903968705d0633baed",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "views/PostureView.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "views/PostureView.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Glyphs.js",
+              "display_relative_path": "views/PostureView.qml",
+              "id": "observation",
+              "line": 6,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "views/PostureView.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 6,
+          "occurrence_id": "af9ed866e9f5904d71fe94dbcda9946b955fa809cfd4317abe7b7320f74854e7",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "views/PostureView.qml",
+          "review_guidance": "This is an unreviewed out-of-tree load, not a sandbox escape — there is no runtime sandbox. Audit the referenced location before trusting the review.",
+          "rule_id": "oma.qml.out-of-tree-reference",
+          "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
+          "severity": "medium",
+          "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "views/PostureView.qml",
+          "evidence": "out-of-tree-reference:directory-import:../model/Posture.js",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "out-of-tree-reference:directory-import:../model/Posture.js",
+              "display_relative_path": "views/PostureView.qml",
+              "id": "observation",
+              "line": 7,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "views/PostureView.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "An absolute-path or traversal reference loads content from outside the reviewed plugin tree, bypassing commit-bound review.",
+          "language": "qml",
+          "line": 7,
+          "occurrence_id": "960e4e272d525508fda7b609f0f1388617a2220ac32a4cb3a62f4adca94879ab",
           "presentation": {
             "omitted_fields": [],
             "redacted": false,
@@ -2310,12 +2994,98 @@
           "rule_semantic_identity_digest": "94b6f77094e90bd626348c2402b3bb7e42e4930839b86fc968bc55fd1ca77815",
           "severity": "medium",
           "title": "QML loads content from outside the plugin tree"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "scripts/harness/candidate.qml",
+          "evidence": "dynamic-reference-sink:FileView.path:coverage-unknown:harness.fixture",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "dynamic-reference-sink:FileView.path:coverage-unknown:harness.fixture",
+              "display_relative_path": "scripts/harness/candidate.qml",
+              "id": "observation",
+              "line": 32,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "scripts/harness/candidate.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "A Loader source or FileView path is computed at runtime instead of a literal.",
+          "language": "qml",
+          "line": 32,
+          "occurrence_id": "7ec27edddbb7353692ced642e396267bfeab6fbbc5e80121731acb9fc1cd59e8",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "scripts/harness/candidate.qml",
+          "review_guidance": "Trace what flows into the reference; computed sinks evade static containment review.",
+          "rule_id": "oma.qml.dynamic-reference",
+          "rule_semantic_identity_digest": "fa975e64305dbd9fa4ec2ef092289a39950126846d9884d0ce96e83e1ab4a71d",
+          "severity": "low",
+          "title": "QML loads content through a computed reference"
+        },
+        {
+          "analysis_method": "ast-syntax",
+          "capability": "filesystem-access",
+          "confidence": "ast-backed",
+          "display_relative_path": "scripts/harness/posture.qml",
+          "evidence": "dynamic-reference-sink:FileView.path:coverage-unknown:harness.fixture",
+          "evidence_steps": [
+            {
+              "analysis_method": "ast-syntax",
+              "detail": "dynamic-reference-sink:FileView.path:coverage-unknown:harness.fixture",
+              "display_relative_path": "scripts/harness/posture.qml",
+              "id": "observation",
+              "line": 39,
+              "origin": "source-derived",
+              "redacted": false,
+              "relative_path": "scripts/harness/posture.qml",
+              "role": "observation",
+              "truncated": false
+            }
+          ],
+          "evidence_summary": {
+            "emitted": 1,
+            "observation_collection_complete": true,
+            "omitted": 0,
+            "total": 1
+          },
+          "explanation": "A Loader source or FileView path is computed at runtime instead of a literal.",
+          "language": "qml",
+          "line": 39,
+          "occurrence_id": "9c11cadca114ff84551129e8d007bd707780dee89943847465e763fb78a01226",
+          "presentation": {
+            "omitted_fields": [],
+            "redacted": false,
+            "redaction_classes": [],
+            "truncated": false
+          },
+          "relative_path": "scripts/harness/posture.qml",
+          "review_guidance": "Trace what flows into the reference; computed sinks evade static containment review.",
+          "rule_id": "oma.qml.dynamic-reference",
+          "rule_semantic_identity_digest": "fa975e64305dbd9fa4ec2ef092289a39950126846d9884d0ce96e83e1ab4a71d",
+          "severity": "low",
+          "title": "QML loads content through a computed reference"
         }
       ],
       "invocation_edges": [
         {
           "from_path": "BarWidget.qml",
-          "line": 875,
+          "line": 886,
           "target_path": "Panel.qml"
         },
         {
@@ -2330,12 +3100,12 @@
         },
         {
           "from_path": "Panel.qml",
-          "line": 11,
+          "line": 12,
           "target_path": "graph/FlowLayout.js"
         },
         {
           "from_path": "Panel.qml",
-          "line": 4063,
+          "line": 4351,
           "target_path": "media/logo.png"
         },
         {
@@ -2355,6 +3125,11 @@
         },
         {
           "from_path": "Panel.qml",
+          "line": 11,
+          "target_path": "model/Posture.js"
+        },
+        {
+          "from_path": "Panel.qml",
           "line": 8,
           "target_path": "model/Time.js"
         },
@@ -2362,6 +3137,11 @@
           "from_path": "Panel.qml",
           "line": 9,
           "target_path": "model/ViewModel.js"
+        },
+        {
+          "from_path": "model/Candidate.js",
+          "line": 10,
+          "target_path": "model/Glyphs.js"
         },
         {
           "from_path": "model/ViewModel.js",
@@ -2380,8 +3160,13 @@
         },
         {
           "from_path": "scripts/candidate-test.js",
-          "line": 10,
+          "line": 24,
           "target_path": "model/Candidate.js"
+        },
+        {
+          "from_path": "scripts/candidate-test.js",
+          "line": 20,
+          "target_path": "model/Glyphs.js"
         },
         {
           "from_path": "scripts/flow-test.js",
@@ -2392,6 +3177,11 @@
           "from_path": "scripts/flow-test.js",
           "line": 56,
           "target_path": "Panel.qml"
+        },
+        {
+          "from_path": "scripts/flow-test.js",
+          "line": 528,
+          "target_path": "docs/design/fixtures/installed-analyze.json"
         },
         {
           "from_path": "scripts/flow-test.js",
@@ -2427,6 +3217,21 @@
           "from_path": "scripts/flow-test.js",
           "line": 266,
           "target_path": "views/OverviewView.qml"
+        },
+        {
+          "from_path": "scripts/harness/candidate.qml",
+          "line": 7,
+          "target_path": "model/Candidate.js"
+        },
+        {
+          "from_path": "scripts/harness/posture.qml",
+          "line": 7,
+          "target_path": "model/Posture.js"
+        },
+        {
+          "from_path": "scripts/posture-test.js",
+          "line": 17,
+          "target_path": "model/Posture.js"
         }
       ],
       "parser": {
@@ -2450,7 +3255,7 @@
         }
       },
       "policy_identity": {
-        "analyzer_version": "0.3.0",
+        "analyzer_version": "0.3.1",
         "detector_logic_fingerprint": "02a940dae80b4921736b08490045384b7186a039f75bcff6a7045308a4442b90",
         "equivalence_map_version": "omarchy-marketplace-baseline-v3/2",
         "limits_fingerprint": "d6b84a213c39442c144a09e276f1a88762ed997a3b7ef31bfba0f5dcc44abd40",
@@ -2492,7 +3297,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "f172a8bf4d677663f2ab83bebd3afee80d0fb93dfbc09d3b0e9ea4fc4ce76970",
+          "exact_sha256": "5770c6bc400977a64ea6695a98669fcb8aee872fff30ed67ef54c1eb4f14adc1",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -2502,7 +3307,7 @@
         {
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "894d287c84d5785555287f04593cfb43f8e21743cc5e6fb8d24af44b3b66148f",
+          "exact_sha256": "1f778a080b256dc965d412f302b6f3b7514724946099556c1a2de83f5b57cd9f",
           "exposure": "unknown",
           "native_format": null,
           "opaque_review_required": false,
@@ -2532,7 +3337,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "267c4a2e38bbc713f6206abe1dcec517d3b50402301e772c750994e032e1fb62",
+          "exact_sha256": "6552ea51e6394d34776095dc5c8d1aa496f0431eb63bee4635fb5349873d8d59",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -2542,7 +3347,7 @@
         {
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "2f5459fd48fe20e21d6c767e1ee72282d5dfe0bb1205c08af3d74a9f22238fcc",
+          "exact_sha256": "b58ce54e4bd56395c52daa5f174cdd072797ab36305f94e417561fb094024c0a",
           "exposure": "unknown",
           "native_format": null,
           "opaque_review_required": false,
@@ -2592,7 +3397,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "8b1392e5c30cd09300c20de0f77a14e716c04fa25c0e279b192a4c8c9c7c0951",
+          "exact_sha256": "fcabe5ccf03fe390d6f39a6e530c384f12228b7b4f86d7fc13692b21c5597555",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -2682,6 +3487,16 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
+          "exact_sha256": "24e36e2d91e0c54c397e7f671e6132716552a607bb92915d8815cf8313cd1e3d",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/MeterBar.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
           "exact_sha256": "54e174c5e4224088aa14b7b980b0889ca6965a9b7c9c0a7b03c523850a1dbf2e",
           "exposure": "possible-or-dynamic",
           "native_format": null,
@@ -2692,11 +3507,31 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "3ae3c7c478b7755123f38190d9c9c2a850e8296521e8cf8a9c9a0f8a1ed8f325",
+          "exact_sha256": "078ee4d11374fe81f7fa9a1ba4835d3e65e68ae8ab76c3e5f429abaa6535b8d6",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "components/PluginRow.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "26e4bd1c9b8527705405887b8af3821c032ebfb2f8d2f8019baf6b4ee6bee137",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/PostureCheckBlock.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "6eb5d61d787e7caa62e5b804bb36e0dc79e3323f6ea08ad9d5e959d0ebf0de76",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/RankedBars.qml",
           "review_status": "not-applicable"
         },
         {
@@ -2712,7 +3547,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "18ffe9f7518c5dd3d7483cc843990d0a56dab0e78886593ffe77a6b91d3dcbce",
+          "exact_sha256": "252e971c8e32093ba3f06a09bbb3eef4c6a04c310bddcb676fe8b22f281695ed",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -2732,7 +3567,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "f94e39b290d994b568dfca92b8d7085c6f4df3a4920f40388457255713ee503d",
+          "exact_sha256": "fb9c1e55744bc6b19826eb2770860558df44c72fce3ce2913de42233855712ff",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -2750,9 +3585,29 @@
           "review_status": "not-applicable"
         },
         {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "1f6f08a51bf341b432012b22a3fb39ec27aa24bc60c9bf3614926d6e3d267f8d",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/UnitStrip.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "9caa0fac8b7c71323120b512ce81911f2ad072f1dc9b3ad398ee9e86a4d0b640",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/ViewChips.qml",
+          "review_status": "not-applicable"
+        },
+        {
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "31346951da70fb9eee8ffa9093eccef38177706b208beb3ef91fb7868ff36be9",
+          "exact_sha256": "98c8cd464bf4b8b132a2c20c84e17fc339d1ef0c97d1d878868ee7828789193c",
           "exposure": "unknown",
           "native_format": null,
           "opaque_review_required": false,
@@ -2792,11 +3647,21 @@
         {
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "71ddaac599165d56928afb2c0605c305fb0f05516a70f0af73817709007f79dc",
+          "exact_sha256": "1d51a07cb48abdceb59c62197ca521ddf57c160ec614ba7ed8de22ac60621b7c",
           "exposure": "unknown",
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "docs/design/02-design-principles.md",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "5892eef0bcf77013254f5b1b65432b754be4664650790a72e16a030423ddb288",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/08-glanceability-and-dashboard-research.md",
           "review_status": "not-applicable"
         },
         {
@@ -2811,12 +3676,102 @@
         },
         {
           "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "27105344f3e717b1b0f8132ab78bc250ca6d538960762e40cf5029d58d6af93d",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/README.md",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "a9a04182e670c59a9366e3c583ffb75d74ef6b6075dccc80af656578b7068250",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/candidate-git-review.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "1eb45c4399f1d6f53dff137454944f31212ce95d338f1869b5c06cd624d98ba3",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/candidate-partial-capabilities-synthetic.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "d68fbf138b834f7e28776bb0b860decdca2f709d1a198a4957fe372c20d07e11",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/candidate-path-review.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "35ccd67e242ba817d28a39659af6ffde2f64a5b6f78e08659fcad07aad058314",
+          "exposure": "known-execute-or-load",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/installed-analyze.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "bdfb90259bd25162d532a07f3c14d3fe8380eaa4153f8b7174b4ac7e5bbbeeee",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/posture-cli031-synthetic.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "16c802a5e6534e62e04248dcb0ef57b4ed70d1da777daf4e494b33d8fd5595c4",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/posture-not-yet-run.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "f4feb921d9da0b83d156be77833a63fcdc568108230c0e20ae2762a4377c6224",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/posture-v1.json",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
           "digest_state": "unavailable",
           "exact_sha256": null,
           "exposure": "unknown",
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "docs/implementation",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "c70b507bf1544778aa1232349204ee811750fd65933263b88ba05df5387bf7e4",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/v0.3.1-plan.md",
           "review_status": "not-applicable"
         },
         {
@@ -2862,7 +3817,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "272dbd7159ef3097ae2b520f7abd77ab8530918121372a6a3100c55ac0998bda",
+          "exact_sha256": "09086527e3ffcb4e70ebbc2a0d46702f06a59bd9d3d9b71bbf6ed99e20e5d61c",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -2902,7 +3857,7 @@
         {
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "163aafae0972ff1bde6c30d0ab45d753ab8b52276863a4913e453f201038c5a7",
+          "exact_sha256": "c15cef5fddd22b8e011191b627f66fba9e450eb6e72bc3a5d298bfdd713fbe9a",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -2940,6 +3895,26 @@
           "review_status": "not-applicable"
         },
         {
+          "content_class": "ordinary-data",
+          "digest_state": "exact",
+          "exact_sha256": "a0dc78edbe06767f775802d67828e4aa7038ce04fe4e5a1b5682afffe1225e27",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "media/posture.png",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "ordinary-data",
+          "digest_state": "exact",
+          "exact_sha256": "6dbd6bd2996a4e250ab18e38d8e471a05430621b3f57ed221ba8751ea9db18d6",
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "media/source-scan.png",
+          "review_status": "not-applicable"
+        },
+        {
           "content_class": "unknown",
           "digest_state": "unavailable",
           "exact_sha256": null,
@@ -2952,7 +3927,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "cd484a51caed608a97d64de718ab42e09148d75dc98dc1550dc429e0a5334aae",
+          "exact_sha256": "e2a841275e9ba7ccd23c6cf937c93d6da656291782a567f0807579342d1237a6",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -2962,7 +3937,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "a57f71facaaf6be5b464c045f5247cbf941ea1cf410efcd90b91110a9bd4f7a1",
+          "exact_sha256": "cfacd40a2ff26ee294a85dc14d1cf556c57c2e84a7af712dde0a69f349f31546",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -2982,6 +3957,26 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
+          "exact_sha256": "c299dcdec4f794c1439437797cedd5044f267cc882cfe83441418e73256603bd",
+          "exposure": "known-execute-or-load",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "model/Posture.js",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "03d659c270816cac7b12522e872a3a8853dc05e074c83be03bb43eaf1dd80bae",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "model/Tiers.js",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
           "exact_sha256": "31e874e9fe1b52a891c4d82445a1db3a45acd9d4980f595556fda9472f9946e1",
           "exposure": "known-execute-or-load",
           "native_format": null,
@@ -2992,7 +3987,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "d1af136a3f999bd0e3ab0081658a58d7bb492e01b16590deed019c50cfd955ba",
+          "exact_sha256": "73d6e41cdecacc88cc6b1b3d3c3afe203011e1f4cea70a8e611a5d05b2da18be",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -3022,7 +4017,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "ee4520cdca7534e4adf6fc233752871558ceec37c31a8a75b655e8c44397cb6a",
+          "exact_sha256": "0b9ff13fbc0c76520e3c55d9bb905f85029f220263285217d4acfc632aa12607",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -3032,11 +4027,81 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "cbf7efd16f827f1411432b88a9329632704d0f11bb450baa9dabd9f24fa993a7",
+          "exact_sha256": "deefdcdc4dab750cd06e4f680ec54f00e52da4222924d6dc5db147a66108e28e",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "scripts/flow-test.js",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "unknown",
+          "digest_state": "unavailable",
+          "exact_sha256": null,
+          "exposure": "unknown",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "7923b2b1fe5b0c705e87bcd5f7ceba404d238cbdc4515a5053d09d4d8922de9e",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/candidate.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "2d5eb65807750ad73f03bba1f98964818fb40b4cb4dc030dec5ba1d852678ef1",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/charts.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "c425c65bdb4f7b65cb1221d5c62f17af7f3efa23a4cff41e61eb18f39dd6d903",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/chips.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "ab9966d0e7bddb941ec64c4252b72c94dc62cfbbabb91454cd033b55bdf2a274",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/posture.qml",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "1479085ac33387fd6a7713f6f60e53d6bc65d8dff771c0bf7bc80ce557571ba7",
+          "exposure": "entry-point",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/run.sh",
+          "review_status": "not-applicable"
+        },
+        {
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "720c1fae10f7a2095b050babb0c5226677a8b400a01248ec0bb002bbc713ae54",
+          "exposure": "possible-or-dynamic",
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/posture-test.js",
           "review_status": "not-applicable"
         },
         {
@@ -3052,7 +4117,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "0afd8a087636829b8a3bfc1a1649fbd8b6bc6f33a9a1100bc30f1a6c09bb02b1",
+          "exact_sha256": "2fe6fcd692271f9069cdc347c0d73663db369a3badc87534401774d8bd3a33f0",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -3062,7 +4127,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "a2a1a2fcc2b8c9d2c1fa61e21827bd408535ca44b686b45682e897f87e99b836",
+          "exact_sha256": "4cfeb245a38d1772133d2ccdce4592f53c8383f436ecf31df33934257386c8ea",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -3082,7 +4147,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "1678a0c2ad031cf8c209120ced5a3e8f9309f00d1eb7c6a7de0712e6c621556a",
+          "exact_sha256": "235b5dee4a3cdb0839230b5426d2ae3a863f5259ef82238295fdec41ee2a36a2",
           "exposure": "known-execute-or-load",
           "native_format": null,
           "opaque_review_required": false,
@@ -3092,7 +4157,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "1e28589240b5578193bfd4edc141de9936326025cf1b44c2ebac7275394216d9",
+          "exact_sha256": "4b251db1ca334fd0d394a937997c08a73fbf7100394f3a741cd65ca62831ed30",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -3102,7 +4167,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "2235c4a651586fcfdc2351ddbb2c5bf13cc7847e0578cfb624cbcee5ef2573a2",
+          "exact_sha256": "6dbf39494d6532772b0933d462a3360270c357834ee09b46a6d78a0f8854fc86",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -3112,7 +4177,7 @@
         {
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "8edb0fea272ddd459fc4de42f83e4374ad79c246d306934caac1ec446947e3fe",
+          "exact_sha256": "3cb9d7be3b17ccd19877d6336bf38f975f5f8d63f906da0d5c59288aa3d53836",
           "exposure": "possible-or-dynamic",
           "native_format": null,
           "opaque_review_required": false,
@@ -3174,7 +4239,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "f172a8bf4d677663f2ab83bebd3afee80d0fb93dfbc09d3b0e9ea4fc4ce76970",
+          "exact_sha256": "5770c6bc400977a64ea6695a98669fcb8aee872fff30ed67ef54c1eb4f14adc1",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3195,7 +4260,7 @@
           "code_exposure": "unknown",
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "894d287c84d5785555287f04593cfb43f8e21743cc5e6fb8d24af44b3b66148f",
+          "exact_sha256": "1f778a080b256dc965d412f302b6f3b7514724946099556c1a2de83f5b57cd9f",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3258,7 +4323,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "267c4a2e38bbc713f6206abe1dcec517d3b50402301e772c750994e032e1fb62",
+          "exact_sha256": "6552ea51e6394d34776095dc5c8d1aa496f0431eb63bee4635fb5349873d8d59",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3279,7 +4344,7 @@
           "code_exposure": "unknown",
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "2f5459fd48fe20e21d6c767e1ee72282d5dfe0bb1205c08af3d74a9f22238fcc",
+          "exact_sha256": "b58ce54e4bd56395c52daa5f174cdd072797ab36305f94e417561fb094024c0a",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3380,7 +4445,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "8b1392e5c30cd09300c20de0f77a14e716c04fa25c0e279b192a4c8c9c7c0951",
+          "exact_sha256": "fcabe5ccf03fe390d6f39a6e530c384f12228b7b4f86d7fc13692b21c5597555",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3569,6 +4634,27 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
+          "exact_sha256": "24e36e2d91e0c54c397e7f671e6132716552a607bb92915d8815cf8313cd1e3d",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/MeterBar.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
           "exact_sha256": "54e174c5e4224088aa14b7b980b0889ca6965a9b7c9c0a7b03c523850a1dbf2e",
           "inventory_state": "complete",
           "language_hint": {
@@ -3590,7 +4676,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "3ae3c7c478b7755123f38190d9c9c2a850e8296521e8cf8a9c9a0f8a1ed8f325",
+          "exact_sha256": "078ee4d11374fe81f7fa9a1ba4835d3e65e68ae8ab76c3e5f429abaa6535b8d6",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3600,6 +4686,48 @@
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "components/PluginRow.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "26e4bd1c9b8527705405887b8af3821c032ebfb2f8d2f8019baf6b4ee6bee137",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/PostureCheckBlock.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "6eb5d61d787e7caa62e5b804bb36e0dc79e3323f6ea08ad9d5e959d0ebf0de76",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/RankedBars.qml",
           "syntax_coverage": "parser"
         },
         {
@@ -3632,7 +4760,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "18ffe9f7518c5dd3d7483cc843990d0a56dab0e78886593ffe77a6b91d3dcbce",
+          "exact_sha256": "252e971c8e32093ba3f06a09bbb3eef4c6a04c310bddcb676fe8b22f281695ed",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3674,7 +4802,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "f94e39b290d994b568dfca92b8d7085c6f4df3a4920f40388457255713ee503d",
+          "exact_sha256": "fb9c1e55744bc6b19826eb2770860558df44c72fce3ce2913de42233855712ff",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3709,6 +4837,48 @@
         },
         {
           "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "1f6f08a51bf341b432012b22a3fb39ec27aa24bc60c9bf3614926d6e3d267f8d",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/UnitStrip.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "9caa0fac8b7c71323120b512ce81911f2ad072f1dc9b3ad398ee9e86a4d0b640",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "components/ViewChips.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
           "behavior_coverage": "unsupported",
           "classification_evidence": [
             "classification:unknown"
@@ -3716,7 +4886,7 @@
           "code_exposure": "unknown",
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "31346951da70fb9eee8ffa9093eccef38177706b208beb3ef91fb7868ff36be9",
+          "exact_sha256": "98c8cd464bf4b8b132a2c20c84e17fc339d1ef0c97d1d878868ee7828789193c",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3792,7 +4962,7 @@
           "code_exposure": "unknown",
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "71ddaac599165d56928afb2c0605c305fb0f05516a70f0af73817709007f79dc",
+          "exact_sha256": "1d51a07cb48abdceb59c62197ca521ddf57c160ec614ba7ed8de22ac60621b7c",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -3802,6 +4972,27 @@
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "docs/design/02-design-principles.md",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "5892eef0bcf77013254f5b1b65432b754be4664650790a72e16a030423ddb288",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/08-glanceability-and-dashboard-research.md",
           "syntax_coverage": "unsupported"
         },
         {
@@ -3823,6 +5014,174 @@
         },
         {
           "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "27105344f3e717b1b0f8132ab78bc250ca6d538960762e40cf5029d58d6af93d",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/README.md",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "a9a04182e670c59a9366e3c583ffb75d74ef6b6075dccc80af656578b7068250",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/candidate-git-review.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "1eb45c4399f1d6f53dff137454944f31212ce95d338f1869b5c06cd624d98ba3",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/candidate-partial-capabilities-synthetic.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "d68fbf138b834f7e28776bb0b860decdca2f709d1a198a4957fe372c20d07e11",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/candidate-path-review.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "known-execute-or-load",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "35ccd67e242ba817d28a39659af6ffde2f64a5b6f78e08659fcad07aad058314",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/installed-analyze.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "bdfb90259bd25162d532a07f3c14d3fe8380eaa4153f8b7174b4ac7e5bbbeeee",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/posture-cli031-synthetic.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "16c802a5e6534e62e04248dcb0ef57b4ed70d1da777daf4e494b33d8fd5595c4",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/posture-not-yet-run.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "f4feb921d9da0b83d156be77833a63fcdc568108230c0e20ae2762a4377c6224",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/design/fixtures/posture-v1.json",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
           "behavior_coverage": "unavailable",
           "classification_evidence": [
             "fallback-text"
@@ -3837,6 +5196,27 @@
           "opaque_review_required": false,
           "relative_path": "docs/implementation",
           "syntax_coverage": "unavailable"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "classification:unknown"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "exact",
+          "exact_sha256": "c70b507bf1544778aa1232349204ee811750fd65933263b88ba05df5387bf7e4",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "unknown",
+            "source": "classification"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "docs/v0.3.1-plan.md",
+          "syntax_coverage": "unsupported"
         },
         {
           "architecture": null,
@@ -3927,7 +5307,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "272dbd7159ef3097ae2b520f7abd77ab8530918121372a6a3100c55ac0998bda",
+          "exact_sha256": "09086527e3ffcb4e70ebbc2a0d46702f06a59bd9d3d9b71bbf6ed99e20e5d61c",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4011,7 +5391,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "unknown",
           "digest_state": "exact",
-          "exact_sha256": "163aafae0972ff1bde6c30d0ab45d753ab8b52276863a4913e453f201038c5a7",
+          "exact_sha256": "c15cef5fddd22b8e011191b627f66fba9e450eb6e72bc3a5d298bfdd713fbe9a",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4076,6 +5456,40 @@
         },
         {
           "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "nul-byte-sniff"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "ordinary-data",
+          "digest_state": "exact",
+          "exact_sha256": "a0dc78edbe06767f775802d67828e4aa7038ce04fe4e5a1b5682afffe1225e27",
+          "inventory_state": "complete",
+          "language_hint": null,
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "media/posture.png",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unsupported",
+          "classification_evidence": [
+            "nul-byte-sniff"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "ordinary-data",
+          "digest_state": "exact",
+          "exact_sha256": "6dbd6bd2996a4e250ab18e38d8e471a05430621b3f57ed221ba8751ea9db18d6",
+          "inventory_state": "complete",
+          "language_hint": null,
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "media/source-scan.png",
+          "syntax_coverage": "unsupported"
+        },
+        {
+          "architecture": null,
           "behavior_coverage": "unavailable",
           "classification_evidence": [
             "fallback-text"
@@ -4100,7 +5514,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "cd484a51caed608a97d64de718ab42e09148d75dc98dc1550dc429e0a5334aae",
+          "exact_sha256": "e2a841275e9ba7ccd23c6cf937c93d6da656291782a567f0807579342d1237a6",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4121,7 +5535,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "a57f71facaaf6be5b464c045f5247cbf941ea1cf410efcd90b91110a9bd4f7a1",
+          "exact_sha256": "cfacd40a2ff26ee294a85dc14d1cf556c57c2e84a7af712dde0a69f349f31546",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4163,6 +5577,48 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
+          "exact_sha256": "c299dcdec4f794c1439437797cedd5044f267cc882cfe83441418e73256603bd",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "javascript",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "model/Posture.js",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:javascript"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "03d659c270816cac7b12522e872a3a8853dc05e074c83be03bb43eaf1dd80bae",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "javascript",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "model/Tiers.js",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:javascript"
+          ],
+          "code_exposure": "known-execute-or-load",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
           "exact_sha256": "31e874e9fe1b52a891c4d82445a1db3a45acd9d4980f595556fda9472f9946e1",
           "inventory_state": "complete",
           "language_hint": {
@@ -4184,7 +5640,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "d1af136a3f999bd0e3ab0081658a58d7bb492e01b16590deed019c50cfd955ba",
+          "exact_sha256": "73d6e41cdecacc88cc6b1b3d3c3afe203011e1f4cea70a8e611a5d05b2da18be",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4239,7 +5695,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "ee4520cdca7534e4adf6fc233752871558ceec37c31a8a75b655e8c44397cb6a",
+          "exact_sha256": "0b9ff13fbc0c76520e3c55d9bb905f85029f220263285217d4acfc632aa12607",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4260,7 +5716,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "cbf7efd16f827f1411432b88a9329632704d0f11bb450baa9dabd9f24fa993a7",
+          "exact_sha256": "deefdcdc4dab750cd06e4f680ec54f00e52da4222924d6dc5db147a66108e28e",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4270,6 +5726,149 @@
           "native_format": null,
           "opaque_review_required": false,
           "relative_path": "scripts/flow-test.js",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "unavailable",
+          "classification_evidence": [
+            "fallback-text"
+          ],
+          "code_exposure": "unknown",
+          "content_class": "unknown",
+          "digest_state": "unavailable",
+          "exact_sha256": null,
+          "inventory_state": "complete",
+          "language_hint": null,
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness",
+          "syntax_coverage": "unavailable"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "7923b2b1fe5b0c705e87bcd5f7ceba404d238cbdc4515a5053d09d4d8922de9e",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/candidate.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "2d5eb65807750ad73f03bba1f98964818fb40b4cb4dc030dec5ba1d852678ef1",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/charts.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "c425c65bdb4f7b65cb1221d5c62f17af7f3efa23a4cff41e61eb18f39dd6d903",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/chips.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:qml"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "ab9966d0e7bddb941ec64c4252b72c94dc62cfbbabb91454cd033b55bdf2a274",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "qml",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/posture.qml",
+          "syntax_coverage": "parser"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "partial",
+          "classification_evidence": [
+            "extension:shell"
+          ],
+          "code_exposure": "entry-point",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "1479085ac33387fd6a7713f6f60e53d6bc65d8dff771c0bf7bc80ce557571ba7",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "shell",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/harness/run.sh",
+          "syntax_coverage": "bounded"
+        },
+        {
+          "architecture": null,
+          "behavior_coverage": "bounded",
+          "classification_evidence": [
+            "extension:javascript"
+          ],
+          "code_exposure": "possible-or-dynamic",
+          "content_class": "interpreted-code",
+          "digest_state": "exact",
+          "exact_sha256": "720c1fae10f7a2095b050babb0c5226677a8b400a01248ec0bb002bbc713ae54",
+          "inventory_state": "complete",
+          "language_hint": {
+            "confidence": "exact",
+            "language": "javascript",
+            "source": "extension"
+          },
+          "native_format": null,
+          "opaque_review_required": false,
+          "relative_path": "scripts/posture-test.js",
           "syntax_coverage": "parser"
         },
         {
@@ -4298,7 +5897,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "0afd8a087636829b8a3bfc1a1649fbd8b6bc6f33a9a1100bc30f1a6c09bb02b1",
+          "exact_sha256": "2fe6fcd692271f9069cdc347c0d73663db369a3badc87534401774d8bd3a33f0",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4319,7 +5918,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "a2a1a2fcc2b8c9d2c1fa61e21827bd408535ca44b686b45682e897f87e99b836",
+          "exact_sha256": "4cfeb245a38d1772133d2ccdce4592f53c8383f436ecf31df33934257386c8ea",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4361,7 +5960,7 @@
           "code_exposure": "known-execute-or-load",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "1678a0c2ad031cf8c209120ced5a3e8f9309f00d1eb7c6a7de0712e6c621556a",
+          "exact_sha256": "235b5dee4a3cdb0839230b5426d2ae3a863f5259ef82238295fdec41ee2a36a2",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4382,7 +5981,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "1e28589240b5578193bfd4edc141de9936326025cf1b44c2ebac7275394216d9",
+          "exact_sha256": "4b251db1ca334fd0d394a937997c08a73fbf7100394f3a741cd65ca62831ed30",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4403,7 +6002,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "2235c4a651586fcfdc2351ddbb2c5bf13cc7847e0578cfb624cbcee5ef2573a2",
+          "exact_sha256": "6dbf39494d6532772b0933d462a3360270c357834ee09b46a6d78a0f8854fc86",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4424,7 +6023,7 @@
           "code_exposure": "possible-or-dynamic",
           "content_class": "interpreted-code",
           "digest_state": "exact",
-          "exact_sha256": "8edb0fea272ddd459fc4de42f83e4374ad79c246d306934caac1ec446947e3fe",
+          "exact_sha256": "3cb9d7be3b17ccd19877d6336bf38f975f5f8d63f906da0d5c59288aa3d53836",
           "inventory_state": "complete",
           "language_hint": {
             "confidence": "exact",
@@ -4459,12 +6058,12 @@
         }
       ],
       "coverage_states": {
-        "analyzed": 23,
-        "partial": 1,
+        "analyzed": 33,
+        "partial": 2,
         "skipped": 0,
         "truncated": 0,
-        "unreferenced": 18,
-        "unsupported": 24
+        "unreferenced": 20,
+        "unsupported": 37
       },
       "entries": [
         {
@@ -4503,8 +6102,8 @@
           "object_id": null,
           "relative_path": "BarWidget.qml",
           "sampled_digest": false,
-          "sha256_sampled": "f172a8bf4d677663f2ab83bebd3afee80d0fb93dfbc09d3b0e9ea4fc4ce76970",
-          "size": 41253
+          "sha256_sampled": "5770c6bc400977a64ea6695a98669fcb8aee872fff30ed67ef54c1eb4f14adc1",
+          "size": 41767
         },
         {
           "coverage_state": "unsupported",
@@ -4516,8 +6115,8 @@
           "object_id": null,
           "relative_path": "CHANGELOG.md",
           "sampled_digest": false,
-          "sha256_sampled": "894d287c84d5785555287f04593cfb43f8e21743cc5e6fb8d24af44b3b66148f",
-          "size": 18734
+          "sha256_sampled": "1f778a080b256dc965d412f302b6f3b7514724946099556c1a2de83f5b57cd9f",
+          "size": 26506
         },
         {
           "coverage_state": "unsupported",
@@ -4555,8 +6154,8 @@
           "object_id": null,
           "relative_path": "Panel.qml",
           "sampled_digest": false,
-          "sha256_sampled": "267c4a2e38bbc713f6206abe1dcec517d3b50402301e772c750994e032e1fb62",
-          "size": 266946
+          "sha256_sampled": "6552ea51e6394d34776095dc5c8d1aa496f0431eb63bee4635fb5349873d8d59",
+          "size": 282325
         },
         {
           "coverage_state": "unsupported",
@@ -4568,8 +6167,8 @@
           "object_id": null,
           "relative_path": "README.md",
           "sampled_digest": false,
-          "sha256_sampled": "2f5459fd48fe20e21d6c767e1ee72282d5dfe0bb1205c08af3d74a9f22238fcc",
-          "size": 9225
+          "sha256_sampled": "b58ce54e4bd56395c52daa5f174cdd072797ab36305f94e417561fb094024c0a",
+          "size": 16267
         },
         {
           "coverage_state": "unsupported",
@@ -4633,8 +6232,8 @@
           "object_id": null,
           "relative_path": "components/CapabilityStrip.qml",
           "sampled_digest": false,
-          "sha256_sampled": "8b1392e5c30cd09300c20de0f77a14e716c04fa25c0e279b192a4c8c9c7c0951",
-          "size": 3686
+          "sha256_sampled": "fcabe5ccf03fe390d6f39a6e530c384f12228b7b4f86d7fc13692b21c5597555",
+          "size": 4467
         },
         {
           "coverage_state": "analyzed",
@@ -4748,6 +6347,19 @@
           "link_target": null,
           "mode": 33188,
           "object_id": null,
+          "relative_path": "components/MeterBar.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "24e36e2d91e0c54c397e7f671e6132716552a607bb92915d8815cf8313cd1e3d",
+          "size": 5466
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
           "relative_path": "components/NoticeRow.qml",
           "sampled_digest": false,
           "sha256_sampled": "54e174c5e4224088aa14b7b980b0889ca6965a9b7c9c0a7b03c523850a1dbf2e",
@@ -4763,8 +6375,34 @@
           "object_id": null,
           "relative_path": "components/PluginRow.qml",
           "sampled_digest": false,
-          "sha256_sampled": "3ae3c7c478b7755123f38190d9c9c2a850e8296521e8cf8a9c9a0f8a1ed8f325",
-          "size": 5765
+          "sha256_sampled": "078ee4d11374fe81f7fa9a1ba4835d3e65e68ae8ab76c3e5f429abaa6535b8d6",
+          "size": 5989
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "components/PostureCheckBlock.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "26e4bd1c9b8527705405887b8af3821c032ebfb2f8d2f8019baf6b4ee6bee137",
+          "size": 8182
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "components/RankedBars.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "6eb5d61d787e7caa62e5b804bb36e0dc79e3323f6ea08ad9d5e959d0ebf0de76",
+          "size": 4846
         },
         {
           "coverage_state": "analyzed",
@@ -4789,8 +6427,8 @@
           "object_id": null,
           "relative_path": "components/RuleRow.qml",
           "sampled_digest": false,
-          "sha256_sampled": "18ffe9f7518c5dd3d7483cc843990d0a56dab0e78886593ffe77a6b91d3dcbce",
-          "size": 9568
+          "sha256_sampled": "252e971c8e32093ba3f06a09bbb3eef4c6a04c310bddcb676fe8b22f281695ed",
+          "size": 10257
         },
         {
           "coverage_state": "unreferenced",
@@ -4815,8 +6453,8 @@
           "object_id": null,
           "relative_path": "components/SemanticMark.qml",
           "sampled_digest": false,
-          "sha256_sampled": "f94e39b290d994b568dfca92b8d7085c6f4df3a4920f40388457255713ee503d",
-          "size": 4585
+          "sha256_sampled": "fb9c1e55744bc6b19826eb2770860558df44c72fce3ce2913de42233855712ff",
+          "size": 4036
         },
         {
           "coverage_state": "analyzed",
@@ -4832,6 +6470,32 @@
           "size": 3529
         },
         {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "components/UnitStrip.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "1f6f08a51bf341b432012b22a3fb39ec27aa24bc60c9bf3614926d6e3d267f8d",
+          "size": 4522
+        },
+        {
+          "coverage_state": "unreferenced",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "components/ViewChips.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "9caa0fac8b7c71323120b512ce81911f2ad072f1dc9b3ad398ee9e86a4d0b640",
+          "size": 3839
+        },
+        {
           "coverage_state": "unsupported",
           "executable": false,
           "invocation_target": false,
@@ -4841,8 +6505,8 @@
           "object_id": null,
           "relative_path": "components/qmldir",
           "sampled_digest": false,
-          "sha256_sampled": "31346951da70fb9eee8ffa9093eccef38177706b208beb3ef91fb7868ff36be9",
-          "size": 578
+          "sha256_sampled": "98c8cd464bf4b8b132a2c20c84e17fc339d1ef0c97d1d878868ee7828789193c",
+          "size": 734
         },
         {
           "coverage_state": "unsupported",
@@ -4893,8 +6557,21 @@
           "object_id": null,
           "relative_path": "docs/design/02-design-principles.md",
           "sampled_digest": false,
-          "sha256_sampled": "71ddaac599165d56928afb2c0605c305fb0f05516a70f0af73817709007f79dc",
-          "size": 74666
+          "sha256_sampled": "1d51a07cb48abdceb59c62197ca521ddf57c160ec614ba7ed8de22ac60621b7c",
+          "size": 80516
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/08-glanceability-and-dashboard-research.md",
+          "sampled_digest": false,
+          "sha256_sampled": "5892eef0bcf77013254f5b1b65432b754be4664650790a72e16a030423ddb288",
+          "size": 50105
         },
         {
           "coverage_state": "unsupported",
@@ -4913,6 +6590,110 @@
           "coverage_state": "unsupported",
           "executable": false,
           "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/README.md",
+          "sampled_digest": false,
+          "sha256_sampled": "27105344f3e717b1b0f8132ab78bc250ca6d538960762e40cf5029d58d6af93d",
+          "size": 3709
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/candidate-git-review.json",
+          "sampled_digest": false,
+          "sha256_sampled": "a9a04182e670c59a9366e3c583ffb75d74ef6b6075dccc80af656578b7068250",
+          "size": 128340
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/candidate-partial-capabilities-synthetic.json",
+          "sampled_digest": false,
+          "sha256_sampled": "1eb45c4399f1d6f53dff137454944f31212ce95d338f1869b5c06cd624d98ba3",
+          "size": 112723
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/candidate-path-review.json",
+          "sampled_digest": false,
+          "sha256_sampled": "d68fbf138b834f7e28776bb0b860decdca2f709d1a198a4957fe372c20d07e11",
+          "size": 142945
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": true,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/installed-analyze.json",
+          "sampled_digest": false,
+          "sha256_sampled": "35ccd67e242ba817d28a39659af6ffde2f64a5b6f78e08659fcad07aad058314",
+          "size": 215639
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/posture-cli031-synthetic.json",
+          "sampled_digest": false,
+          "sha256_sampled": "bdfb90259bd25162d532a07f3c14d3fe8380eaa4153f8b7174b4ac7e5bbbeeee",
+          "size": 12227
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/posture-not-yet-run.json",
+          "sampled_digest": false,
+          "sha256_sampled": "16c802a5e6534e62e04248dcb0ef57b4ed70d1da777daf4e494b33d8fd5595c4",
+          "size": 186
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/design/fixtures/posture-v1.json",
+          "sampled_digest": false,
+          "sha256_sampled": "f4feb921d9da0b83d156be77833a63fcdc568108230c0e20ae2762a4377c6224",
+          "size": 12854
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
           "kind": "directory",
           "link_target": null,
           "mode": 16877,
@@ -4921,6 +6702,19 @@
           "sampled_digest": false,
           "sha256_sampled": null,
           "size": 0
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "text-file",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "docs/v0.3.1-plan.md",
+          "sampled_digest": false,
+          "sha256_sampled": "c70b507bf1544778aa1232349204ee811750fd65933263b88ba05df5387bf7e4",
+          "size": 45211
         },
         {
           "coverage_state": "unsupported",
@@ -4984,8 +6778,8 @@
           "object_id": null,
           "relative_path": "graph/MatrixGrid.qml",
           "sampled_digest": false,
-          "sha256_sampled": "272dbd7159ef3097ae2b520f7abd77ab8530918121372a6a3100c55ac0998bda",
-          "size": 8207
+          "sha256_sampled": "09086527e3ffcb4e70ebbc2a0d46702f06a59bd9d3d9b71bbf6ed99e20e5d61c",
+          "size": 8399
         },
         {
           "coverage_state": "analyzed",
@@ -5036,7 +6830,7 @@
           "object_id": null,
           "relative_path": "manifest.json",
           "sampled_digest": false,
-          "sha256_sampled": "163aafae0972ff1bde6c30d0ab45d753ab8b52276863a4913e453f201038c5a7",
+          "sha256_sampled": "c15cef5fddd22b8e011191b627f66fba9e450eb6e72bc3a5d298bfdd713fbe9a",
           "size": 1827
         },
         {
@@ -5082,6 +6876,32 @@
           "coverage_state": "unsupported",
           "executable": false,
           "invocation_target": false,
+          "kind": "data-binary",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "media/posture.png",
+          "sampled_digest": false,
+          "sha256_sampled": "a0dc78edbe06767f775802d67828e4aa7038ce04fe4e5a1b5682afffe1225e27",
+          "size": 134121
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "data-binary",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "media/source-scan.png",
+          "sampled_digest": false,
+          "sha256_sampled": "6dbd6bd2996a4e250ab18e38d8e471a05430621b3f57ed221ba8751ea9db18d6",
+          "size": 94567
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
           "kind": "directory",
           "link_target": null,
           "mode": 16877,
@@ -5101,8 +6921,8 @@
           "object_id": null,
           "relative_path": "model/Candidate.js",
           "sampled_digest": false,
-          "sha256_sampled": "cd484a51caed608a97d64de718ab42e09148d75dc98dc1550dc429e0a5334aae",
-          "size": 28423
+          "sha256_sampled": "e2a841275e9ba7ccd23c6cf937c93d6da656291782a567f0807579342d1237a6",
+          "size": 43917
         },
         {
           "coverage_state": "analyzed",
@@ -5114,8 +6934,8 @@
           "object_id": null,
           "relative_path": "model/Glyphs.js",
           "sampled_digest": false,
-          "sha256_sampled": "a57f71facaaf6be5b464c045f5247cbf941ea1cf410efcd90b91110a9bd4f7a1",
-          "size": 5260
+          "sha256_sampled": "cfacd40a2ff26ee294a85dc14d1cf556c57c2e84a7af712dde0a69f349f31546",
+          "size": 6086
         },
         {
           "coverage_state": "unreferenced",
@@ -5129,6 +6949,32 @@
           "sampled_digest": false,
           "sha256_sampled": "10a85a147494f9572f44bce072adb3ffbca1bdf3a5b303b5586fa928d42667ea",
           "size": 18816
+        },
+        {
+          "coverage_state": "unreferenced",
+          "executable": false,
+          "invocation_target": true,
+          "kind": "javascript",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "model/Posture.js",
+          "sampled_digest": false,
+          "sha256_sampled": "c299dcdec4f794c1439437797cedd5044f267cc882cfe83441418e73256603bd",
+          "size": 22825
+        },
+        {
+          "coverage_state": "unreferenced",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "javascript",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "model/Tiers.js",
+          "sampled_digest": false,
+          "sha256_sampled": "03d659c270816cac7b12522e872a3a8853dc05e074c83be03bb43eaf1dd80bae",
+          "size": 3453
         },
         {
           "coverage_state": "unreferenced",
@@ -5153,8 +6999,8 @@
           "object_id": null,
           "relative_path": "model/ViewModel.js",
           "sampled_digest": false,
-          "sha256_sampled": "d1af136a3f999bd0e3ab0081658a58d7bb492e01b16590deed019c50cfd955ba",
-          "size": 37510
+          "sha256_sampled": "73d6e41cdecacc88cc6b1b3d3c3afe203011e1f4cea70a8e611a5d05b2da18be",
+          "size": 41707
         },
         {
           "coverage_state": "unsupported",
@@ -5183,7 +7029,7 @@
           "size": 0
         },
         {
-          "coverage_state": "unreferenced",
+          "coverage_state": "analyzed",
           "executable": false,
           "invocation_target": false,
           "kind": "javascript",
@@ -5192,8 +7038,8 @@
           "object_id": null,
           "relative_path": "scripts/candidate-test.js",
           "sampled_digest": false,
-          "sha256_sampled": "ee4520cdca7534e4adf6fc233752871558ceec37c31a8a75b655e8c44397cb6a",
-          "size": 8440
+          "sha256_sampled": "0b9ff13fbc0c76520e3c55d9bb905f85029f220263285217d4acfc632aa12607",
+          "size": 29797
         },
         {
           "coverage_state": "unreferenced",
@@ -5205,8 +7051,99 @@
           "object_id": null,
           "relative_path": "scripts/flow-test.js",
           "sampled_digest": false,
-          "sha256_sampled": "cbf7efd16f827f1411432b88a9329632704d0f11bb450baa9dabd9f24fa993a7",
-          "size": 27344
+          "sha256_sampled": "deefdcdc4dab750cd06e4f680ec54f00e52da4222924d6dc5db147a66108e28e",
+          "size": 33976
+        },
+        {
+          "coverage_state": "unsupported",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "directory",
+          "link_target": null,
+          "mode": 16877,
+          "object_id": null,
+          "relative_path": "scripts/harness",
+          "sampled_digest": false,
+          "sha256_sampled": null,
+          "size": 0
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "scripts/harness/candidate.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "7923b2b1fe5b0c705e87bcd5f7ceba404d238cbdc4515a5053d09d4d8922de9e",
+          "size": 4992
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "scripts/harness/charts.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "2d5eb65807750ad73f03bba1f98964818fb40b4cb4dc030dec5ba1d852678ef1",
+          "size": 8323
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "scripts/harness/chips.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "c425c65bdb4f7b65cb1221d5c62f17af7f3efa23a4cff41e61eb18f39dd6d903",
+          "size": 6654
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "qml",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "scripts/harness/posture.qml",
+          "sampled_digest": false,
+          "sha256_sampled": "ab9966d0e7bddb941ec64c4252b72c94dc62cfbbabb91454cd033b55bdf2a274",
+          "size": 6788
+        },
+        {
+          "coverage_state": "partial",
+          "executable": true,
+          "invocation_target": false,
+          "kind": "shell",
+          "link_target": null,
+          "mode": 33261,
+          "object_id": null,
+          "relative_path": "scripts/harness/run.sh",
+          "sampled_digest": false,
+          "sha256_sampled": "1479085ac33387fd6a7713f6f60e53d6bc65d8dff771c0bf7bc80ce557571ba7",
+          "size": 3082
+        },
+        {
+          "coverage_state": "analyzed",
+          "executable": false,
+          "invocation_target": false,
+          "kind": "javascript",
+          "link_target": null,
+          "mode": 33188,
+          "object_id": null,
+          "relative_path": "scripts/posture-test.js",
+          "sampled_digest": false,
+          "sha256_sampled": "720c1fae10f7a2095b050babb0c5226677a8b400a01248ec0bb002bbc713ae54",
+          "size": 25046
         },
         {
           "coverage_state": "unsupported",
@@ -5231,8 +7168,8 @@
           "object_id": null,
           "relative_path": "views/CandidateView.qml",
           "sampled_digest": false,
-          "sha256_sampled": "0afd8a087636829b8a3bfc1a1649fbd8b6bc6f33a9a1100bc30f1a6c09bb02b1",
-          "size": 25140
+          "sha256_sampled": "2fe6fcd692271f9069cdc347c0d73663db369a3badc87534401774d8bd3a33f0",
+          "size": 35339
         },
         {
           "coverage_state": "analyzed",
@@ -5244,8 +7181,8 @@
           "object_id": null,
           "relative_path": "views/FinderResultsView.qml",
           "sampled_digest": false,
-          "sha256_sampled": "a2a1a2fcc2b8c9d2c1fa61e21827bd408535ca44b686b45682e897f87e99b836",
-          "size": 7347
+          "sha256_sampled": "4cfeb245a38d1772133d2ccdce4592f53c8383f436ecf31df33934257386c8ea",
+          "size": 9607
         },
         {
           "coverage_state": "analyzed",
@@ -5270,8 +7207,8 @@
           "object_id": null,
           "relative_path": "views/OverviewView.qml",
           "sampled_digest": false,
-          "sha256_sampled": "1678a0c2ad031cf8c209120ced5a3e8f9309f00d1eb7c6a7de0712e6c621556a",
-          "size": 18843
+          "sha256_sampled": "235b5dee4a3cdb0839230b5426d2ae3a863f5259ef82238295fdec41ee2a36a2",
+          "size": 18928
         },
         {
           "coverage_state": "analyzed",
@@ -5283,8 +7220,8 @@
           "object_id": null,
           "relative_path": "views/PluginDetailView.qml",
           "sampled_digest": false,
-          "sha256_sampled": "1e28589240b5578193bfd4edc141de9936326025cf1b44c2ebac7275394216d9",
-          "size": 28497
+          "sha256_sampled": "4b251db1ca334fd0d394a937997c08a73fbf7100394f3a741cd65ca62831ed30",
+          "size": 32238
         },
         {
           "coverage_state": "analyzed",
@@ -5296,8 +7233,8 @@
           "object_id": null,
           "relative_path": "views/PostureView.qml",
           "sampled_digest": false,
-          "sha256_sampled": "2235c4a651586fcfdc2351ddbb2c5bf13cc7847e0578cfb624cbcee5ef2573a2",
-          "size": 9888
+          "sha256_sampled": "6dbf39494d6532772b0933d462a3360270c357834ee09b46a6d78a0f8854fc86",
+          "size": 20435
         },
         {
           "coverage_state": "analyzed",
@@ -5309,8 +7246,8 @@
           "object_id": null,
           "relative_path": "views/RulesView.qml",
           "sampled_digest": false,
-          "sha256_sampled": "8edb0fea272ddd459fc4de42f83e4374ad79c246d306934caac1ec446947e3fe",
-          "size": 11144
+          "sha256_sampled": "3cb9d7be3b17ccd19877d6336bf38f975f5f8d63f906da0d5c59288aa3d53836",
+          "size": 12757
         },
         {
           "coverage_state": "unsupported",
@@ -5328,23 +7265,23 @@
       ],
       "limitations": [],
       "totals": {
-        "bytes_ingested": 1816709,
-        "entries": 66,
-        "files_seen": 54
+        "bytes_ingested": 2992355,
+        "entries": 92,
+        "files_seen": 79
       }
     },
     "report_profile": {
       "name": "full",
       "omissions": {
         "capabilities": {
-          "emitted": 72,
+          "emitted": 86,
           "omitted": 0,
-          "total": 72
+          "total": 86
         },
         "code_exposure": {
-          "emitted": 66,
+          "emitted": 92,
           "omitted": 0,
-          "total": 66
+          "total": 92
         },
         "coverage_gaps": {
           "emitted": 1,
@@ -5352,24 +7289,24 @@
           "total": 1
         },
         "evidence_observations": {
-          "emitted": 33,
+          "emitted": 47,
           "omitted": 0,
-          "total": 33
+          "total": 47
         },
         "findings": {
-          "emitted": 33,
+          "emitted": 47,
           "omitted": 0,
-          "total": 33
+          "total": 47
         },
         "invocation_edges": {
-          "emitted": 23,
+          "emitted": 30,
           "omitted": 0,
-          "total": 23
+          "total": 30
         },
         "payload_entries": {
-          "emitted": 66,
+          "emitted": 92,
           "omitted": 0,
-          "total": 66
+          "total": 92
         }
       },
       "presentation_version": 1,
@@ -5382,11 +7319,38 @@
       }
     },
     "review_summary": {
-      "analysis_produced_at": "2026-09-08T23:46:12Z",
+      "analysis_produced_at": "2026-09-09T05:22:44Z",
       "capabilities": {
-        "emitted": 72,
+        "by_class": {
+          "clipboard-access": {
+            "emitted": 5,
+            "omitted": 0,
+            "total": 5
+          },
+          "filesystem-access": {
+            "emitted": 2,
+            "omitted": 0,
+            "total": 2
+          },
+          "persistence-scheduling": {
+            "emitted": 55,
+            "omitted": 0,
+            "total": 55
+          },
+          "process-execution": {
+            "emitted": 22,
+            "omitted": 0,
+            "total": 22
+          },
+          "sensitive-path": {
+            "emitted": 2,
+            "omitted": 0,
+            "total": 2
+          }
+        },
+        "emitted": 86,
         "omitted": 0,
-        "total": 72
+        "total": 86
       },
       "complete": true,
       "coverage": {
@@ -5401,12 +7365,12 @@
         "inert_metadata_entries": 0,
         "language_model_gaps": 1,
         "payload_states": {
-          "analyzed": 23,
-          "partial": 1,
+          "analyzed": 33,
+          "partial": 2,
           "skipped": 0,
           "truncated": 0,
-          "unreferenced": 18,
-          "unsupported": 24
+          "unreferenced": 20,
+          "unsupported": 37
         }
       },
       "coverage_gaps": {
@@ -5415,15 +7379,23 @@
         "total": 1
       },
       "findings": {
-        "active": 33,
+        "active": 47,
         "by_rule": {
+          "oma.qml.dynamic-reference": {
+            "active": 2,
+            "emitted": 2,
+            "omitted": 0,
+            "rule_id": "oma.qml.dynamic-reference",
+            "suppressed": 0,
+            "total": 2
+          },
           "oma.qml.out-of-tree-reference": {
-            "active": 33,
-            "emitted": 33,
+            "active": 45,
+            "emitted": 45,
             "omitted": 0,
             "rule_id": "oma.qml.out-of-tree-reference",
             "suppressed": 0,
-            "total": 33
+            "total": 45
           }
         },
         "by_severity": {
@@ -5449,44 +7421,44 @@
             "total": 0
           },
           "low": {
-            "active": 0,
-            "emitted": 0,
+            "active": 2,
+            "emitted": 2,
             "omitted": 0,
             "suppressed": 0,
-            "total": 0
+            "total": 2
           },
           "medium": {
-            "active": 33,
-            "emitted": 33,
+            "active": 45,
+            "emitted": 45,
             "omitted": 0,
             "suppressed": 0,
-            "total": 33
+            "total": 45
           }
         },
-        "emitted": 33,
+        "emitted": 47,
         "omitted": 0,
         "suppressed": 0,
-        "total": 33
+        "total": 47
       },
-      "findings_before_suppression": 33,
-      "freshness": "cached-current",
+      "findings_before_suppression": 47,
+      "freshness": "fresh",
       "lifecycle_policy": {
         "authorization_basis": null,
         "evaluation_state": "not-evaluated",
         "outcome": null
       },
       "max_severity": "medium",
-      "policy_identity_digest": "ed96862890a601773ec7308c6e59d6fd3976a18e9167b1c72275d42e1883ef5f",
+      "policy_identity_digest": "841a5fe0d27850297482aee0895d37ca05706d007a14666649893e5d0cb16307",
       "presentation_collections": {
         "capabilities": {
-          "emitted": 72,
+          "emitted": 86,
           "omitted": 0,
-          "total": 72
+          "total": 86
         },
         "code_exposure": {
-          "emitted": 66,
+          "emitted": 92,
           "omitted": 0,
-          "total": 66
+          "total": 92
         },
         "coverage_gaps": {
           "emitted": 1,
@@ -5494,33 +7466,35 @@
           "total": 1
         },
         "evidence_observations": {
-          "emitted": 33,
+          "emitted": 47,
           "omitted": 0,
-          "total": 33
+          "total": 47
         },
         "findings": {
-          "emitted": 33,
+          "emitted": 47,
           "omitted": 0,
-          "total": 33
+          "total": 47
         },
         "invocation_edges": {
-          "emitted": 23,
+          "emitted": 30,
           "omitted": 0,
-          "total": 23
+          "total": 30
         },
         "payload_entries": {
-          "emitted": 66,
+          "emitted": 92,
           "omitted": 0,
-          "total": 66
+          "total": 92
         }
       },
       "presentation_complete": true,
       "rule_counts": {
-        "oma.qml.out-of-tree-reference": 33
+        "oma.qml.dynamic-reference": 2,
+        "oma.qml.out-of-tree-reference": 45
       },
       "schema": "omasafe.review-summary.v1",
       "severity_counts": {
-        "medium": 33
+        "low": 2,
+        "medium": 45
       },
       "source_identity_ref": "target",
       "source_identity_state": "partial",
@@ -5543,7 +7517,7 @@
     },
     "target": {
       "classification": "built-in",
-      "content_digest": "d4a334259f1c5415a99cc404d093452825fb617a00fe6bb4758a8af56bc5cadf",
+      "content_digest": "807fc831f4d33d8d727bbac84bcac69e26f36b2a00d57ddd30e183d0f003d8e0",
       "head": null,
       "id": "io.github.tuthan.omasafe",
       "path": "/home/hvo/.config/omarchy/plugins/io.github.tuthan.omasafe",

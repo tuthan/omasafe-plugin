@@ -3,10 +3,11 @@
 // count and sentence the Posture tab renders is decided in model/Posture.js
 // precisely so it is reachable from here rather than only from a running shell.
 //
-// It runs against the captured real report (docs/design/fixtures/posture-v1.json)
-// where one exists, and against synthetic reports for the shapes this host does not
-// produce: a zero-check catalog, a forty-check catalog, an unknown state word, and
-// the two CLI 0.3.1 fields that ship dark.
+// It runs against two captured real reports — `posture-v1.json` (this host, steady
+// state) and `posture-two-run.json` (the second of two scans with one observable
+// condition changed between them) — and against synthetic reports only for shapes this
+// host cannot produce: a zero-check catalog, a forty-check catalog, and an unknown
+// state word.
 'use strict'
 
 const fs = require('fs')
@@ -54,17 +55,18 @@ const real = sandbox.build(fixture('posture-v1.json'))
   eq(real.catalogVersion, 1, 'catalog version')
   eq(real.checkTotal, 18, 'the captured host reports 18 checks')
 
-  // The state distribution of doc 08 §1, which is the distribution the UI must make
-  // readable: 6 pass, 7 informational, 1 regression, 2 incomplete, 2 not applicable.
+  // The distribution this host reports under omasafe-cli 0.3.1. Pending package and
+  // Omarchy updates are `attention` now, not `regression` (CLI v0.3.1 D1): nothing
+  // about the host got worse, it is behind.
   const counts = {}
   real.stateCounts.forEach(row => { counts[row.key] = row.count })
-  eq(counts.pass, 6, 'pass count')
+  eq(counts.pass, 5, 'pass count')
   eq(counts.informational, 7, 'informational count')
-  eq(counts.regression, 1, 'regression count')
+  eq(counts.regression, 0, 'no check reports a regression on this host')
   eq(counts.incomplete, 2, 'incomplete count')
   eq(counts.not_applicable, 2, 'not_applicable count')
   eq(counts.error, 0, 'error count')
-  eq(counts.attention, 0, 'attention count')
+  eq(counts.attention, 2, 'the two pending-update checks')
   eq(counts.unsupported, undefined, '`unsupported` is absent when it did not occur')
 
   // CH5: the parts reconcile to the total, and the printed line carries every term.
@@ -100,11 +102,11 @@ const real = sandbox.build(fixture('posture-v1.json'))
   eq(firewall.missingDependencies.length, 0,
     'a check whose declared tool IS available is not attributed to a missing tool')
 
-  // A2: the three items worth acting on are first, not items 5, 17 and 18.
-  eq(real.attention.length, 3, 'the attention set is regression + 2 incomplete')
+  // A2: the items worth acting on are first, not scattered through an alphabet.
+  eq(real.attention.length, 4, 'two incomplete + two pending-update checks')
   eq(real.attention.map(c => c.id).join(','),
-    'updates.repository,firewall.effective,vulnerabilities.arch_audit',
-    'attention order is exact: regression before incomplete, then id ascending')
+    'firewall.effective,vulnerabilities.arch_audit,updates.omarchy,updates.repository',
+    'attention order is exact: incomplete before attention, then id ascending')
 
   // Grouping and the strip.
   eq(real.groups.map(g => g.label).join(','),
@@ -112,18 +114,27 @@ const real = sandbox.build(fixture('posture-v1.json'))
     'domains are the id prefix, upper-cased, sorted')
   eq(real.groups.reduce((n, g) => n + g.count, 0) + real.attention.length, 18,
     'every check is in exactly one of attention or a domain group')
+  eq(real.groups.reduce((n, g) => n + g.count, 0), 14, 'fourteen checks sit under OBSERVED')
+  // The strip follows the CLI's own catalog order now that 0.3.1 exports
+  // `catalog_index`. That order is deliberate and NOT alphabetical, which is the whole
+  // reason the field exists: sorted by id, cell 0 would be `boot.secure_boot`.
   eq(real.strip.length, 18, 'the strip has one cell per check')
-  eq(real.strip[0].key, 'boot.secure_boot', 'strip cell 0 is the first check in catalog order')
-  eq(real.strip[17].key, 'vulnerabilities.arch_audit', 'strip cell 17 is the last')
-  eq(real.strip[16].key, 'updates.repository', 'strip cell 16 is the regression')
-  eq(real.strip[16].tooltip, 'Repository package updates · REGRESSION', 'strip tooltip')
+  eq(real.strip[0].key, 'host.context', 'strip cell 0 is the catalog\'s first check')
+  eq(real.strip[1].key, 'updates.repository', 'catalog order puts updates second')
+  eq(real.strip[17].key, 'updates.post_update_hook', 'strip cell 17 is the catalog\'s last')
+  ok(real.strip.map(c => c.key).join(',') !==
+     real.checks.map(c => c.id).slice().sort().join(','),
+    'catalog order differs from id order, or catalog_index bought nothing')
+  eq(real.strip[1].tooltip, 'Repository package updates · ATTENTION', 'strip tooltip')
 
-  // T9: `incomplete` must not draw severity `high`'s mark.
+  // T9: every state in the attention set draws its own mark. `incomplete` in
+  // particular must not draw severity high's `alert`, which is what it did before.
   eq(real.checks.find(c => c.id === 'firewall.effective').glyphKey, 'incomplete', 'incomplete glyph')
-  eq(real.checks.find(c => c.id === 'updates.repository').glyphKey, 'alert', 'regression glyph')
-  ok(real.checks.find(c => c.id === 'firewall.effective').glyphKey !==
-     real.checks.find(c => c.id === 'updates.repository').glyphKey,
-    'incomplete and regression must render different marks')
+  eq(real.checks.find(c => c.id === 'updates.repository').glyphKey, 'medium', 'attention glyph')
+  eq(sandbox.stateGlyphKey('regression'), 'alert', 'regression still maps to the alert mark')
+  const attentionGlyphs = new Set(['error', 'regression', 'incomplete', 'attention']
+    .map(sandbox.stateGlyphKey))
+  eq(attentionGlyphs.size, 4, 'the four attention states draw four different marks')
   eq(real.checks.find(c => c.id === 'packages.integrity').glyphKey, 'not-applicable',
     'not_applicable glyph')
 
@@ -138,28 +149,44 @@ const real = sandbox.build(fixture('posture-v1.json'))
 }
 
 // ------------------------------------------------------------- catalog order
-// Catalog order must be stable across two reports with the same catalog version,
-// whatever order the CLI happened to emit the array in.
+// A strip cell position must mean the same check on every host and every run.
 {
+  // Whatever order the CLI emitted the array in, the strip comes back the same.
   const shuffled = fixture('posture-v1.json')
   shuffled.checks = shuffled.checks.slice().reverse()
-  const model = sandbox.build(shuffled)
-  eq(model.strip.map(c => c.key).join(','), real.strip.map(c => c.key).join(','),
+  eq(sandbox.build(shuffled).strip.map(c => c.key).join(','),
+    real.strip.map(c => c.key).join(','),
     'catalog order is stable regardless of emitted array order')
 }
 {
-  // A CLI-supplied catalog_index wins — but only when EVERY check carries one, so a
-  // partial index cannot interleave two orderings and move strip cells between runs.
+  // The CLI-supplied index wins over sorted id. Assigning it in reverse array order
+  // must reverse the strip, which also proves the index is doing the ordering rather
+  // than the array position happening to agree with it.
   const indexed = fixture('posture-v1.json')
+  const byArray = indexed.checks.map(c => c.id)
   indexed.checks.forEach((c, i) => { c.catalog_index = indexed.checks.length - 1 - i })
   eq(sandbox.build(indexed).strip.map(c => c.key).join(','),
-    real.strip.map(c => c.key).slice().reverse().join(','),
+    byArray.slice().reverse().join(','),
     'a complete catalog_index defines the strip order')
-
+}
+{
+  // ...but only when EVERY check carries one. A partial index would interleave two
+  // orderings and move strip cells between runs, so it is ignored entirely.
   const partial = fixture('posture-v1.json')
-  partial.checks.forEach((c, i) => { if (i > 0) c.catalog_index = partial.checks.length - i })
-  eq(sandbox.build(partial).strip.map(c => c.key).join(','), real.strip.map(c => c.key).join(','),
-    'a partial catalog_index is ignored in favour of sorted id')
+  delete partial.checks[0].catalog_index
+  eq(sandbox.build(partial).strip.map(c => c.key).join(','),
+    partial.checks.map(c => c.id).slice().sort().join(','),
+    'a partial catalog_index falls back to sorted id, wholesale')
+}
+{
+  // A 0.3.0 report carries no index at all and must still build, in id order.
+  const legacy = fixture('posture-v1.json')
+  legacy.checks.forEach(c => { delete c.catalog_index })
+  const model = sandbox.build(legacy)
+  eq(model.strip.length, 18, 'a report with no catalog_index still builds')
+  eq(model.strip.map(c => c.key).join(','),
+    legacy.checks.map(c => c.id).slice().sort().join(','),
+    'and falls back to sorted id')
 }
 
 // ------------------------------------------------------------------ not_yet_run
@@ -179,7 +206,7 @@ const real = sandbox.build(fixture('posture-v1.json'))
 // The chip and the NEEDS ATTENTION section read the same array, so they cannot
 // disagree in any fixture.
 {
-  eq(sandbox.chipSuffix(real), '3', 'the captured report yields `Posture 3`')
+  eq(sandbox.chipSuffix(real), '4', 'the captured report yields `Posture 4`')
   eq(String(real.attention.length), sandbox.chipSuffix(real), 'chip equals the attention count')
 
   const clean = fixture('posture-v1.json')
@@ -239,55 +266,71 @@ const real = sandbox.build(fixture('posture-v1.json'))
     'forty checks are partitioned exactly once')
 }
 
-// -------------------------------------------------- CLI 0.3.1 fields ship dark
+// -------------------------------------------------- T10 change and gap-age marks
+//
+// These now run against REAL captures. `omasafe-cli 0.3.1` exports `previous_state`
+// and `gap_open_since`; `posture-two-run.json` is the second of two scans with one
+// observable condition changed between them (a world-writable directory on PATH,
+// which `execution.path` reads).
 {
-  // T10: the 0.3.0 report must render exactly as it does without the fields — no
-  // empty slots, no placeholders, and above all no "no change".
-  real.checks.forEach(c => {
-    eq(c.previousState, null, 'a 0.3.0 report carries no previous_state')
-    eq(c.gapOpenSince, null, 'a 0.3.0 report carries no gap_open_since')
-    eq(sandbox.changedFrom(c), '', 'an absent previous_state renders NOTHING, never "no change"')
-    eq(sandbox.gapAgeText(c), '', 'an absent gap_open_since renders nothing')
-  })
+  // The steady-state capture: two scans a moment apart, nothing changed. EVERY check
+  // reports a previous_state equal to its state and therefore renders NO mark.
+  //
+  // This is the shape the `previous_states` export bug produces for every check, and
+  // on this fixture it is also the correct answer — which is exactly why it can never
+  // be the only case tested. The two-run capture below is what tells them apart.
+  eq(real.checks.filter(c => sandbox.changedFrom(c) !== '').length, 0,
+    'a steady-state report renders no delta marks at all')
+  ok(real.checks.every(c => c.previousState !== null),
+    'and it does carry the field, so "no marks" is a finding and not an absence')
 
-  // The all-equal fixture is a TRAP DETECTOR, not a pass: it is exactly what the CLI
-  // would emit if it exported today's `previous_states` map, which holds the states
-  // of the report that produced it rather than the preceding one.
-  const allEqual = fixture('posture-v1.json')
-  allEqual.checks.forEach(c => { c.previous_state = c.state })
-  sandbox.build(allEqual).checks.forEach(c => {
-    eq(sandbox.changedFrom(c), '', 'previous_state === state must render no delta mark')
-  })
+  const twoRun = sandbox.build(fixture('posture-two-run.json'))
+  const deltas = twoRun.checks.filter(c => sandbox.changedFrom(c) !== '')
+  eq(deltas.length, 1, 'the two-run capture renders EXACTLY ONE delta mark')
+  eq(deltas[0].id, 'execution.path', 'and it is the check whose condition changed')
+  eq(sandbox.changedFrom(deltas[0]), 'changed from pass', 'naming the previous state')
+  eq(deltas[0].state, 'regression', 'a world-writable PATH entry is a real regression')
+  eq(twoRun.checks.filter(c => c.previousState === c.state).length, 17,
+    'the other seventeen carry previous_state === state and stay silent')
 
-  // The committed synthetic fixture, which is the same shape the panel will see from
-  // CLI 0.3.1 — and is ALSO the trap detector: sixteen of its eighteen checks carry
-  // previous_state === state.
-  const changedModel = sandbox.build(fixture('posture-cli031-synthetic.json'))
-  eq(sandbox.changedFrom(changedModel.checks.find(c => c.id === 'updates.repository')),
-    'changed from pass', 'a genuinely differing previous_state renders the delta sentence')
-  eq(changedModel.checks.filter(c => sandbox.changedFrom(c) !== '').length, 1,
-    'only the changed check renders a delta mark')
+  // A first observation is null — a different claim from "unchanged" — and renders
+  // nothing either.
+  const first = fixture('posture-two-run.json')
+  first.checks.forEach(c => { c.previous_state = null })
+  const firstModel = sandbox.build(first)
+  ok(firstModel.checks.every(c => c.previousState === null),
+    'a first observation carries null, not the current state')
+  eq(firstModel.checks.filter(c => sandbox.changedFrom(c) !== '').length, 0,
+    'and renders nothing, never "new"')
 
-  const gapModel = changedModel
-  eq(sandbox.gapAgeText(gapModel.checks.find(c => c.id === 'firewall.effective')), 'open 6 days',
-    'a gap_open_since six days back renders `open 6 days`')
-  eq(sandbox.gapAgeText(gapModel.checks.find(c => c.id === 'updates.repository')), '',
-    'a check without the field renders nothing')
-  // The two fields are independent: a changed check need not be in a gap, and a check
-  // in a gap need not have changed.
-  eq(sandbox.changedFrom(gapModel.checks.find(c => c.id === 'firewall.effective')), '',
-    'a check in a gap that did not change renders no delta mark')
+  // gap_open_since, from the real capture.
+  const gapped = real.checks.filter(c => c.gapOpenSince !== null)
+  eq(gapped.length, 2, 'the two incomplete checks carry a gap start')
+  ok(gapped.every(c => c.state === 'incomplete'),
+    'and only checks in a coverage gap carry one')
+  ok(gapped.every(c => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(c.gapOpenSince)),
+    'the CLI emits RFC-3339, not the bare unix seconds it used to store')
+  ok(gapped.every(c => sandbox.gapAgeText(c) !== ''), 'and each renders an age')
+  eq(sandbox.gapAgeText(real.checks.find(c => c.id === 'execution.path')), '',
+    'a check with no gap renders nothing')
+  eq(sandbox.gapAgeText({ gapOpenSince: 'not-a-timestamp' }), '',
+    'an unparseable gap start renders nothing rather than a guess')
+  eq(sandbox.gapAgeText({ gapOpenSince: null }), '', 'and so does an absent one')
 
-  // The CLI this release ships against emits NEITHER field, so T10 is dark on a real
-  // report. That is asserted, not assumed.
-  const captured = fixture('posture-v1.json')
-  ok(captured.checks.every(c => !('previous_state' in c) && !('gap_open_since' in c)),
-    'omasafe-cli 0.3.0 emits neither previous_state nor gap_open_since')
+  // Six days back, to pin the wording rather than depend on the capture's age.
+  const opened = new Date(Date.now() - 6 * 86400000).toISOString().replace(/\.\d+Z$/, 'Z')
+  eq(sandbox.gapAgeText({ gapOpenSince: opened }), 'open 6 days', 'six days reads `open 6 days`')
 
-  const bad = fixture('posture-v1.json')
-  bad.checks[0].gap_open_since = 'not-a-timestamp'
-  eq(sandbox.gapAgeText(sandbox.build(bad).checks.find(c => c.id === 'boot.secure_boot')), '',
-    'an unparseable gap_open_since renders nothing rather than a guess')
+  // Compatibility: a 0.3.0 report has neither field and must render exactly as it did.
+  const legacy = fixture('posture-v1.json')
+  legacy.checks.forEach(c => { delete c.previous_state; delete c.gap_open_since })
+  const legacyModel = sandbox.build(legacy)
+  ok(legacyModel.checks.every(c => c.previousState === null && c.gapOpenSince === null),
+    'a 0.3.0 report yields null for both fields')
+  eq(legacyModel.checks.filter(c => sandbox.changedFrom(c) !== '').length, 0,
+    'and renders no delta marks — never "no change", never an empty slot')
+  eq(legacyModel.attention.length, real.attention.length,
+    'and is otherwise identical to the 0.3.1 report')
 }
 
 // -------------------------------------------------------------- never infer
@@ -329,8 +372,7 @@ const real = sandbox.build(fixture('posture-v1.json'))
 
 // ------------------------------------------------------------- bar tooltip line
 {
-  eq(sandbox.barTooltipLine(real),
-    'Host posture: 1 regression, 2 incomplete (12 hours old)',
+  ok(sandbox.barTooltipLine(real).indexOf('Host posture: 2 incomplete, 2 attention') === 0,
     'the bar tooltip uses the same words as the tab')
   eq(sandbox.barTooltipLine(sandbox.build(fixture('posture-not-yet-run.json'))),
     'Host posture: no scan has completed yet', 'not_yet_run tooltip line')
@@ -347,14 +389,14 @@ const real = sandbox.build(fixture('posture-v1.json'))
   // sectionCount("posture-strip") on this host.
   eq(real.strip.length, 18,
     'sectionCount("posture-strip") must be the number of selectable cells, 18 on this host')
-  eq(real.attention.length, 3, 'sectionCount("posture-attention") on this host')
+  eq(real.attention.length, 4, 'sectionCount("posture-attention") on this host')
 
   // sectionCount("posture-observed") over the FLATTENED list: eleven domain headers
   // plus the fifteen checks under them.
   const rows = sandbox.observedRows(real, {})
-  eq(rows.length, 11 + 15, 'sectionCount("posture-observed") counts headers AND checks')
+  eq(rows.length, 11 + 14, 'sectionCount("posture-observed") counts headers AND checks')
   eq(rows.filter(r => r.kind === 'group').length, 11, 'one row per domain header')
-  eq(rows.filter(r => r.kind === 'check').length, 15, 'one row per visible check')
+  eq(rows.filter(r => r.kind === 'check').length, 14, 'one row per visible check')
 
   // Render order: every check row follows its own domain's header, never another's.
   let domain = null
@@ -374,8 +416,10 @@ const real = sandbox.build(fixture('posture-v1.json'))
 
   // Collapsing a domain removes exactly its checks from the index space — the reason
   // this list, and not the model's groups, is what sectionCount counts.
+  const packages = rows.filter(r => r.kind === 'check' && r.check.domain === 'PACKAGES').length
   const collapsed = sandbox.observedRows(real, { PACKAGES: true })
-  eq(collapsed.length, rows.length - 3, 'collapsing PACKAGES removes its three checks')
+  eq(collapsed.length, rows.length - packages,
+    'collapsing PACKAGES removes exactly its ' + packages + ' checks')
   eq(collapsed.filter(r => r.kind === 'group').length, 11, 'a collapsed domain keeps its header')
   eq(sandbox.rowIndex(collapsed, 'check', 'packages.keyring'), -1,
     'a check under a collapsed domain is not in the index space')
@@ -399,16 +443,17 @@ const real = sandbox.build(fixture('posture-v1.json'))
     'a next step with no command yields no action')
 
   const actions = sandbox.copyActions(real)
-  // Two, not three: `firewall.effective`'s next step names no command, so it
-  // contributes no action rather than an empty button.
+  // Two, not four: `firewall.effective`'s next step names no command, and
+  // `updates.repository` and `updates.omarchy` name the SAME one — two buttons
+  // copying the same string is a row of noise, not a second affordance.
   eq(actions.length, 2, 'sectionCount("posture-actions") on this host')
-  eq(actions.map(a => a.value).join(' | '), 'omarchy update | arch-audit',
-    'copy actions are the attention set\'s commands, in attention order')
+  eq(actions.map(a => a.value).join(' | '), 'arch-audit | omarchy update',
+    'copy actions are the attention set\'s commands, in attention order, deduped')
   eq(actions.map(a => a.checkId).join(' | '),
-    'updates.repository | vulnerabilities.arch_audit', 'and they carry their check id')
-  eq(actions[0].label, 'Copy command', 'a span with an argument is a command')
-  eq(actions[1].label, 'Copy tool name', 'a bare identifier is a name, and says so')
-  ok(actions[1].tooltip.indexOf('OmaSafe never runs it') >= 0,
+    'vulnerabilities.arch_audit | updates.omarchy', 'and they carry their check id')
+  eq(actions[1].label, 'Copy command', 'a span with an argument is a command')
+  eq(actions[0].label, 'Copy tool name', 'a bare identifier is a name, and says so')
+  ok(actions[0].tooltip.indexOf('OmaSafe never runs it') >= 0,
     'the tooltip states that the panel never runs the command')
   eq(sandbox.copyActions(null).length, 0, 'a null model offers no copy actions')
 }
@@ -435,7 +480,8 @@ const real = sandbox.build(fixture('posture-v1.json'))
   // `0` is not one of the three.
   eq(sandbox.chipSuffix(sandbox.build(fixture('posture-not-yet-run.json'))), '–',
     'not_yet_run yields `–`, never `Posture 0` and never a bare `Posture`')
-  eq(sandbox.chipSuffix(real), '3', 'the captured report (1 regression + 2 incomplete) yields `Posture 3`')
+  eq(sandbox.chipSuffix(real), '4',
+    'the captured report (2 incomplete + 2 attention) yields `Posture 4`')
 
   const clean = fixture('posture-v1.json')
   clean.checks.forEach(c => { c.state = 'pass' })
@@ -460,7 +506,8 @@ const real = sandbox.build(fixture('posture-v1.json'))
 
   // The bar tooltip line uses the tab's words and never carries a verdict.
   const tip = sandbox.barTooltipLine(real)
-  eq(tip, 'Host posture: 1 regression, 2 incomplete (12 hours old)', 'bar tooltip line')
+  ok(/^Host posture: 2 incomplete, 2 attention \(.+ old\)$/.test(tip),
+    'the bar tooltip uses the tab\'s own words and its age: ' + tip)
   ok(tip.indexOf('secure') < 0 && tip.indexOf('safe') < 0 && tip.indexOf('%') < 0,
     'the bar tooltip carries no verdict, grade or percentage')
   ok(sandbox.barTooltipLine(sandbox.build(clean)).indexOf('nothing needs attention') >= 0,

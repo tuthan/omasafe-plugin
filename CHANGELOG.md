@@ -111,16 +111,27 @@ or approve, and the Source Scan install-command visibility rule is untouched.
 - `Posture.build()` never infers: a missing field yields null and the view renders
   nothing, so an absent coverage block produces no reconstructed sentence.
 
+### Requires omasafe-cli 0.3.1 (degrades cleanly on 0.3.0)
+
+- **Change marks and `open N days`** render from `checks[].previous_state` and
+  `checks[].gap_open_since`. Verified by a real two-run sequence on this host, not
+  a fixture: two scans with one observable condition changed between them produce
+  exactly one delta mark and leave the other seventeen checks silent. On a 0.3.0
+  report both fields are absent and the tab renders exactly as it did — never "no
+  change", never an empty slot.
+- **The check strip follows the CLI's catalog order** when `checks[].catalog_index`
+  is present, instead of sorting by id. That order is deliberate and not
+  alphabetical. A report without the field, or with it on only some checks, falls
+  back to sorted id wholesale rather than interleaving two orderings.
+- **The candidate capability strip can be exact under omission** when
+  `review_summary.capabilities.by_class` is present.
+- Pending package and Omarchy updates now arrive as `attention` rather than
+  `regression` (CLI v0.3.1 D1). The panel renders the CLI's state word and did not
+  change to accommodate this; the attention count is unaffected, the mark moves
+  from amber to yellow, and the row sorts below `incomplete`.
+
 ### Deferred
 
-- **`checks[].previous_state` and `checks[].gap_open_since` (CLI 0.3.1).** The
-  change mark and the `open N days` slot are implemented and absent-safe, and ship
-  **dark**: `omasafe-cli 0.3.0` emits neither field, so no delta mark can be
-  produced from a real report. Do not export `posture-state.json →
-  previous_states` — despite its name it holds the states of the report that
-  produced it, so `previous_state == state` for every check and every delta mark
-  would silently disappear. The CLI must capture the displaced prior before the
-  insert. The panel-side guard is in place; the real two-run verification is open.
 - Posture history and a state timeline; posture in `BarWidget.alertCount`; the
   structural merge of `UnitStrip` and `CapabilityStrip`; top-files hot-spot bars.
 

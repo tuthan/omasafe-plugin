@@ -459,11 +459,16 @@ function commandInStep(text) {
 
 function copyActions(model) {
   if (!model || !model.available) return []
-  var out = []
+  var out = [], seen = {}
   for (var i = 0; i < model.attention.length; i++) {
     var check = model.attention[i]
     var command = commandInStep(check.nextStep)
     if (command === "") continue
+    // Two checks routinely name the same remediation — `updates.repository` and
+    // `updates.omarchy` both say "Run `omarchy update`" — and two buttons with the
+    // same label copying the same string is a row of noise, not a second affordance.
+    if (seen[command] === true) continue
+    seen[command] = true
     out.push({
       checkId: check.id,
       value: command,

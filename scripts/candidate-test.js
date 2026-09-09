@@ -545,10 +545,15 @@ function loadFixture(name) {
   if (rows.rows.map(r => r.key).join(',') !==
       'analyzed,partial,truncated,skipped,unsupported,unreferenced')
     throw new Error('the installed path uses the candidate\'s fixed order')
-  if (rows.total !== 66 || !rows.reconciles)
+  // Asserted as a reconciliation, not a constant: this fixture is re-captured from
+  // the working tree and its payload count legitimately moves as the repo grows.
+  if (rows.total !== installed.payload_inventory.totals.entries || !rows.reconciles)
     throw new Error('the installed coverage rows must sum to the payload entry total')
-  if (rows.countsText !== '23 analyzed · 1 partial · 0 truncated · 0 skipped · 24 unsupported · 18 unreferenced')
-    throw new Error('installed counts line: ' + rows.countsText)
+  if (!/^\d+ analyzed · \d+ partial · \d+ truncated · \d+ skipped · \d+ unsupported · \d+ unreferenced$/
+      .test(rows.countsText))
+    throw new Error('installed counts line shape: ' + rows.countsText)
+  if (rows.rows.find(r => r.key === 'analyzed').count !== states.analyzed)
+    throw new Error('the analyzed row carries the report\'s own figure')
   if (rows.rows.some(r => r.level === 'healthy'))
     throw new Error('no installed coverage segment may be green either')
 
@@ -567,6 +572,37 @@ function loadFixture(name) {
   if (!odd.reconciles || odd.rows[odd.rows.length - 1].key !== 'other' ||
       odd.rows[odd.rows.length - 1].count !== 3)
     throw new Error('an unknown coverage state is counted as `other`, never dropped')
+}
+
+// ------------------------------------------------- C5: per-class capability counts
+//
+// `omasafe-cli 0.3.1` exports `review_summary.capabilities.by_class`, mirroring
+// `findings.by_rule`. Its per-class `total` is taken from the pre-selection set, so it
+// stays exact however much of `analysis.capabilities[]` the report profile drops —
+// which is what lets a strip cell distinguish "not observed" from "selected away".
+{
+  const installed = JSON.parse(fs.readFileSync(
+    path.join(fixtures, 'installed-analyze.json'), 'utf8')).result
+  const byClass = installed.review_summary.capabilities.by_class
+  if (!byClass || typeof byClass !== 'object')
+    throw new Error('the 0.3.1 report must carry capabilities.by_class')
+  const summed = Object.values(byClass).reduce((n, row) => n + row.total, 0)
+  if (summed !== installed.review_summary.capabilities.total)
+    throw new Error('by_class totals must sum to the capability total: ' + summed)
+  for (const [cls, row] of Object.entries(byClass)) {
+    if (row.emitted + row.omitted !== row.total)
+      throw new Error('by_class[' + cls + '] must reconcile: ' + JSON.stringify(row))
+  }
+  // Every class the emitted array mentions has a row, and the row's total is at least
+  // what was emitted — the direction that matters, since total is the pre-selection
+  // figure and emitted is what survived.
+  const emittedClasses = new Set(installed.analysis.capabilities.map(c => c.capability))
+  for (const cls of emittedClasses) {
+    if (!byClass[cls]) throw new Error('by_class is missing an observed class: ' + cls)
+    const count = installed.analysis.capabilities.filter(c => c.capability === cls).length
+    if (byClass[cls].total < count)
+      throw new Error('by_class[' + cls + '].total is below what was emitted')
+  }
 }
 
 console.log('candidate model: ok')
