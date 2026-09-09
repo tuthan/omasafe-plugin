@@ -309,7 +309,8 @@ stated reason in the document that introduces it, not an amendment here.
 
 ### 2.3 Colour roles and derivations
 
-Declared once on each root; the shared `SemanticMark` owns the small, theme-aware semantic tier palette.
+Declared once on each root; `model/Tiers.js` owns the small, theme-aware semantic tier palette and
+`SemanticMark` is its first consumer.
 
 ```qml
 readonly property color fg:           bar ? bar.foreground : Color.foreground
@@ -325,8 +326,17 @@ readonly property color selectedFill: Style.selectedFillFor(fg, Color.accent)
 
 Rules: `Color.accent` reaches the screen only through the kit (`Style.*StateColor`, `Color.popups.border`,
 `ConfirmDialog.selectedText`). `Color.muted` is never used. `Util.alpha(fg, …)` appears only inside `graph/EdgeLayer.qml`
-(rest `Style.hoverBorderAlpha`, hot `0.9`) and inside the kit. `SemanticMark.qml` is the sole owner of semantic tier
-colours and chooses readable light/dark variants from the theme background.
+(rest `Style.hoverBorderAlpha`, hot `0.9`) and inside the kit.
+
+**`model/Tiers.js` is the sole owner of semantic tier colours** (amended in v0.3.1, decision 08 D1; the ladder
+previously lived inside `SemanticMark.qml`). It is a pure module exposing `isDark(background)`,
+`normalize(level)` and `color(level, dark)`, and it chooses readable light/dark variants from the theme
+background. `SemanticMark.qml` is its first consumer and remains the sole renderer of a tier as a **row
+marker**; `MeterBar`, `RankedBars` and `UnitStrip` paint segments and cells from the same ladder. `color()`
+returns `""` for a tier with no colour of its own (`unknown`, `notApplicable`, `checking`, `stale`) so the
+dim ladder above stays owned by the call site's theme roles. `grep -n 'markColor' components/` must return
+only `SemanticMark.qml`, and no view may hard-code a tier hex. The alternative — passing colours in as
+properties from every call site — reintroduces the per-call-site colour sprawl Phase 1 removed.
 
 Why a mix toward background and not the kit's `Qt.darker` ladder (`PanelHero` 1.4, `Toggle` 1.5, `TextField` placeholder
 1.6, `PanelActionButton` disabled 2.0): the hierarchy rests almost entirely on these three steps, because size contrast is
@@ -353,7 +363,9 @@ Hue never carries meaning alone and there are no opacity ramps. Nothing below en
 | Trust loading / unavailable / unsupported | checking… / unavailable / unsupported | none | dim |
 | Severity `info` / `low` / `medium` / `high` | the word | info / info / medium / alert glyph | regular / regular / regular / bold; blue / blue / yellow / amber tier |
 | Severity `critical` / unknown | critical / unavailable | critical / hollow glyph | bold red / dim gray |
-| Health `healthy` / `stale` / `incomplete` | No active alerts / cached result / analysis incomplete | check / hollow glyph | green only for current healthy; gray otherwise |
+| Health `healthy` / `stale` / `incomplete` | No active alerts / cached result / analysis incomplete | check / hollow / progress-question `󱔢` glyph | green only for current healthy; gray for stale; amber for incomplete |
+| State `not_applicable` | Not applicable | `󰍷` minus-circle-outline | dim; never coloured like `pass` |
+| Changed since the previous report | changed from `<previous state>` | `󰇂` delta | dim; no direction, no arrow, no trend |
 | Confidence `ast-backed` / `lexical-fallback` / `null` | parser-backed / text match only / no parser | none in rows; Flow edges solid / dashed / dashed | — |
 | Scan alert row | kind label (§3.3) | `󰀦` in fg; `urgent` only for `critical` / `error` | bold primary line |
 | Catalog claim | Marketplace listing: … | none — never a pill, never beside a trust word | regular |
@@ -379,6 +391,34 @@ Placeholder vocabulary (one set, every view): `–` = not analyzed / no data, wh
 Baseline coverage `exercised here` column; `·` = analyzed and not observed (strip and matrix); `unavailable` = the word,
 when a fetch failed. The strip for an unanalyzed plugin prints a single `–` followed by `not analyzed`, never a run of
 placeholders. No other placeholder mark exists.
+
+**`·` is a positive claim and must be earned.** "Analyzed and not observed" may be drawn only where the panel has
+established that the collection behind the cell was emitted whole. Where any part of it could have been omitted by
+the scanner or capped by the display, the cell is `–` and the section header says `PARTIAL` — on the candidate path
+and on the installed path alike. This is GR3 applied to geometry: 17 cells of `·` say "clean" louder than a
+sentence says "incomplete", so an omission notice beside the strip does not discharge the rule.
+
+#### Chart contract (v0.3.1; derived in doc 08 §4)
+
+A chart in this panel is a **shape aid attached to printed numbers**, never a substitute for them.
+
+| Rule | Statement |
+|---|---|
+| **CH1 — Numbers first** | Every chart is adjacent to a line printing each category's exact count. Remove the chart and the reader loses speed, never information. |
+| **CH2 — Unit chart when n ≤ 24, length bar above it** | One cell per item while items are countable at a glance; a segmented length bar once they are not. Never both for the same data in the same band. |
+| **CH3 — Position and length only** | Permitted: cell position in a fixed order, segment length on a common baseline, rank order in a sorted list. Forbidden: angle, area, radius, saturation, opacity, blur, 3-D. |
+| **CH4 — Colour is the third channel, never the first** | Every segment and cell carries a word (in the legend or the row it links to) and a glyph. Colour comes from `model/Tiers.js` and adds nothing the word and glyph do not already say. |
+| **CH5 — The parts reconcile, visibly** | Segment counts sum to the printed total. An omitted or capped term is a named part of the same line, not a separate notice. |
+| **CH6 — A minimum segment is disclosed, not hidden** | A non-zero category is never invisible: minimum segment width `Style.space(2)`. That breaks strict proportionality at the small end, so CH1's counts are the datum and the bar is documented as an aid. |
+| **CH7 — Zero and absent are different marks** | `0` prints as `0` in the legend of a chart that ran. Not observed prints `–`. Observed-and-none prints `·`. A chart that could not be computed renders the word `unavailable` and no bar. Availability and zero are independent: a measured zero keeps its zeros. |
+| **CH8 — Fixed order, or explicit order** | A unit strip is in a CLI-owned catalog order, so a cell position means the same thing on every host and run. A bar is in attention order (`error → regression → incomplete → attention → informational → pass → not applicable`) and the order is stated in the header. |
+| **CH9 — No chart implies a verdict** | No chart is titled with a judgement, and none has a target line, a threshold zone, a "good" direction or an aggregate. Section titles are nouns: `STATES`, `COVERAGE`, `BY RULE`. |
+| **CH10 — Charts cost no motion** | Charts are static geometry. No animated draw-in, no transition on data change beyond the existing 60/120 ms colour behaviours. Nothing animates while the panel is closed (P11). |
+
+Never drawn, in any tab: a score, index, grade, percentage-healthy or letter; a gauge, speedometer, dial or
+traffic light; a pie or donut; a saturation or opacity heatmap; a trend line or sparkline over data the CLI does
+not retain; a coverage progress bar that reads as completion; any chart of a suppressed, omitted or capped set
+drawn as if complete. Doc 08 §3.1 and §7 carry the evidence.
 
 ### 2.5 Radius, borders, surfaces
 
@@ -441,7 +481,8 @@ UI glyphs
 | enforcement block | `󰂭` | F00AD | `X` | catalog / Baseline V3 | `󰆼` | F01BC | `B` |
 | expand Flow | `󱁉` | F1049 | `#` | Git checkout | `󰊢` | F02A2 | `g` |
 | installed without git | `󰏗` | F03D7 | `p` | backup copy | `󱈎` | F120E `md-archive_outline` | `b` |
-| unsupported | `󰘥` | F0625 | `?` | | | | |
+| unsupported | `󰘥` | F0625 | `?` | incomplete observation | `󱔢` | F1522 `md-progress_question` | `%` |
+| not applicable | `󰍷` | F0377 `md-minus_circle_outline` | `_` | changed since previous report | `󰇂` | F01C2 `md-delta` | `d` |
 
 F0029 is `md-alert_octagon` in the installed font (verified with fontTools today; F068C, sometimes quoted for an
 octagon, is `md-skull` and is not used). The outline shield is F0499 `md-shield_outline`, the MDI outline of the filled
@@ -451,6 +492,17 @@ as a pair at `display` and `icon` size (F099F, previously listed here, is `md-se
 `md-backup_restore` it does not share the circular-arrow shape of rescan `󰑐` (F0053, previously listed here, is
 `md-arrow_left_drop_circle_outline` and would read as a second back affordance beside `󰅁`). The in-flight ASCII fallback
 is `/` (spinner idiom); `~` belongs to the relation mark `≈` alone.
+
+Three glyphs were added in v0.3.1 (doc 08 §6), verified the same way (`cmap[0xF1522] == 'md-progress_question'`,
+`cmap[0xF0377] == 'md-minus_circle_outline'`, `cmap[0xF01C2] == 'md-delta'`). **`incomplete` no longer shares the
+`alert` mark with severity `high`**: in a unit strip the state word is not on the cell, so "we could not look"
+and "high severity" were indistinguishable; a progress ring carrying a question is the honest shape. `not
+applicable` is distinct from `hollow` `󰝦`, which stays pinned to "not analyzed / unavailable, Flow only" — "the
+check does not apply to this host" is a different fact from "we did not observe". The `changed` delta is
+rendered only when the CLI supplies a previous state; **direction is carried by the sentence** ("changed from
+`pass`"), never by the mark, because there is no ordering in which `informational → pass` is "up" —
+`md-trending_up`/`_down` are therefore banned. `%`, `_` and `d` were unused, so the one-meaning-per-ASCII-character
+rule still holds across all 43 entries.
 
 Capability classes. **Catalog order** is defined once, here: the order in which classes first appear in `rules list`
 (`rules-list.json`, catalog v7), numbered below. `CapabilityStrip` and `MatrixGrid` always use catalog order, so a

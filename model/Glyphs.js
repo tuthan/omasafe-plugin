@@ -42,7 +42,18 @@ var ui = {
   "git-checkout":    _g(0xF02A2, "md-git", "g"),
   "installed-no-git":_g(0xF03D7, "md-package_variant_closed", "p"),
   "backup":          _g(0xF120E, "md-archive_outline", "b"),
-  "unsupported":     _g(0xF0625, "md-help_circle_outline", "?")
+  "unsupported":     _g(0xF0625, "md-help_circle_outline", "?"),
+  // v0.3.1 (doc 08 §6). `incomplete` used to share the `alert` mark with severity
+  // `high`; in a unit strip, where the state word is not on the cell, "we could not
+  // look" and "high severity" then become the same mark. A progress ring carrying a
+  // question is the honest shape. `not-applicable` is distinct from `hollow`, which
+  // 02 §2.7 pins to "not analyzed / unavailable, Flow only".
+  "incomplete":      _g(0xF1522, "md-progress_question", "%"),
+  "not-applicable":  _g(0xF0377, "md-minus_circle_outline", "_"),
+  // Change since the previous report. Direction is carried by the sentence
+  // ("changed from pass"), never by the mark — there is no ordering in which
+  // `informational → pass` is "up", so md-trending_up/_down are deliberately unused.
+  "changed":         _g(0xF01C2, "md-delta", "d")
 }
 
 // Capability classes, in catalog order (doc 02 §2.7 "Capability classes"). The

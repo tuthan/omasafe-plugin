@@ -2,10 +2,16 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 import "../model/Glyphs.js" as Glyphs
+import "../model/Tiers.js" as Tiers
 
 // Shared health/severity marker. Colour reinforces the printed level and glyph;
 // it never carries the meaning alone. `compact` is used in dense rows and graph
 // nodes, while `showLabel` is used in summaries and expanded rule sheets.
+//
+// The tier ladder itself lives in `model/Tiers.js` (doc 02 §2.3, 08 D1) so the
+// v0.3.1 charts paint from the same source. This component's public API is
+// unchanged; it is the ladder's first consumer, and still the only one that
+// renders a tier as a ROW marker.
 Item {
   id: root
 
@@ -22,32 +28,11 @@ Item {
   property string fontFamily: Style.font.family
   property string resolvedFamily: Style.font.resolvedFamily
 
-  readonly property bool darkSurface: {
-    var b = Color.background
-    return (Number(b.r) * 0.2126 + Number(b.g) * 0.7152 + Number(b.b) * 0.0722) < 0.5
-  }
-  readonly property string normalizedLevel: {
-    var v = String(root.level || "").toLowerCase()
-    if (v === "error" || v === "blocked") return "critical"
-    if (v === "warning") return "medium"
-    if (v === "normal" || v === "ok" || v === "pass") return "healthy"
-    if (v === "checking" || v === "loading") return "checking"
-    if (v === "not analyzed" || v === "not-analyzed" || v === "incomplete") return "incomplete"
-    if (["healthy", "critical", "high", "medium", "low", "info", "stale", "unknown"].indexOf(v) >= 0) return v
-    return "unknown"
-  }
+  readonly property bool darkSurface: Tiers.isDark(Color.background)
+  readonly property string normalizedLevel: Tiers.normalize(root.level)
   readonly property color markColor: {
-    var dark = root.darkSurface
-    switch (root.normalizedLevel) {
-    case "healthy": return dark ? "#72d394" : "#19733d"
-    case "medium": return dark ? "#f2d16b" : "#8a6200"
-    case "high": return dark ? "#ffb064" : "#a34f00"
-    case "critical": return dark ? "#ff7777" : "#b42318"
-    case "incomplete": return dark ? "#f2a65a" : "#9a4d00"
-    case "low": return dark ? "#9bc8ff" : "#2b65a3"
-    case "info": return dark ? "#9bc8ff" : "#2b65a3"
-    default: return root.dim
-    }
+    var tier = Tiers.color(root.normalizedLevel, root.darkSurface)
+    return tier === "" ? root.dim : tier
   }
   readonly property string glyphKey: {
     switch (root.normalizedLevel) {
@@ -57,7 +42,8 @@ Item {
     case "medium": return "medium"
     case "low":
     case "info": return "info"
-    case "incomplete": return "alert"
+    case "incomplete": return "incomplete"
+    case "notApplicable": return "not-applicable"
     case "checking": return "in-flight"
     default: return "hollow"
     }
@@ -74,6 +60,7 @@ Item {
     case "checking": return "Checking"
     case "stale": return "Stale result"
     case "incomplete": return "Analysis incomplete"
+    case "notApplicable": return "Not applicable"
     default: return "Unavailable"
     }
   }
