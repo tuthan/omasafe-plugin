@@ -4,6 +4,13 @@ All notable changes to the OmaSafe plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 semantic versioning (`0.5.0` for the current v0.3.1 glanceability release).
 
+## [Unreleased] — v0.3.2 runner compatibility
+
+Paired with `omasafe-cli 0.3.2`. The manifest now requires `cliVersionMin` 0.3.2
+for panel hydration, scheduled scans, Source Scan, and host posture. Older CLI
+versions are rejected by the panel's compatibility gate; no isolation UI or
+runtime sandbox is implied.
+
 ## [Unreleased] — v0.3.1 glanceability
 
 Paired with `omasafe-cli 0.3.1`. `cliVersionMin` stays `0.3.0`: every surface below

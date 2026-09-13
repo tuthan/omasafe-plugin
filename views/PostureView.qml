@@ -53,7 +53,7 @@ Column {
     width: parent.width
     visible: !root.panel || !root.panel.cliVerified
     reason: "unavailable"
-    text: "Host posture is unavailable until omasafe-cli 0.3.0 or newer is verified."
+    text: "Host posture is unavailable until omasafe-cli 0.3.2 or newer is verified."
     foreground: root.col("fg"); dim: root.col("dim"); urgent: root.col("urgent")
     fontFamily: root.col("fontFamily"); resolvedFamily: root.rf
   }

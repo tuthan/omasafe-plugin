@@ -333,7 +333,7 @@ Panel {
   readonly property bool navigationLocked: root.operationRunning || root.pendingAction !== ""
   readonly property bool scanAvailable: root.cliVerified &&
     root.statusLevel !== "checking" && !root.navigationLocked
-  readonly property string candidateFeatureMin: "0.3.0"
+  readonly property string candidateFeatureMin: "0.3.2"
   readonly property bool candidateFeatureAvailable: {
     if (!root.cliVerified || !root.hostWidget) return false
     var have = root.hostWidget.parseVersion(root.hostWidget.cliVersion)
@@ -493,7 +493,7 @@ Panel {
     if (root.hostWidget.scanState === "unavailable")
       return root.hostWidget.cliError || "The latest scan could not be completed."
     if (root.hostWidget.cacheFeatureUnavailable)
-      return "Persistent scan hydration requires omasafe-cli 0.3.0; manual scans remain available."
+      return "Persistent scan hydration requires omasafe-cli 0.3.2; manual scans remain available."
     if (root.hostWidget.cacheState === "cached-stale")
       return "Showing a cached result; " + root.hostWidget.cacheStaleReasonLabel(root.hostWidget.cacheStaleReason) + "."
     if (root.hostWidget.cacheState === "cached-unvalidated")
@@ -550,7 +550,7 @@ Panel {
       return String(root.hostWidget.cliVersion || "") + " found · " +
         String(root.hostWidget.cliVersionMin || "") + " or newer required"
     if (root.hostWidget.cacheFeatureUnavailable)
-      return "cache requires omasafe-cli 0.3.0"
+      return "cache requires omasafe-cli 0.3.2"
     var frags = []
     var plugins = root.visiblePlugins().length
     if (plugins > 0) frags.push(plugins + " plugins")
@@ -856,6 +856,23 @@ Panel {
   function visiblePlugins() {
     var plugins = root.inventoryReport && root.inventoryReport.plugins || []
     return plugins.filter(function(plugin) { return plugin.classification !== "backup" })
+  }
+
+  function syncBackupClassification() {
+    if (!root.hostWidget) return
+    root.hostWidget.backupClassificationReady = false
+    var ids = ({})
+    var plugins = root.inventoryReport && root.inventoryReport.plugins
+    if (!Array.isArray(plugins)) {
+      root.hostWidget.backupPluginIds = ids
+      return
+    }
+    for (var i = 0; i < plugins.length; i++) {
+      if (String(plugins[i].classification || "") === "backup")
+        ids[String(plugins[i].id || "")] = true
+    }
+    root.hostWidget.backupPluginIds = ids
+    root.hostWidget.backupClassificationReady = true
   }
 
   function marketplaceListings() {
@@ -1542,11 +1559,11 @@ Panel {
 
 
   function candidateAvailabilityText() {
-    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.3.0 or newer."
+    if (!root.hostWidget) return "Plugin Source Scan requires omasafe-cli 0.3.2 or newer."
     var state = String(root.hostWidget.scanState || "")
-    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.3.0 or newer; no CLI was found."
+    if (state === "missing-cli") return "Plugin Source Scan requires omasafe-cli 0.3.2 or newer; no CLI was found."
     if (state === "incompatible-cli" || !root.cliVerified)
-      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.3.0 or newer."
+      return String(root.hostWidget.cliVersion || "") + " found; Plugin Source Scan requires omasafe-cli 0.3.2 or newer."
     return "Plugin Source Scan is unavailable."
   }
 
@@ -3500,6 +3517,9 @@ Panel {
     if (!root.cliVerified || postureProcess.running) return
     root.postureLoading = true
     root.postureError = ""
+    // Export reads the last completed report. A live collection is explicit: the
+    // user can use Run posture scan after an Omarchy/package update without making
+    // every panel open wait for a full host scan.
     postureProcess.startRequest("export")
   }
 
@@ -3634,6 +3654,7 @@ Panel {
           !report.result || !Array.isArray(report.result.plugins))
         throw new Error("unsupported inventory report")
       root.inventoryReport = report.result || {}
+      root.syncBackupClassification()
       root.enforcementSummary = root.inventoryReport.enforcement_summary || null
       root.panelError = ""
       var signature = root.computeInstalledSignature()
@@ -3666,6 +3687,7 @@ Panel {
       if (root.opened && root.overviewDepth >= 1) Qt.callLater(root.hydrateAnalysis)
     } catch (error) {
       root.inventoryReport = null
+      root.syncBackupClassification()
       root.enforcementSummary = null
       root.panelError = "CLI returned an invalid inventory report"
     }
@@ -4199,7 +4221,7 @@ Panel {
     enableProcess.policy = root.enablePolicyChoice
     // Target contract (05 §10): the CLI compares this exact identity before enabling;
     // digest is mandatory, git fields passed when present. Gated off until a CLI
-    // release implements it (identitySafeMutations), so these never run below 0.3.0.
+    // release implements it (identitySafeMutations), so these never run below 0.3.2.
     var enableArgs = ["plugins", "enable", root.enablePluginId, "--policy", root.enablePolicyChoice]
     if (root.authorizedHead !== "") enableArgs.push("--expected-head", root.authorizedHead)
     if (root.authorizedTree !== "") enableArgs.push("--expected-tree", root.authorizedTree)
@@ -4427,7 +4449,7 @@ Panel {
           width: parent.width
           reason: "unavailable"
           text: "Plugins, review items, rules and the trust flow are unavailable until omasafe-cli " +
-            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.3.0") + " or newer is found on PATH."
+            (root.hostWidget ? root.hostWidget.cliVersionMin : "0.3.2") + " or newer is found on PATH."
           foreground: root.fg
           dim: root.dim
           urgent: root.urgent

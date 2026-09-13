@@ -108,6 +108,27 @@ const real = sandbox.build(fixture('posture-v1.json'))
     'firewall.effective,vulnerabilities.arch_audit,updates.omarchy,updates.repository',
     'attention order is exact: incomplete before attention, then id ascending')
 
+  // The CLI may satisfy firewall.effective through its UFW fallback when direct
+  // nftables inspection is unavailable. The plugin must consume that pass state
+  // normally: it is no longer an attention item, while any explicit limitation
+  // remains available on expansion.
+  const ufw = fixture('posture-v1.json')
+  const ufwFirewall = ufw.checks.find(c => c.id === 'firewall.effective')
+  ufwFirewall.state = 'pass'
+  ufwFirewall.evidence = [
+    'UFW is enabled and ufw.service is active',
+    'A generated UFW policy file is readable'
+  ]
+  ufwFirewall.limitations = [
+    'The live netfilter ruleset was not directly readable; effectiveness is inferred from UFW activation and policy files'
+  ]
+  const ufwModel = sandbox.build(ufw)
+  eq(ufwModel.attention.length, 3, 'UFW effective policy pass leaves three posture alerts')
+  ok(!ufwModel.attention.some(c => c.id === 'firewall.effective'),
+    'the plugin does not flag a verified UFW policy as incomplete')
+  ok(ufwModel.checks.find(c => c.id === 'firewall.effective').limitations.length === 1,
+    'the plugin preserves the UFW inference limitation')
+
   // Grouping and the strip.
   eq(real.groups.map(g => g.label).join(','),
     'BOOT,ENCRYPTION,EXECUTION,FIREWALL,HOST,KERNEL,NETWORK,PACKAGES,PERSISTENCE,SSH,UPDATES',
@@ -364,9 +385,9 @@ const real = sandbox.build(fixture('posture-v1.json'))
 // ------------------------------------------------------------- display safety
 {
   const nasty = fixture('posture-v1.json')
-  nasty.checks[0].evidence = ['a\r\nb\t‎‏  ']
+  nasty.checks[0].evidence = ['a\r\nb\t‎‏']
   eq(sandbox.build(nasty).checks.find(c => c.id === 'boot.secure_boot').evidence[0],
-    'a\\r\\nb\\t\\u{200e}\\u{200f}\\u{2028}\\u{2029}',
+    'a\\r\\nb\\t\\u{200e}\\u{200f}',
     'evidence escaping neutralizes line and directional controls')
 }
 

@@ -135,7 +135,7 @@ section header says `PARTIAL` — on a candidate and on an installed plugin alik
 ## Requirements
 
 - Omarchy with shell plugin support.
-- `omasafe-cli` 0.3.0 or newer on the graphical session `PATH`.
+- `omasafe-cli` 0.3.2 or newer on the graphical session `PATH`.
 
 The widget can be installed before the CLI. Until the CLI is available, it
 shows an unavailable state and never implies that the system is clean.
@@ -179,9 +179,10 @@ command the report printed. OmaSafe never runs it and never invents one.
 actions, `Enter` on a strip cell jumps to that check and expands it, and `/`
 finds a check by id, title, state, evidence, limitation or next step.
 
-Use **Run posture scan** (or press `r`) to collect a current report. The first
-export may say **not yet run**; that is an absence of observation, not a clean
-result. The CLI owns the report, state history, and optional notification
+The panel opens with the last completed posture report. Use **Run posture scan**
+(or press `r`) to collect a current report after an Omarchy or package update.
+The first export may say **not yet run**; that is an absence of observation, not
+a clean result. The CLI owns the report, state history, and optional notification
 behavior; the panel only renders the bounded result. It shows report age and
 marks observations older than 24 hours as stale.
 
@@ -371,4 +372,5 @@ omarchy plugin validate .
 qmllint -I /usr/share/omarchy/shell -I /usr/lib/qt6/qml \
   BarWidget.qml Panel.qml components/*.qml views/*.qml graph/*.qml
 node scripts/flow-test.js
+node scripts/cli-floor-test.js
 ```

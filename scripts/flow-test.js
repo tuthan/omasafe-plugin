@@ -211,11 +211,8 @@ const backupAlertVm = ViewModel.build({
   nowMs: Date.parse('2026-09-07T10:32:18Z')
 })
 eq(backupAlertVm.plugins.length, 1, 'backup remains out of the live plugin list')
-eq(backupAlertVm.alerts.length, 1, 'first scan keeps backup alert in ALERTS')
-eq(backupAlertVm.alerts[0].pluginId, '.live.plugin.bak.20260814081802',
-   'backup alert retains its plugin id')
-eq(backupAlertVm.alerts[0].backup, true, 'backup alert is identified separately from pseudo alerts')
-eq(backupAlertVm.alerts[0].pseudo, false, 'backup alert is not mislabeled as a pseudo alert')
+eq(backupAlertVm.alerts.length, 0, 'backup alerts never appear in ALERTS')
+eq(backupAlertVm.outstanding, 0, 'backup alerts never contribute to the alert count')
 const staleVm = ViewModel.build({
   inventory: { plugins: [{ id: 'stale.plugin', classification: 'cloned/local' }] },
   alerts: [{ plugin_id: 'stale.plugin', severity: 'critical' }],

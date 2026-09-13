@@ -142,17 +142,33 @@ function _marketplaceByPlugin(inv, id) {
   return null
 }
 
+// Backup classification is owned by the CLI inventory. Until that inventory is
+// available, alert presentation fails closed so an alert cannot be attached to an
+// unclassified copy during startup hydration.
+function _backupIds(input) {
+  var inventory = input && input.inventory
+  if (!inventory || !Array.isArray(inventory.plugins)) return null
+  var ids = {}
+  for (var i = 0; i < inventory.plugins.length; i++) {
+    if (_str(inventory.plugins[i].classification) === "backup")
+      ids[_str(inventory.plugins[i].id)] = true
+  }
+  return ids
+}
+
 function buildPlugins(input) {
   var inv = input.inventory || {}
   var plugins = _arr(inv.plugins).filter(function(p) { return _str(p.classification) !== "backup" })
   var statusById = input.statusById || {}
   var analysisById = input.analysisById || {}
   var checking = _arr(input.checkingIds)
+  var backupIds = _backupIds(input)
   var alerted = {}
   var alertSeverityById = {}
   var alerts = _arr(input.alerts)
   for (var a = 0; a < alerts.length; a++) {
     var alertId = _str(alerts[a].plugin_id)
+    if (backupIds === null || backupIds[alertId] === true) continue
     alerted[alertId] = true
     var alertTier = Labels.severityTier(alerts[a].severity)
     if (!alertSeverityById[alertId] || Labels.severityRank(alertTier) > Labels.severityRank(alertSeverityById[alertId]))
@@ -275,18 +291,17 @@ function buildBackups(input) {
 function buildAlerts(input, pluginsById) {
   var alerts = _arr(input.alerts)
   var scanMeta = input.scanMeta || {}
-  var backupIds = {}
-  var inventoryPlugins = _arr((input.inventory || {}).plugins)
-  for (var b = 0; b < inventoryPlugins.length; b++) {
-    if (_str(inventoryPlugins[b].classification) === "backup")
-      backupIds[_str(inventoryPlugins[b].id)] = true
-  }
+  var backupIds = _backupIds(input)
+  // Inventory is the authority for the backup classification. Do not render a
+  // cached alert while that authority is unavailable during shell startup.
+  if (backupIds === null) return []
   var now = input.nowMs
   var out = []
   for (var i = 0; i < alerts.length; i++) {
     var a = alerts[i]
     var pid = _str(a.plugin_id)
     var isBackup = backupIds[pid] === true
+    if (isBackup) continue
     var kindLabel = Labels.alertKind(a.kind)
     if (_str(a.kind) === "finding-regression" && _str(a.rule || a.rule_id) !== "")
       kindLabel = kindLabel + ": " + _str(a.rule || a.rule_id)
@@ -303,11 +318,9 @@ function buildAlerts(input, pluginsById) {
       urgent: Labels.alertIsUrgent(a.severity),
       severityRank: _severityRank(a.severity),
       isNew: a.new === true,
-      // Backups are omitted from the live plugin index, but their scan alerts
-      // still belong in ALERTS (the scanner reports them explicitly). Keep them
-      // distinct from system-level pseudo alerts so future filtering cannot drop
-      // a backup alert accidentally.
-      backup: isBackup,
+      // Backup alerts are filtered above. This remains false for every rendered
+      // alert; the backup list has its own explicit "not scanned" presentation.
+      backup: false,
       pseudo: !pluginsById[pid] && !isBackup
     })
   }
@@ -644,6 +657,8 @@ function build(input) {
   var pluginsById = {}
   for (var i = 0; i < plugins.length; i++) pluginsById[plugins[i].id] = plugins[i]
 
+  var displayedAlerts = buildAlerts(input, pluginsById)
+
   var analyzedCount = 0
   var exactCount = 0
   for (var a = 0; a < plugins.length; a++) {
@@ -669,8 +684,11 @@ function build(input) {
     analysisExactForAll: exactForAll,
     liveCount: liveCount,
     backupCount: backupCount,
-    alerts: buildAlerts(input, pluginsById),
-    outstanding: Number((input.scanMeta || {}).outstanding || 0),
+    alerts: displayedAlerts,
+    // The panel's count must describe the rows it can actually show. This also
+    // prevents a filtered backup alert from leaving an orphaned "17 alerts"
+    // headline after the inventory arrives.
+    outstanding: displayedAlerts.length,
     sources: buildSources(input),
     rules: rulesBundle.rules,
     ruleCatalogVersion: rulesBundle.catalogVersion,
@@ -739,6 +757,7 @@ function flowInput(input) {
   var enforcementById = input.enforcementById || {}
   var cov = input.coverage || null
   var rl = input.rulesList || null
+  var backupIds = _backupIds(input)
 
   // catalog facts for rule nodes.
   var catalog = {}
@@ -751,6 +770,7 @@ function flowInput(input) {
   var alerts = _arr(input.alerts)
   for (var a = 0; a < alerts.length; a++) {
     var apid = _str(alerts[a].plugin_id)
+    if (backupIds === null || backupIds[apid] === true) continue
     if (apid !== "") outstandingById[apid] = (outstandingById[apid] || 0) + 1
     var alertTier = Labels.severityTier(alerts[a].severity)
     if (apid !== "" && (!outstandingSeverityById[apid] ||

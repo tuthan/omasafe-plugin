@@ -18,6 +18,12 @@ BarWidget {
   property int outstandingCount: 0
   property int newCount: 0
   property var alerts: []
+  // The scan cache can hydrate before the panel has fetched inventory. Keep raw
+  // rows private and publish only rows classified as live; backups never reach
+  // the alert surface.
+  property var rawAlerts: []
+  property var backupPluginIds: ({})
+  property bool backupClassificationReady: false
   property string scanState: "checking"
   property bool scanResultsStale: false
   property string highestSeverity: "none"
@@ -96,14 +102,14 @@ BarWidget {
     settings.cliVersionMin !== undefined &&
     !/^\d+\.\d+(?:\.\d+)?$/.test(root.configuredCliVersionMin.trim())
   readonly property string cliVersionMin: {
-    var floor = [0, 3, 0]
+    var floor = [0, 3, 2]
     var configured = root.parseVersion(root.configuredCliVersionMin)
     return configured && root.compareVersion(configured, floor) > 0
-      ? configured.join(".") : "0.3.0"
+      ? configured.join(".") : "0.3.2"
   }
-  readonly property string cacheCliVersionMin: "0.3.0"
+  readonly property string cacheCliVersionMin: "0.3.2"
   readonly property bool cliCacheCompatible: root.cliCompatible &&
-    root.compareVersion(root.parseVersion(root.cliVersion) || [0, 0, 0], [0, 2, 5]) >= 0
+    root.compareVersion(root.parseVersion(root.cliVersion) || [0, 0, 0], [0, 3, 2]) >= 0
   readonly property bool cacheFeatureUnavailable: root.cliCompatible && !root.cliCacheCompatible
   readonly property bool cliVersionRequireIdentity: settings &&
     settings.cliVersionRequireIdentity === true
@@ -167,12 +173,13 @@ BarWidget {
   // The bar keeps its existing urgent token contract; row-level semantic tiers live
   // in components/SemanticMark.qml and are not painted into this compact icon.
   readonly property color warningColor: bar ? bar.urgent : Color.urgent
-  readonly property string statusLevel: root.scanState === "checking"
+  readonly property string statusLevel: !root.backupClassificationReady ? "unknown" :
+    (root.scanState === "checking"
     ? "checking" : (root.scanState === "ready" ? "ready"
       : (root.scanState === "missing-cli" || root.scanState === "unavailable" ||
         root.scanState === "incompatible-cli" ? "unknown"
         : (root.highestSeverity === "critical" ? "critical"
-          : (root.outstandingCount > 0 ? "warning" : "normal"))))
+          : (root.outstandingCount > 0 ? "warning" : "normal")))))
 
   // Bar-state inputs for the OmaSafeShield contract (doc 03 §2), each with an
   // explicit false/zero fallback.
@@ -185,7 +192,8 @@ BarWidget {
   readonly property color dim: dimStep(0.33)
   readonly property bool checking: root.scanState === "checking"
   // The two states a fresh result sets (applyScan).
-  readonly property bool hasScanResult: root.scanState === "quiet" || root.scanState === "attention"
+  readonly property bool hasScanResult: root.backupClassificationReady &&
+    (root.scanState === "quiet" || root.scanState === "attention")
   readonly property bool earlierResultKept: root.scanResultsStale && root.lastScanAt !== ""
   readonly property bool cliFailed: root.scanState === "missing-cli" ||
     root.scanState === "incompatible-cli" || root.scanState === "unavailable"
@@ -208,8 +216,9 @@ BarWidget {
     if (root.scanState === "incompatible-cli")
       return "OmaSafe: omasafe-cli " + root.cliVersion + " found; " +
         root.cliVersionMin + " or newer required"
+    if (!root.backupClassificationReady) return "OmaSafe: installed-plugin inventory pending"
     if (root.cacheFeatureUnavailable)
-      return "OmaSafe: cached hydration requires omasafe-cli 0.3.0; manual scans remain available"
+      return "OmaSafe: cached hydration requires omasafe-cli 0.3.2; manual scans remain available"
     if (root.scanState === "unavailable")
       return root.earlierResultKept
         ? "OmaSafe: last scan failed; showing results from " + root.relativeScanAge()
@@ -257,6 +266,35 @@ BarWidget {
   function severityRank(value) {
     return ["none", "info", "low", "medium", "warning", "error", "high", "critical"].indexOf(String(value || "").toLowerCase())
   }
+
+  function applyAlertFilter(updateScanState) {
+    var source = root.rawAlerts || []
+    var ids = root.backupPluginIds || {}
+    var filtered = []
+    if (root.backupClassificationReady) {
+      for (var i = 0; i < source.length; i++) {
+        var alert = source[i]
+        if (ids[String(alert.plugin_id || "")] === true) continue
+        filtered.push(alert)
+      }
+    }
+    root.alerts = filtered
+    root.alertCount = filtered.length
+    root.outstandingCount = filtered.length
+    var highest = "none", newCount = 0
+    for (var j = 0; j < filtered.length; j++) {
+      if (filtered[j].new === true) newCount += 1
+      if (root.severityRank(filtered[j].severity) > root.severityRank(highest))
+        highest = String(filtered[j].severity || "none").toLowerCase()
+    }
+    root.newCount = newCount
+    root.highestSeverity = highest
+    if (updateScanState === true || ["quiet", "attention"].indexOf(root.scanState) >= 0)
+      root.scanState = filtered.length === 0 ? "quiet" : "attention"
+  }
+
+  onBackupPluginIdsChanged: root.applyAlertFilter(false)
+  onBackupClassificationReadyChanged: root.applyAlertFilter(false)
 
   function relativeScanAge() {
     return Time.relative(root.lastScanAt) || "an earlier scan"
@@ -324,7 +362,7 @@ BarWidget {
       root.cliCompatible = false
       root.cliVersion = parsed.join(".")
       root.scanState = "incompatible-cli"
-      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.3.0"
+      root.cliError = "Configured cliVersionMin is invalid; use a version such as 0.3.2"
       return
     }
     var min = root.cliVersionMin ? root.parseVersion(root.cliVersionMin) : null
@@ -373,6 +411,7 @@ BarWidget {
       keys[key] = true
       alerts.push({key: key, plugin_id: String(alert.plugin_id || ""), kind: String(alert.kind || ""),
         severity: severity, reason_code: reason, message: String(alert.message || ""),
+        new: alert.new === true,
         post_change: alert.post_change === true})
     })
     var integer = function(value) {
@@ -450,18 +489,14 @@ BarWidget {
   }
 
   function commitNormalized(normalized, stale, cacheState) {
-    root.alertCount = normalized.alerts.length
-    root.outstandingCount = normalized.outstanding
-    root.newCount = normalized.new
-    root.alerts = normalized.alerts
+    root.rawAlerts = normalized.alerts
     root.lastScanAt = normalized.generated_at
-    root.highestSeverity = normalized.highest_severity
     root.blockedDecisions = normalized.blocked
     root.scanResultsStale = stale === true
     root.cacheState = cacheState || "fresh"
     root.cacheStaleReason = normalized.stale_reasons.length ? String(normalized.stale_reasons[0]) : ""
     root.cacheGeneration = normalized.generation
-    root.scanState = normalized.quiet ? "quiet" : "attention"
+    root.applyAlertFilter(true)
     root.limitation = ""
     root.cliError = ""
   }
@@ -494,6 +529,7 @@ BarWidget {
     if (["missing", "incompatible", "corrupt", "cached-unvalidated", "cached-valid", "cached-stale"].indexOf(state) < 0)
       throw new Error("unsupported cache state")
     if (["missing", "incompatible", "corrupt"].indexOf(state) >= 0) {
+      root.rawAlerts = []
       root.alerts = []
       root.alertCount = 0
       root.outstandingCount = 0
