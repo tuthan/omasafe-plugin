@@ -539,4 +539,59 @@ const real = sandbox.build(fixture('posture-v1.json'))
   eq(sandbox.barTooltipLine(null), '', 'no report contributes no line at all')
 }
 
+// ------------------------------------------------- bar indicator state (new)
+{
+  const nil = sandbox.build(fixture('posture-not-yet-run.json'))
+  eq(sandbox.postureStateForBar(nil), 'not_yet_run', 'not_yet_run → not_yet_run')
+  eq(sandbox.postureStateForBar(null), 'unavailable', 'null → unavailable')
+  const unavailableReport = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  unavailableReport.checks = []
+  unavailableReport.coverage = null
+  eq(sandbox.postureStateForBar(sandbox.build(unavailableReport)), 'unavailable',
+    'no checks + no coverage → unavailable')
+
+  const stale = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  stale.result_age_seconds = 90000 // older than STALE_AFTER_SECONDS (86400)
+  eq(sandbox.postureStateForBar(sandbox.build(stale)), 'stale', 'age >= 86400 → stale')
+
+  const clean = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  clean.checks.forEach(c => { c.state = 'pass' })
+  eq(sandbox.postureStateForBar(sandbox.build(clean)), 'pass',
+    'no attention → pass')
+
+  const attention = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  attention.checks.forEach(c => { c.state = 'pass' })
+  attention.checks[0].state = 'attention'
+  eq(sandbox.postureStateForBar(sandbox.build(attention)), 'attention',
+    'attention → attention')
+  eq(sandbox.postureStateForBar(sandbox.build(attention)).toUpperCase(),
+    'ATTENTION', 'the state word is the canonical row label')
+
+  // Error dominates. Regression, incomplete, attention, unsupported all reach
+  // their own row; an error on top of everything is still an error.
+  const errored = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  errored.checks.forEach(c => { c.state = 'pass' })
+  errored.checks[0].state = 'error'
+  eq(sandbox.postureStateForBar(sandbox.build(errored)), 'error', 'error → error')
+
+  const regression = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  regression.checks.forEach(c => { c.state = 'pass' })
+  regression.checks[0].state = 'regression'
+  eq(sandbox.postureStateForBar(sandbox.build(regression)), 'regression',
+    'regression → regression')
+
+  const unsupported = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  unsupported.checks.forEach(c => { c.state = 'pass' })
+  unsupported.checks[0].state = 'unsupported'
+  eq(sandbox.postureStateForBar(sandbox.build(unsupported)), 'unsupported',
+    'unsupported → unsupported')
+
+  // Unknown state words fall through to `unsupported` (never silently dropped).
+  const weird = JSON.parse(JSON.stringify(fixture('posture-v1.json')))
+  weird.checks.forEach(c => { c.state = 'pass' })
+  weird.checks[0].state = 'unexpected'
+  eq(sandbox.postureStateForBar(sandbox.build(weird)), 'unsupported',
+    'unknown state → unsupported')
+}
+
 console.log('posture model: ok (' + checked + ' assertions)')

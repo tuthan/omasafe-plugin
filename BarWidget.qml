@@ -4,6 +4,7 @@ import qs.Ui
 import Quickshell
 import Quickshell.Io
 import "model/Time.js" as Time
+import "components"
 
 BarWidget {
   id: root
@@ -15,6 +16,10 @@ BarWidget {
   // then, and `alertCount` never changes — whether posture enters the bar COUNT is
   // decision D3 and is deferred out of 0.3.1.
   property string postureTooltipLine: ""
+  // The bar posture indicator state (doc 08 §5.1). Derived by the panel from
+  // `postureModel` (model/Posture.js: postureStateForBar) and exposed on this widget.
+  // "" renders nothing; the indicator is a colour-coded shape (CH8), never a label.
+  property string postureState: ""
   property int outstandingCount: 0
   property int newCount: 0
   property var alerts: []
@@ -1009,6 +1014,29 @@ BarWidget {
       y: root.vertical
         ? button.height + iconRow.countGap
         : (iconRow.height - implicitHeight) / 2
+    }
+
+    // The posture indicator: one colour-coded segment per state (CH8 §5.1). It is
+    // the first data point in the bar; the tooltip (below the shield) shows the
+    // same words the post-schema tab renders. "": no posture data yet.
+    PostureIndicator {
+      id: postureIndicator
+      state: root.hostWidget ? root.hostWidget.postureState : ""
+      panel: root.panel
+      anchors { left: button.right; right: parent.right; top: parent.top; bottom: parent.bottom }
+      leftMargin: 4
+      rightMargin: root.countText.visible ? Style.space(6) : Style.space(4)
+      topMargin: 2
+      bottomMargin: 2
+      MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        onPositionChanged: function(mouse) {
+          if (root.panel) root.panel.hoverCursor("posture-indicator", 0)
+        }
+        onPressed: function(mouse) { if (mouse.button === Qt.LeftButton) root.panel?.open() }
+      }
     }
   }
 }

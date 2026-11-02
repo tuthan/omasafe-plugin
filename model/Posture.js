@@ -513,10 +513,27 @@ function barTooltipLine(model) {
   return "Host posture: " + parts.join(", ") + " (" + model.ageText + " old)"
 }
 
-// The `/` finder's posture results (doc 08 §5.6). Matches a check on its id, its
-// title, its state word or any of its evidence strings, so "arch" finds the
-// arch-audit gap and "incomplete" finds every open one. Attention order first, so the
-// results are ranked the same way the tab is.
+// The bar indicator's state, derived from the posture model (08 §5.8). The order
+// IS the attention order: a worst state dominates. Every returned value maps to ONE
+// color on the bar; no state is silently dropped.
+function postureStateForBar(model) {
+  if (!model) return "unavailable"
+  if (model.notYetRun) return "not_yet_run"
+  if (!model.available) return "unavailable"
+  if (model.stale) return "stale"
+  if (model.attention.length === 0) return "pass"
+  // Highest-priority attention state wins.
+  var stateRank = { error: 0, regression: 0, incomplete: 1, attention: 1, unsupported: 2 }
+  var best = "attention", bestRank = 3
+  for (var i = 0; i < model.attention.length; i++) {
+    var key = model.attention[i].state
+    var rank = stateRank[key] === undefined ? 3 : stateRank[key]
+    if (rank < bestRank) { bestRank = rank; best = key }
+  }
+  return best
+}
+
+// The `/` finder's posture results (doc 08 §5.6). Matches a check on its id, its title, its state word or any of its evidence strings, so "arch" finds the arch-audit gap and "incomplete" finds every open one. Attention order first, so the results are ranked the same way the tab is.
 function search(model, query) {
   var text = _str(query).trim().toLowerCase()
   if (!model || !model.available || text === "") return []

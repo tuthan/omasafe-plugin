@@ -49,7 +49,10 @@ Panel {
   // opened at least once and a report has arrived — before that the bar says nothing
   // about posture rather than guessing.
   onPostureModelChanged: {
-    if (root.hostWidget) root.hostWidget.postureTooltipLine = Posture.barTooltipLine(root.postureModel)
+    if (root.hostWidget) {
+      root.hostWidget.postureTooltipLine = Posture.barTooltipLine(root.postureModel)
+      root.hostWidget.postureState = Posture.postureStateForBar(root.postureModel)
+    }
   }
   // Posture disclosure state. It lives here rather than in the view because the
   // cursor's index space depends on it: `sectionCount("posture-checks")` counts the
