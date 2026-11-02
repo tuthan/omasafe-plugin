@@ -80,7 +80,10 @@ Item {
     // Tooltip: the state word, plus the age when stale.
     ToolTip {
       text: {
-        if (root.state === "stale") return "Posture stale (" + (root.panel ? root.panel.postureModel : "").ageText + ")"
+        if (root.state === "stale") {
+          var model = root.panel ? root.panel.postureModel : null
+          return model ? "Posture stale (" + model.ageText + ")" : "Posture stale"
+        }
         if (root.state === "unavailable") return "Posture unavailable (CLI not verified)"
         if (root.state === "not_yet_run") return "Posture: no scan has completed"
         return "Posture: " + String(root.state).toUpperCase()
